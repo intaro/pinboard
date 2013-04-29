@@ -1,0 +1,183 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    <p class="lead">The page is refreshed every 5 seconds</p>
+    <div class="row">
+      <div class="span6">
+        <h3>Request time</h3>
+        <div id="req-time-chart" style="height: 300px;"></div>
+        <script type="text/javascript">
+            rtChart = null;
+            rtChartData = [];
+            {% for item in pages %}
+            rtChartData.push({ page: "{{ item.script_name }}", value: "{{ item.req_time }}" });
+            {% endfor %}    
+
+            AmCharts.ready(function () {
+                // SERIAL CHART
+                rtChart = new AmCharts.AmSerialChart();
+                rtChart.pathToImages = "/js/amcharts/images/";
+                rtChart.dataProvider = rtChartData;
+                rtChart.categoryField = "page";
+
+                var categoryAxis = rtChart.categoryAxis;
+                categoryAxis.gridAlpha = 0.07;
+                categoryAxis.axisColor = "#DADADA";
+                categoryAxis.labelsEnabled = false;
+
+                // Value
+                var valueAxis = new AmCharts.ValueAxis();
+                valueAxis.gridAlpha = 0.07;
+                rtChart.addValueAxis(valueAxis);
+
+                // GRAPH
+                var graph = new AmCharts.AmGraph();
+                graph.type = "line"; // try to change it to "column"
+                graph.title = "Request time";
+                graph.balloonText = "[[value]] ms";
+                graph.valueField = "value";
+                graph.descriptionField = "page";
+                graph.lineAlpha = 1;
+                graph.lineColor = "#729462";
+                graph.fillAlphas = 0.2;
+                graph.fillColor = "#729462";
+                rtChart.addGraph(graph);
+
+                // CURSOR
+                var chartCursor = new AmCharts.ChartCursor();
+                chartCursor.cursorPosition = "mouse";
+                rtChart.addChartCursor(chartCursor);
+
+                // WRITE
+                rtChart.write("req-time-chart");
+            });
+        </script>
+      </div>
+      <div class="span6">
+        <h3>Memory peak usage</h3>
+        <div id="mem-usage-chart" style="height: 300px;"></div>
+        <script type="text/javascript">
+            muChart = null;
+            muChartData = [];
+            {% for item in pages %}
+            muChartData.push({ page: "{{ item.script_name }}", value: "{{ item.mem_peak_usage }}" });
+            {% endfor %}    
+
+            AmCharts.ready(function () {
+                // SERIAL CHART
+                muChart = new AmCharts.AmSerialChart();
+                muChart.pathToImages = "/js/amcharts/images/";
+                muChart.dataProvider = muChartData;
+                muChart.categoryField = "page";
+
+                var categoryAxis = muChart.categoryAxis;
+                categoryAxis.gridAlpha = 0.07;
+                categoryAxis.axisColor = "#DADADA";
+                categoryAxis.labelsEnabled = false;
+
+                // Value
+                var valueAxis = new AmCharts.ValueAxis();
+                valueAxis.gridAlpha = 0.07;
+                muChart.addValueAxis(valueAxis);
+
+                // GRAPH
+                var graph = new AmCharts.AmGraph();
+                graph.type = "line"; // try to change it to "column"
+                graph.title = "Memory peak usage";
+                graph.balloonText = "[[value]] kB";
+                graph.valueField = "value";
+                graph.descriptionField = "page";
+                graph.lineAlpha = 1;
+                graph.lineColor = "#39A3B9";
+                graph.fillAlphas = 0.2;
+                muChart.addGraph(graph);
+
+                // CURSOR
+                var chartCursor = new AmCharts.ChartCursor();
+                chartCursor.cursorPosition = "mouse";
+                muChart.addChartCursor(chartCursor);
+
+                // WRITE
+                muChart.write("mem-usage-chart");
+            });
+        </script>
+      </div>
+    </div>
+    <div class="row">
+      <div class="span12">
+          <h3>Last requests</h3>
+          <table id="table-data" class="table table-bordered table-hover table-striped">
+            <tr id="table-header">
+              <th>Host name</th>
+              <th>Script name</th>
+              <th><div class="text-right">Request time, ms</div></th>
+              <th><div class="text-right">Memory peak usage, kB</div></th>
+            </tr>
+            {% for page in pages %}
+            <tr>
+              <td>{{ page.hostname }}</a></td>
+              <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
+              <td><div class="text-right">{{ page.req_time }}</div></td>
+              <td><div class="text-right">{{ page.mem_peak_usage }}</div></td>
+            </tr>
+            {% endfor %}
+          </table>
+      </div>
+    </div>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/html" id="row_tpl">
+        <% for (var i = 0; i < pages.length; i++) { %>
+        <tr style="display: none;">
+          <td><%=pages[i].hostname%></a></td>
+          <td><a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a></td>
+          <td><div class="text-right"><%=pages[i].req_time%></div></td>
+          <td><div class="text-right"><%=pages[i].mem_peak_usage%></div></td>
+        </tr>
+        <% } %>
+    </script>    
+    <script type="text/javascript">
+        $(function() {
+            var lastId = {{ last_id }};
+            
+            (function poll(){
+                setTimeout(function(){
+                    $.ajax({ 
+                        url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}", 
+                        data: { last_id: lastId },
+                        success: function(data){
+                            if (typeof data.pages !== undefined && data.pages.length > 0) {
+                                var resHtml = tmpl("row_tpl", { pages: data.pages });
+                                $('#table-header').after(resHtml);
+                                $('#table-data tr:hidden').fadeIn();
+                                
+                                for (var i = data.pages.length - 1; i >= 0; i--) {
+                                    rtChartData.shift();
+                                    rtChartData.push({ 
+                                        page: data.pages[i].script_name, 
+                                        value: data.pages[i].req_time 
+                                    });
+                                    muChartData.shift();
+                                    muChartData.push({ 
+                                        page: data.pages[i].script_name, 
+                                        value: data.pages[i].mem_peak_usage 
+                                    });                                    
+                                }
+                                rtChart.validateData();
+                                muChart.validateData();
+                                
+                                lastId = data.pages[0].id;
+                            }
+                            
+                            poll();
+                        }, 
+                        dataType: "json"
+                    });
+              }, 5000);
+            })();
+        });
+    </script>
+{% endblock %}

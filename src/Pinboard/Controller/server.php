@@ -1,6 +1,7 @@
 <?php
 
 use Pinboard\Utils\Utils;
+use Symfony\Component\HttpFoundation\Request;
 
 $server = $app['controllers_factory'];
 
@@ -329,6 +330,75 @@ function getHeavyPages($conn, $serverName, $hostName) {
     
     foreach($data as &$item) {
         $item['mem_peak_usage']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+    }
+    
+    return $data;
+}
+
+$server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
+    if ($request->isXmlHttpRequest()) {
+        $result = array(
+            'pages' => getLivePages($app['db'], $serverName, $hostName, $request->get('last_id')),
+        );
+        
+        return $app->json($result);
+    }
+
+    $result = array(
+        'server_name' => $serverName,
+        'hostname'    => $hostName,
+        'title'       => 'Live / ' . $serverName,
+    );
+    
+    $result['hosts'] = getHosts($app['db'], $serverName);    
+    $result['pages'] = getLivePages($app['db'], $serverName, $hostName);
+    $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
+        
+    return $app['twig']->render(
+        'live.html.twig', 
+        $result
+    );
+})
+->value('hostName', 'all')
+->bind('server_live');
+
+
+function getLivePages($conn, $serverName, $hostName, $lastId = null) {
+    $params = array(
+        'server_name' => $serverName,
+    );
+    $hostCondition = '';
+    $idCondition   = '';
+    
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+    if ($lastId > 0) {
+        $params['last_id'] = $lastId;
+        $idCondition = 'AND id > :last_id';
+    }
+
+    $sql = '
+        SELECT
+            id, server_name, hostname, script_name, req_time, mem_peak_usage
+        FROM
+            request
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            ' . $idCondition . '
+        ORDER BY
+            id DESC
+        LIMIT
+            50
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+    
+    foreach($data as &$item) {
+        $item['req_time']        = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item['mem_peak_usage']  = $item['mem_peak_usage'];
     }
     
     return $data;
