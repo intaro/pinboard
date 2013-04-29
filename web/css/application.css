@@ -1,3 +1,18 @@
+* {
+	margin: 0;
+}
+html, body {
+	height: 100%;
+}
+#wrap {
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	margin: 0 auto -191px; /* the bottom margin is the negative value of the footer's height */
+}
+#push {
+	height: 191px; /* .push must be the same height as .footer */
+}
 footer {
     text-align: center;
     padding: 30px 0;

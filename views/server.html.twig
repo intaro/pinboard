@@ -248,6 +248,7 @@
                 graph.lineAlpha = 1;
                 graph.lineColor = "#39A3B9";
                 graph.fillAlphas = 0.2;
+                graph.title = "Requests per second";
                 rpsChart.addGraph(graph);
 
                 // CURSOR
@@ -255,6 +256,10 @@
                 chartCursor.cursorPosition = "mouse";
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 rpsChart.addChartCursor(chartCursor);
+
+                // LEGEND                
+                var legend = new AmCharts.AmLegend();
+                rpsChart.addLegend(legend);
 
                 // WRITE
                 rpsChart.write("req-per-sec-chart");
