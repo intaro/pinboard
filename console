@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+//ini_set('display_errors', 'on');
+require __DIR__ . '/src/init.php';
+
+//$app['debug'] = true;
+
+$console = new Pinboard\Console\Application('Intaro Pinboard');
+$console->setSilex($app);
+
+$console->add(new Pinboard\Command\InitCommand());
+$console->add(new Pinboard\Command\AggregateCommand());
+
+$console->run();

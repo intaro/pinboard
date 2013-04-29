@@ -1,0 +1,31 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    <div class="row">
+      <div class="span12">
+        <p class="lead">Slowest pages for a last day</p>
+        {% if pages|length > 0 %}
+          <table class="table table-bordered table-hover table-striped">
+            <tr>
+              <th>Host name</th>
+              <th>Script name</th>
+              <th>Request time, ms</th>
+              <th>Registered around</th>
+            </tr>
+            {% for page in pages %}
+            <tr class="{{ page.req_time >= 2000 ? 'error' : (page.req_time >= 1000 ? 'warning' : '') }}">
+              <td>{{ page.hostname }}</a></td>
+              <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
+              <td>{{ page.req_time }}</td>
+              <td>{{ page.created_at }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        {% else %}
+        <p>No slow pages for a last day.</p>
+        {% endif %}
+      </div>
+    </div>
+{% endblock %}

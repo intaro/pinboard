@@ -1,0 +1,23 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+    <h1>Overview <small>for a last day</small></h1>
+    {% if servers|length > 0 %}
+      <table class="table table-bordered table-hover table-striped">
+        <tr>
+          <th>Server Name</th>
+          <th>Requests Count</th>
+          <th>Requests / Sec</th>
+          <th>Pages with errors</th>
+        </tr>
+        {% for server in servers %}
+        <tr class="{{ server.error_count > 0 ? 'error' : '' }}">
+          <td><a href="{{ path('server', { serverName: server.server_name }) }}" title="">{{ server.server_name }}</a></td>
+          <td>{{ server.req_count }}</td>
+          <td>{{ server.req_per_sec }}</td>
+          <td>{{ server.error_count }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+{% endblock %}

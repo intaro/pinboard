@@ -1,0 +1,17 @@
+<ul class="nav">
+  <li><a href="{{ path('index') }}">Overview</a></li>
+  <li class="divider"></li>
+      <li class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Sites<b class="caret"></b></a>
+        <ul class="dropdown-menu">
+        {% for server_name, server in app.menu.servers %}
+            <li>
+                <a href="{{ path('server', { serverName: server_name }) }}">
+                    {{ server_name }}
+                    {# <span class="badge badge-{{ server.label }}">{{ server.req_count }}</span> #}
+                </a>
+            </li>    
+        {% endfor %}
+        </ul>        
+      </li>
+</ul>

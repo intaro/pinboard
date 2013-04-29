@@ -1,0 +1,6 @@
+db_host: localhost
+db_name: pinba
+db_user: user
+db_pass: password
+
+locale:  en

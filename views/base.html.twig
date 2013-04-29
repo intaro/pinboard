@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}Intaro Pinboard{% endblock %}</title>
+        <link href="/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="/css/application.css" rel="stylesheet" />
+        <script src="/js/amcharts/amcharts.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <div class="navbar navbar-inverse">
+            <div class="navbar-inner">
+                <a class="brand" href="{{ path("index") }}">Intaro Pinboard</a>
+                {% include '_menu.html.twig' %}  
+            </div>
+        </div>
+
+        <div class="container">
+          {% block content %}{% endblock %}
+        </div>
+
+        <footer class="footer">
+          <div class="container">
+            <p>Developed by <a href="http://intaro.ru" target="_blank">Intaro</a></p>
+            <p>Code and documentation licensed under the MIT license.</p>
+          </div>
+        </footer>
+    
+        {% block javascripts %}
+        <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+        <script src="/js/bootstrap.min.js" type="text/javascript"></script>
+        {% endblock %}
+    </body>
+</html>
