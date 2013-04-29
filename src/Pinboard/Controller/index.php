@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 $index = $app['controllers_factory'];
 
@@ -11,13 +11,20 @@ $index->get('/', function() use ($app) {
     
     $sql = '
         SELECT
-            a.server_name, sum(a.req_count) as req_count, avg(a.req_per_sec) as req_per_sec, count(b.script_name) as error_count
+            a.server_name, 
+            sum(a.req_count) as req_count, 
+            avg(a.req_per_sec) as req_per_sec, 
+            (
+                SELECT 
+                    count(b.script_name) 
+                FROM 
+                    ipm_status_details b 
+                WHERE 
+                    a.server_name = b.server_name AND b.status >= 500 AND b.created_at > :created_at
+            ) 
+            as error_count
         FROM
             ipm_report_by_hostname_and_server a
-        LEFT JOIN
-            ipm_status_details b 
-        ON 
-            a.server_name = b.server_name AND b.status >= 500
         WHERE
             a.created_at > :created_at
         GROUP BY
