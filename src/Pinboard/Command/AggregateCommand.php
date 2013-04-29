@@ -19,7 +19,8 @@ class AggregateCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $db = $this->getApplication()->getSilex()['db'];
+        $silexApp = $this->getApplication()->getSilex();
+        $db = $silexApp['db'];
         
         $sql = '
             SELECT 
@@ -173,6 +174,13 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
+            $maxReqTime = 0.3;
+            if (isset($silexApp['params']['logging']['long_request_time']['global'])) {
+                $maxReqTime = $silexApp['params']['logging']['long_request_time']['global'];
+            }
+            if (isset($silexApp['params']['logging']['long_request_time'][$server['server_name']])) {
+                $maxReqTime = $silexApp['params']['logging']['long_request_time'][$server['server_name']];
+            }
             $sql .= '
                 INSERT INTO ipm_req_time_details
                     (server_name, hostname, script_name, req_time)
@@ -181,7 +189,7 @@ class AggregateCommand extends Command
                 FROM 
                     request
                 WHERE
-                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND req_time > 0.3
+                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND req_time > ' . (float)$maxReqTime . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
@@ -194,6 +202,14 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
+            $maxMemoryUsage = 4000;
+            if (isset($silexApp['params']['logging']['heavy_request']['global'])) {
+                $maxMemoryUsage = $silexApp['params']['logging']['heavy_request']['global'];
+            }
+            if (isset($silexApp['params']['logging']['heavy_request'][$server['server_name']])) {
+                $maxMemoryUsage = $silexApp['params']['logging']['heavy_request'][$server['server_name']];
+            }
+
             $sql .= '
                 INSERT INTO ipm_mem_peak_usage_details
                     (server_name, hostname, script_name, mem_peak_usage)
@@ -202,7 +218,7 @@ class AggregateCommand extends Command
                 FROM 
                     request
                 WHERE
-                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND mem_peak_usage > 4000
+                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND mem_peak_usage > ' . (int)$maxMemoryUsage . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
