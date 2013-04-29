@@ -60,7 +60,7 @@ class InitCommand extends Command
 
         if (!$input->getOption('no-crontab')) {
             $output->writeln('<info>Defining crontab task...</info>');            
-            $output->writeln('<info>Please enter the frequency of data aggregating</info> <comment>(frequency must be equal "pinba_stats_history" in pinba engine config)</comment>.');            
+            $output->writeln('<info>Please enter the frequency of data aggregating</info> <comment>(frequency must be equal "pinba_stats_history" of the pinba engine config)</comment>.');            
             
             $dialog = $this->getHelperSet()->get('dialog');
             $frequency = $dialog->askAndValidate(
