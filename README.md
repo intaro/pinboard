@@ -7,22 +7,24 @@ Intaro Pinboard works with PHP 5.3.3 or later.
 
 ## Installation
 
-1. Download [composer](http://getcomposer.org)
+1. Download [composer](http://getcomposer.org):
 
-    $ curl -sS https://getcomposer.org/installer | php
+        $ curl -sS https://getcomposer.org/installer | php
 
-2. Install dependency libraries throw composer
+2. Install dependency libraries throw composer:
 
-    $ php composer.phar install
+        $ php composer.phar install
 
-3. Create config file and enter parameters of connection to Pinba database
+3. Create config file and enter parameters of connection to Pinba database:
 
-    $ cp config/parameters.yml.dist config/parameters.yml
-    $ nano config/parameters.yml
+        $ cp config/parameters.yml.dist config/parameters.yml
+        $ nano config/parameters.yml
 
-4. Initialize app (command will create additional tables and define crontab task)
+4. Initialize app (command will create additional tables and define crontab task):
 
-    $ ./console init
+        $ ./console init
+
+5. Point the document root of your webserver or virtual host to the web/ directory.
 
 ## More Information
 
