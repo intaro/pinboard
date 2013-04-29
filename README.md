@@ -1,7 +1,7 @@
 Intaro Pinboard
 =============================
 
-Intaro Pinboard is a simple web monitoring system which uses and aggregates data from Pinba. Developed on [Silex][1] framework.
+Intaro Pinboard is a simple web monitoring system which uses and aggregates data from [Pinba][1]. Developed on [Silex][2] framework.
 
 Intaro Pinboard works with PHP 5.3.3 or later.
 
@@ -32,4 +32,5 @@ Documentation in development.
 
 Intaro Pinboard is licensed under the MIT license.
 
-[1]: http://silex.sensiolabs.org
+[1]: http://pinba.org
+[2]: http://silex.sensiolabs.org
