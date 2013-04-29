@@ -60,6 +60,23 @@ class InitCommand extends Command
 
         if (!$input->getOption('no-crontab')) {
             $output->writeln('<info>Defining crontab task...</info>');            
+            $output->writeln('<info>Please enter the frequency of data aggregating</info> <comment>(frequency must be equal "pinba_stats_history" in pinba engine config)</comment>.');            
+            
+            $dialog = $this->getHelperSet()->get('dialog');
+            $frequency = $dialog->askAndValidate(
+                $output,
+                'Frequency (in minutes, default "5"): ',
+                function ($answer) {
+                    if (intval($answer) <= 0) {
+                        throw new \RunTimeException(
+                            'You must enter positive integer value'
+                        );
+                    }
+                    return $answer;
+                },
+                false,
+                '5'
+            );
             
             $process = new Process('crontab -l');
             $process->setTimeout(20);
@@ -67,7 +84,7 @@ class InitCommand extends Command
             
             $crontabString = $process->isSuccessful() ? $process->getOutput() : '';
             
-            $command = '*/5 * * * * ' . __DIR__ . '/../../../console aggregate';
+            $command = '*/' . $frequency . ' * * * * ' . __DIR__ . '/../../../console aggregate';
             if (strpos($crontabString, $command) === false) {
                 $crontabString .= "\n" . $command . "\n";
             }
