@@ -348,10 +348,11 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Live / ' . $serverName,
+        'limit'       => 50,
     );
     
     $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getLivePages($app['db'], $serverName, $hostName);
+    $result['pages'] = getLivePages($app['db'], $serverName, $hostName, null, $result['limit']);
     $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
         
     return $app['twig']->render(
@@ -363,7 +364,7 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
 ->bind('server_live');
 
 
-function getLivePages($conn, $serverName, $hostName, $lastId = null) {
+function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50) {
     $params = array(
         'server_name' => $serverName,
     );
@@ -391,7 +392,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null) {
         ORDER BY
             id DESC
         LIMIT
-            50
+            ' . $limit . '
     ';
 
     $data = $conn->fetchAll($sql, $params);

@@ -11,7 +11,7 @@
         <script type="text/javascript">
             rtChart = null;
             rtChartData = [];
-            {% for item in pages %}
+            {% for item in pages|reverse %}
             rtChartData.push({ page: "{{ item.script_name }}", value: "{{ item.req_time }}" });
             {% endfor %}    
 
@@ -61,7 +61,7 @@
         <script type="text/javascript">
             muChart = null;
             muChartData = [];
-            {% for item in pages %}
+            {% for item in pages|reverse %}
             muChartData.push({ page: "{{ item.script_name }}", value: "{{ item.mem_peak_usage }}" });
             {% endfor %}    
 
@@ -141,7 +141,7 @@
     </script>    
     <script type="text/javascript">
         $(function() {
-            var lastId = {{ last_id }};
+            var lastId = {{ last_id }}, limit = {{ limit }};
             
             (function poll(){
                 setTimeout(function(){
@@ -155,12 +155,14 @@
                                 $('#table-data tr:hidden').fadeIn();
                                 
                                 for (var i = data.pages.length - 1; i >= 0; i--) {
-                                    rtChartData.shift();
+                                    if (rtChartData.length >= limit)
+                                        rtChartData.shift();
                                     rtChartData.push({ 
                                         page: data.pages[i].script_name, 
                                         value: data.pages[i].req_time 
                                     });
-                                    muChartData.shift();
+                                    if (muChartData.length >= limit)
+                                        muChartData.shift();
                                     muChartData.push({ 
                                         page: data.pages[i].script_name, 
                                         value: data.pages[i].mem_peak_usage 
