@@ -7,7 +7,7 @@
       <div class="span6">
         <h2>Request time <small><a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
         {% if req|length > 0 %}
-        <div id="req-time-chart" style="height: 400px;"></div>
+        <div id="req-time-chart" style="height: 450px;"></div>
         <script type="text/javascript">
             var rtChart;
 
@@ -108,7 +108,7 @@
       <div class="span6">
         <h2>Memory peak usage <small><a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
         {% if req|length > 0 %}
-        <div id="mem-usage-chart" style="height: 400px;"></div>
+        <div id="mem-usage-chart" style="height: 450px;"></div>
         <script type="text/javascript">
             var muChart;
 
@@ -211,7 +211,7 @@
       <div class="span6">
         <h2>Requests per sec {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}</h2>
         {% if req_per_sec|length > 0 %}
-        <div id="req-per-sec-chart" style="height: 300px;"></div>
+        <div id="req-per-sec-chart" style="height: 350px;"></div>
         <script type="text/javascript">
             var rpsChart;
 
@@ -272,7 +272,7 @@
       <div class="span6">
         <h2>Error statuses <small><a href="{{ path('server_statuses', { serverName: server_name }) }}">view details</a></small></h2>
         {% if statuses.data|length > 0 %}
-        <div id="statuses-chart" style="height: 300px;"></div>
+        <div id="statuses-chart" style="height: 350px;"></div>
         <script type="text/javascript">
             var statusChart;
 
