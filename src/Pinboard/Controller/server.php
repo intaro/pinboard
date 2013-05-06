@@ -81,7 +81,10 @@ function getStatusesReview($conn, $serverName, $hostName) {
         'codes' => array(),
     );
     while ($data = $stmt->fetch()) {
-        $statuses['data'][date('Y,m,d,H,i', strtotime($data['created_at']))][$data['status'] > 0 ? $data['status'] : 'none'] = $data['cnt'];
+        $t = strtotime($data['created_at']);
+        $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        
+        $statuses['data'][$date][$data['status'] > 0 ? $data['status'] : 'none'] = $data['cnt'];
         if (!isset($statuses['codes'][$data['status']])) {
             //set color
             $statuses['codes'][$data['status']] = Utils::generateColor();
@@ -122,7 +125,8 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
     $data = $conn->fetchAll($sql, $params);
     
     foreach($data as &$item) {
-        $item['date'] = date('Y,m,d,H,i', strtotime($item['created_at']));
+        $t = strtotime($item['created_at']);
+        $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
         $item['req_per_sec'] = number_format($item['req_per_sec'], 2, '.', '');
     }
 
@@ -163,7 +167,8 @@ function getRequestReview($conn, $serverName, $hostName) {
     $data = $conn->fetchAll($sql, $params);
     
     foreach($data as &$item) {
-        $item['date'] = date('Y,m,d,H,i', strtotime($item['created_at']));
+        $t = strtotime($item['created_at']);
+        $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
         $item['req_time_90']  = number_format($item['req_time_90'] * 1000, 0, '.', '');
         $item['req_time_95']  = number_format($item['req_time_95'] * 1000, 0, '.', '');
         $item['req_time_99']  = number_format($item['req_time_99'] * 1000, 0, '.', '');
