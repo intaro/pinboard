@@ -66,7 +66,7 @@ Intaro Pinboard works with PHP 5.3.3 or later.
 
 ## More Information
 
-Documentation in development.
+Documentation in [Wiki][4].
 
 ## License
 
@@ -75,3 +75,4 @@ Intaro Pinboard is licensed under the MIT license.
 [1]: http://pinba.org
 [2]: http://silex.sensiolabs.org
 [3]: http://silex.sensiolabs.org/doc/web_servers.html
+[4]: https://github.com/intaro/pinboard/wiki
