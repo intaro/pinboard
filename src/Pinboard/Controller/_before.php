@@ -5,9 +5,13 @@ $app->before(function() use ($app) {
     
     $sql = '
         SELECT
-            server_name, req_count
+            server_name, req_count, count(created_at) cnt
         FROM
             ipm_report_by_server_name
+        GROUP BY
+            server_name
+        HAVING
+            cnt > 10
         ORDER BY
             server_name
     ';
