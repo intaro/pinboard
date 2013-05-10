@@ -3,74 +3,170 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Pinboard by intaro</title>
+    <title>Intaro Pinboard</title>
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="fancybox/jquery.fancybox.css">
+    <link rel="stylesheet" href="css/application.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
   </head>
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>Pinboard</h1>
-        <p>Simple web monitoring system which uses and aggregates data from Pinba</p>
+    <div class="container">
 
-        <p class="view"><a href="https://github.com/intaro/pinboard">View the Project on GitHub <small>intaro/pinboard</small></a></p>
+        <div class="masthead">
+            <ul class="nav nav-pills pull-right">
+              <li><a href="#overview">Overview</a></li>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#screenshots">Screenshots</a></li>
+              <li><a href="#share">Share</a></li>
+            </ul>
+            <h3 class="muted"><a href="/" title="Intaro Pinboard"><img src="img/logo.png" alt="Intaro Pinboard" width="289" height="52" /></a></h3>
+        </div>
+        <hr>
 
+        <div id="overview" class="jumbotron">
+            <h1>Intaro Pinboard</h1>
+            <p class="lead">Simple PHP monitoring system which uses and aggregates data from Pinba.</p>
+            <p>
+                <a class="btn btn-large btn-success" href="https://github.com/intaro/pinboard">View on GitHub</a>
+            </p>
+            <p class="buttons">
+                <a class="btn btn-small" href="https://github.com/intaro/pinboard/wiki">Documentation</a>
+                <a class="btn btn-small" href="https://github.com/intaro/pinboard/zipball/master">Download <strong>ZIP File</strong></a>
+                <a class="btn btn-small" href="https://github.com/intaro/pinboard/tarball/master">Download <strong>TAR Ball</strong></a>
+            </p>
+        </div>
 
-        <ul>
-          <li><a href="https://github.com/intaro/pinboard/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/intaro/pinboard/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/intaro/pinboard">View On <strong>GitHub</strong></a></li>
+        <hr>
+
+        <h2 id="features">Features</h2>
+
+        <div class="row features">
+            <div class="span3">
+              <h4><i class="icon-briefcase"></i> PHP statistics</h4>
+              <p>Review of requests time, memory peak usage, site load, error pages.</p>
+            </div>
+            <div class="span3">
+              <h4><i class="icon-circle-arrow-down"></i> Slow and heavy pages</h4>
+              <p>Analyse log of slowest (request processing time) and heavest (memory usage) pages.</p>
+            </div>
+            <div class="span3">
+              <h4><i class="icon-warning-sign"></i> Error pages</h4>
+              <p>Analyse pages with error HTTP statuses.</p>
+            </div>
+            <div class="span3">
+              <h4><i class="icon-facetime-video"></i> Live mode</h4>
+              <p>View in realtime information about request processing.</p>
+            </div>
+        </div>
+
+        <hr>
+      
+        <h2 id="screenshots">Screenshots</h2>
+
+        <ul class="thumbnails">
+          <li class="span3">
+            <a href="img/screens/site_overview.png" class="thumbnail" rel="screenshots">
+              <img data-src="holder.js/210x253" src="img/screens/preview/site_overview.png" alt="Site statistic preview" width="210" height="253">
+            </a>
+          </li>
+          <li class="span3">
+            <a href="img/screens/site_heavy.png" class="thumbnail" rel="screenshots">
+              <img data-src="holder.js/210x266" src="img/screens/preview/site_heavy.png" alt="site_heavy" width="210" height="266">
+            </a>
+          </li>
+          <li class="span3">
+            <a href="img/screens/site_error.png" class="thumbnail" rel="screenshots">
+              <img data-src="holder.js/210x176" src="img/screens/preview/site_error.png" alt="Site error pages" width="210" height="176">
+            </a>
+          </li>
+          <li class="span3">
+            <a href="img/screens/site_live.png" class="thumbnail" rel="screenshots">
+              <img data-src="holder.js/210x277" src="img/screens/preview/site_live.png" alt="Site live statistic" width="210" height="277">
+            </a>
+          </li>
         </ul>
-      </header>
-      <section>
-        <h3>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+        <hr>
+      
+        <h2 id="share">Share</h2>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+        <div class="social-widgets">
+            <div id="fb-root"></div>
+            <script>(function(d, s, id) {
+              var js, fjs = d.getElementsByTagName(s)[0];
+              if (d.getElementById(id)) return;
+              js = d.createElement(s); js.id = id;
+              js.src = "//connect.facebook.net/ru_RU/all.js#xfbml=1&appId=415112775190150";
+              fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));</script>
+            
+            <div class="fb-like" data-send="false" data-layout="button_count" data-width="200" data-show-faces="false" data-font="tahoma"></div>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+            &nbsp;&nbsp;
 
-<h3>Designer Templates</h3>
+            <!-- Place this tag where you want the +1 button to render. -->
+            <div class="g-plusone" data-size="medium"></div>
+            
+            <!-- Place this tag after the last +1 button tag. -->
+            <script type="text/javascript">
+              (function() {
+                var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+                po.src = 'https://apis.google.com/js/plusone.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+              })();
+            </script>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+            <a href="https://twitter.com/share" class="twitter-share-button" data-via="twitterapi" data-lang="en">Tweet</a>
+            <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
 
-<h3>Rather Drive Stick?</h3>
+            &nbsp;&nbsp;
+    
+            <!-- Put this script tag to the <head> of your page -->
+            <script type="text/javascript" src="//vk.com/js/api/openapi.js?95"></script>
+            
+            <script type="text/javascript">
+              VK.init({apiId: 3636474, onlyWidgets: true});
+            </script>
+            
+            <!-- Put this div tag to the place, where the Like block will be -->
+            <div id="vk_like"></div>
+            <script type="text/javascript">
+            VK.Widgets.Like("vk_like", {type: "button", height: 20});
+            </script>
+        </div>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+        <hr>
+  
+        <div class="footer">
+            <p>This project is maintained by <a href="https://github.com/intaro">Intaro</a></p>
+            <p><small>Hosted on GitHub Pages</small></p>
+        </div>
 
-<h3>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/intaro">intaro</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
-              <script type="text/javascript">
-            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
-            try {
-              var pageTracker = _gat._getTracker("UA-4182159-11");
-            pageTracker._trackPageview();
-            } catch(err) {}
-          </script>
 
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="fancybox/jquery.fancybox.pack.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+    		$(".thumbnail").fancybox({
+        		padding : 5
+    		});
+        });
+    </script>
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      try {
+        var pageTracker = _gat._getTracker("UA-4182159-11");
+        pageTracker._trackPageview();
+      } catch(err) {}
+    </script>
   </body>
 </html>

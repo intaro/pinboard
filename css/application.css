@@ -1,0 +1,29 @@
+body {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+.container > hr {
+    margin: 30px 0;
+}
+
+.container > h2 {
+    text-align: center;
+}
+
+/* Main marketing message and sign up button */
+.jumbotron {
+    text-align: center;
+}
+.jumbotron .buttons {
+    margin-top: 25px;
+}
+
+.features [class^="icon-"], .features [class*=" icon-"] {
+    vertical-align: inherit;
+}
+
+.social-widgets {
+    text-align: center;
+    margin-top: 20px;
+}
