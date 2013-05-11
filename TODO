@@ -1,2 +1,4 @@
+* Add pagination in sections Request time, Memory peak usage and Statuses
+* Add notifying about error statuses 
 * Add support of tags
 * Add indexes for tables
