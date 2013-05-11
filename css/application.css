@@ -7,7 +7,7 @@ body {
     margin: 30px 0;
 }
 
-.container > h2 {
+.container > h2, .container > h3, .container > h4 {
     text-align: center;
     margin-bottom: 20px;
 }
