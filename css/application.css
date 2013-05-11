@@ -3,6 +3,12 @@ body {
     padding-bottom: 40px;
 }
 
+h1 i {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 28px;
+}
+
 .container > hr {
     margin: 30px 0;
 }
