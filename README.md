@@ -1,9 +1,9 @@
 Intaro Pinboard
 =============================
 
-Intaro Pinboard (Pinba Board) is a simple web monitoring system which uses and aggregates data from [Pinba][1]. Developed on [Silex][2] framework.
+Intaro Pinboard (Pinba Board) is a simple web monitoring system which aggregates and displays [Pinba][1] data. 
 
-Intaro Pinboard works with PHP 5.3.3 or later.
+Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
 
 ## Installation
 
