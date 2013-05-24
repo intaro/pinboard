@@ -15,3 +15,6 @@ logging:
 #        "some.site.ru": 30000
         
 locale:  en
+
+pagination:
+    row_per_page: 50

@@ -237,10 +237,20 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Request time / ' . $serverName,
+        'pageNum'     => 1,
     );
-    
+
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
     $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName);
+    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
 
     return $app['twig']->render(
         'req_time.html.twig', 
@@ -250,7 +260,64 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
 ->value('hostName', 'all')
 ->bind('server_req_time');
 
-function getSlowPages($conn, $serverName, $hostName) {
+$server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+    $result = array(
+        'server_name' => $serverName,
+        'hostname'    => $hostName,
+        'title'       => 'Request time / ' . $serverName,
+        'pageNum'     => $pageNum,
+    );
+
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
+    $result['hosts'] = getHosts($app['db'], $serverName);    
+    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, $pageNum * $rowPerPage + 1, $rowPerPage);
+
+    return $app['twig']->render(
+        'req_time.html.twig', 
+        $result
+    );
+})
+->value('hostName', 'all')
+->bind('server_req_time_page')
+->assert('pageNum', '\d+');
+
+function getSlowPagesCount($conn, $serverName, $hostName) {
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+    );
+    $hostCondition = '';
+    
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $sql = '
+        SELECT
+            COUNT(*)
+        FROM
+            ipm_req_time_details
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            AND created_at > :created_at
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+
+    return (int)$data[0]['COUNT(*)'];
+}
+
+function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -274,7 +341,7 @@ function getSlowPages($conn, $serverName, $hostName) {
         ORDER BY
             created_at DESC, req_time DESC
         LIMIT
-            100
+            ' . $startPos . ', ' . $rowCount . '
     ';
 
     $data = $conn->fetchAll($sql, $params);

@@ -5,3 +5,4 @@ Thumbs.db
 /composer.lock
 /composer.phar
 /vendor
+/nbproject/*
