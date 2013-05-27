@@ -16,13 +16,13 @@
   <li class="{{ app.request.get('_route') == 'server' ? 'active' : '' }}">
     <a href="{{ path('server', { serverName: server_name }) }}">Overview</a>
   </li>
-  <li class="{{ app.request.get('_route') == 'server_req_time' ? 'active' : '' }}">
+  <li class="{{ (app.request.get('_route') == 'server_req_time' or app.request.get('_route') == 'server_req_time_page') ? 'active' : '' }}">
     <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">Request time</a>
   </li>
-  <li class="{{ app.request.get('_route') == 'server_mem_usage' ? 'active' : '' }}">
+  <li class="{{ (app.request.get('_route') == 'server_mem_usage' or app.request.get('_route') == 'server_mem_usage_page') ? 'active' : '' }}">
     <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname }) }}">Memory peak usage</a>
   </li>
-  <li class="{{ app.request.get('_route') == 'server_statuses' ? 'active' : '' }}">
+  <li class="{{ (app.request.get('_route') == 'server_statuses' or app.request.get('_route') == 'server_statuses_page') ? 'active' : '' }}">
     <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname }) }}">Statuses</a>
   </li>
   <li class="{{ app.request.get('_route') == 'server_live' ? 'active' : '' }}">
