@@ -7,21 +7,6 @@
       <div class="span12">
         <p class="lead">Heavy pages for a last day</p>
         {% if pages|length > 0 %}
-          {% if rowCount > rowPerPage %}
-            <div class="pagination">
-              <ul>
-                {% if pageNum > 1 %}
-                  <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum - 1 }) }}">Prev</a></li>
-                {% endif %}
-                  {% for i in 1..pageCount %}
-                    <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: i }) }}">{{ i }}</a></li>
-                  {% endfor %}
-                {% if pageNum < pageCount %}
-                  <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum + 1 }) }}">Next</a></li>
-                {% endif %}
-              </ul>
-            </div>
-          {% endif %}
           <table class="table table-bordered table-hover table-striped">
             <tr>
               <th>Host name</th>
@@ -38,6 +23,21 @@
             </tr>
             {% endfor %}
           </table>
+          {% if rowCount > rowPerPage %}
+            <div class="pagination">
+              <ul>
+                {% if pageNum > 1 %}
+                  <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum - 1 }) }}">Prev</a></li>
+                {% endif %}
+                  {% for i in 1..pageCount %}
+                    <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: i }) }}">{{ i }}</a></li>
+                  {% endfor %}
+                {% if pageNum < pageCount %}
+                  <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum + 1 }) }}">Next</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          {% endif %}
         {% else %}
         <p>No heavy pages for a last day.</p>
         {% endif %}
