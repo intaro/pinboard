@@ -30,7 +30,7 @@
                   <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum - 1 }) }}">Prev</a></li>
                 {% endif %}
                   {% for i in 1..pageCount %}
-                    <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: i }) }}">{{ i }}</a></li>
+                    <li {{ pageNum == i ? 'class="active"' : '' }}><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: i }) }}">{{ i }}</a></li>
                   {% endfor %}
                 {% if pageNum < pageCount %}
                   <li><a href="{{ path('server_mem_usage_page', { serverName: server_name, hostName: hostname, pageNum: pageNum + 1 }) }}">Next</a></li>
