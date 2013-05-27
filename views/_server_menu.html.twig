@@ -6,9 +6,9 @@
         </a>
     <ul class="dropdown-menu">
       {% set host = 'all' %}
-      <li class="{{ host == hostname ? 'active' : '' }}"><a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host, pageNum: 1 }) }}" title="">all hosts</a></li>
+      <li class="{{ host == hostname ? 'active' : '' }}"><a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host}) }}" title="">all hosts</a></li>
       {% for host in hosts %}
-      <li class="{{ host == hostname ? 'active' : '' }}"><a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host, pageNum: 1 }) }}" title="">{{ host }}</a></li>
+      <li class="{{ host == hostname ? 'active' : '' }}"><a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host}) }}" title="">{{ host }}</a></li>
       {% endfor %}
     </ul></small>
 </h1>

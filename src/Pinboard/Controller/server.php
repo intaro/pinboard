@@ -187,10 +187,20 @@ $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostNam
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Error pages / ' . $serverName,
+        'pageNum'     => 1,
     );
     
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getErrorPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
     $result['hosts']    = getHosts($app['db'], $serverName);    
-    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName);
+    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
 
     return $app['twig']->render(
         'statuses.html.twig', 
@@ -200,7 +210,70 @@ $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostNam
 ->value('hostName', 'all')
 ->bind('server_statuses');
 
-function getErrorPages($conn, $serverName, $hostName) {
+$server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+    $result = array(
+        'server_name' => $serverName,
+        'hostname'    => $hostName,
+        'title'       => 'Error pages / ' . $serverName,
+        'pageNum'     => $pageNum,
+    );
+    
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getErrorPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
+    if ($pageNum < 1 || $pageNum > $pageCount) {
+        $app->abort(404, "Page $pageNum does not exist.");
+    }
+
+    $startPos = ($pageNum - 1) * $rowPerPage;
+    $result['hosts']    = getHosts($app['db'], $serverName);    
+    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
+
+    return $app['twig']->render(
+        'statuses.html.twig', 
+        $result
+    );
+})
+->value('hostName', 'all')
+->value('pageNum', '1')
+->assert('pageNum', '\d+')
+->bind('server_statuses_page');
+
+function getErrorPagesCount($conn, $serverName, $hostName) {
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+    );
+    $hostCondition = '';
+    
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $sql = '
+        SELECT
+            COUNT(*)
+        FROM
+            ipm_status_details
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            AND created_at > :created_at
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+
+    return (int)$data[0]['COUNT(*)'];
+}
+
+function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -224,7 +297,7 @@ function getErrorPages($conn, $serverName, $hostName) {
         ORDER BY
             created_at DESC
         LIMIT
-            100
+            ' . $startPos . ', ' . $rowCount . '
     ';
 
     $data = $conn->fetchAll($sql, $params);
@@ -292,8 +365,9 @@ $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serve
     );
 })
 ->value('hostName', 'all')
-->bind('server_req_time_page')
-->assert('pageNum', '\d+');
+->value('pageNum', '1')
+->assert('pageNum', '\d+')
+->bind('server_req_time_page');
 
 function getSlowPagesCount($conn, $serverName, $hostName) {
     $params = array(
@@ -364,10 +438,20 @@ $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostNa
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Memory peak usage / ' . $serverName,
+        'pageNum'     => 1,
     );
     
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getHeavyPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
     $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName);
+    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
 
     return $app['twig']->render(
         'mem_usage.html.twig', 
@@ -377,7 +461,71 @@ $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostNa
 ->value('hostName', 'all')
 ->bind('server_mem_usage');
 
-function getHeavyPages($conn, $serverName, $hostName) {
+$server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+    $result = array(
+        'server_name' => $serverName,
+        'hostname'    => $hostName,
+        'title'       => 'Memory peak usage / ' . $serverName,
+        'pageNum'     => $pageNum,
+    );
+    
+    $rowPerPage = $app['params']['pagination']['row_per_page'];
+    $result['rowPerPage'] = $rowPerPage;
+
+    $rowCount = getHeavyPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
+
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+
+    if ($pageNum < 1 || $pageNum > $pageCount) {
+        $app->abort(404, "Page $pageNum does not exist.");
+    }
+
+    $startPos = ($pageNum - 1) * $rowPerPage;
+
+    $result['hosts'] = getHosts($app['db'], $serverName);    
+    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
+
+    return $app['twig']->render(
+        'mem_usage.html.twig', 
+        $result
+    );
+})
+->value('hostName', 'all')
+->value('pageNum', '1')
+->assert('pageNum', '\d+')
+->bind('server_mem_usage_page');
+
+function getHeavyPagesCount($conn, $serverName, $hostName){
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+    );
+    $hostCondition = '';
+    
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $sql = '
+        SELECT
+            COUNT(*)
+        FROM
+            ipm_mem_peak_usage_details
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            AND created_at > :created_at
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+
+    return (int)$data[0]['COUNT(*)'];
+}
+
+function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -401,7 +549,7 @@ function getHeavyPages($conn, $serverName, $hostName) {
         ORDER BY
             created_at DESC, mem_peak_usage DESC
         LIMIT
-            100
+            ' . $startPos . ', ' . $rowCount . '
     ';
 
     $data = $conn->fetchAll($sql, $params);
