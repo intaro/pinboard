@@ -2,7 +2,7 @@
 
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% block content %}
-    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts, pageNum: pageNum} %}      
     <div class="row">
       <div class="span12">
         <p class="lead">Slowest pages for a last day</p>

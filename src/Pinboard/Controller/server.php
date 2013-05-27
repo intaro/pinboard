@@ -277,8 +277,14 @@ $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serve
     $pageCount = ceil($rowCount / $rowPerPage);
     $result['pageCount'] = $pageCount;
 
+    if ($pageNum < 1 || $pageNum > $pageCount) {
+        $app->abort(404, "Page $pageNum does not exist.");
+    }
+
+    $startPos = ($pageNum - 1) * $rowPerPage;
+
     $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, $pageNum * $rowPerPage + 1, $rowPerPage);
+    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
 
     return $app['twig']->render(
         'req_time.html.twig', 
