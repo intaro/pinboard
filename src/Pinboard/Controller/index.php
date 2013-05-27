@@ -1,4 +1,4 @@
-    <?php
+<?php
 
 $index = $app['controllers_factory'];
 

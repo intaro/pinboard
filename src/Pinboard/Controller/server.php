@@ -3,6 +3,10 @@
 use Pinboard\Utils\Utils;
 use Symfony\Component\HttpFoundation\Request;
 
+$ROW_PER_PAGE = 10;
+$rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params']['pagination']['row_per_page'] : $ROW_PER_PAGE;
+$rowPerPage = ($rowPerPage > 0) ? $rowPerPage : $ROW_PER_PAGE;
+
 $server = $app['controllers_factory'];
 
 $server->get('/{serverName}/{hostName}', function($serverName, $hostName) use ($app) {
@@ -182,7 +186,7 @@ function getRequestReview($conn, $serverName, $hostName) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostName) use ($app) {
+$server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostName) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -190,7 +194,6 @@ $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostNam
         'pageNum'     => 1,
     );
     
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getErrorPagesCount($app['db'], $serverName, $hostName);
@@ -210,7 +213,7 @@ $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostNam
 ->value('hostName', 'all')
 ->bind('server_statuses');
 
-$server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+$server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -218,7 +221,6 @@ $server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serve
         'pageNum'     => $pageNum,
     );
     
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getErrorPagesCount($app['db'], $serverName, $hostName);
@@ -305,7 +307,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app) {
+$server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -313,7 +315,6 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
         'pageNum'     => 1,
     );
 
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
@@ -333,7 +334,7 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
 ->value('hostName', 'all')
 ->bind('server_req_time');
 
-$server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+$server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -341,7 +342,6 @@ $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serve
         'pageNum'     => $pageNum,
     );
 
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
@@ -433,7 +433,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostName) use ($app) {
+$server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostName) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -441,7 +441,6 @@ $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostNa
         'pageNum'     => 1,
     );
     
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getHeavyPagesCount($app['db'], $serverName, $hostName);
@@ -461,7 +460,7 @@ $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostNa
 ->value('hostName', 'all')
 ->bind('server_mem_usage');
 
-$server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app) {
+$server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -469,7 +468,6 @@ $server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serv
         'pageNum'     => $pageNum,
     );
     
-    $rowPerPage = $app['params']['pagination']['row_per_page'];
     $result['rowPerPage'] = $rowPerPage;
 
     $rowCount = getHeavyPagesCount($app['db'], $serverName, $hostName);
