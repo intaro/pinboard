@@ -3,7 +3,7 @@
 use Pinboard\Utils\Utils;
 use Symfony\Component\HttpFoundation\Request;
 
-$ROW_PER_PAGE = 10;
+$ROW_PER_PAGE = 50;
 $rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params']['pagination']['row_per_page'] : $ROW_PER_PAGE;
 $rowPerPage = ($rowPerPage > 0) ? $rowPerPage : $ROW_PER_PAGE;
 
