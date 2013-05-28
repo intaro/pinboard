@@ -38,7 +38,8 @@ class InitCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $db = $this->getApplication()->getSilex()['db'];
+        $silexApp = $this->getApplication()->getSilex();
+        $db = $silexApp['db'];
         
         if (!$input->getOption('no-tables')) {
             $output->writeln('<info>Creating database tables...</info>');            
