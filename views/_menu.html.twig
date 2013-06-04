@@ -14,7 +14,4 @@
         {% endfor %}
         </ul>        
       </li>
-  {% if is_granted('IS_AUTHENTICATED_FULLY') %}
-    <li><a href="{{ path('logout') }}">Log out</a></li>
-  {% endif %}
 </ul>
