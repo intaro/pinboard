@@ -11,6 +11,9 @@ $app->before(function() use ($app) {
             $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
                         ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
                         : ".*";
+            if (trim($hosts) == "") {
+                $hosts = ".*";
+            }
         }
     }
 

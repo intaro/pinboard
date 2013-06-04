@@ -51,6 +51,17 @@ class GenerateCommand extends Command
         $users = $yaml['secure']['users'];
         if ($hosts)
         {
+            if ($hosts == "") {
+                $hosts = ".*";
+            }
+
+            preg_match("/" . $hosts . "/", "my test string for regexp");
+            if (preg_last_error() != PREG_NO_ERROR)
+            {
+                $output->writeln("<error>Wrong regular expression!</error>");
+                return;
+            }
+
             $users[$username] = array(
                 'password' => $encodePassword,
                 'hosts' => $hosts,

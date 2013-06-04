@@ -17,6 +17,9 @@ function checkUserAccess($app, $serverName) {
             $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
                         ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
                         : ".*";
+            if (trim($hostsRegExp) == "") {
+                $hosts = ".*";
+            }
         }
     }
 
