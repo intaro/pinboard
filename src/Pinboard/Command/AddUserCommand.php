@@ -10,7 +10,7 @@ use Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder;
 use Symfony\Component\Yaml\Dumper;
 use Symfony\Component\Yaml\Yaml;
 
-class GenerateCommand extends Command
+class AddUserCommand extends Command
 {
     protected function configure()
     {
@@ -58,7 +58,7 @@ class GenerateCommand extends Command
             preg_match("/" . $hosts . "/", "my test string for regexp");
             if (preg_last_error() != PREG_NO_ERROR)
             {
-                $output->writeln("<error>Wrong regular expression!</error>");
+                $output->writeln("<error>Wrong regular expression! Code " . preg_last_error() . "</error>");
                 return;
             }
 

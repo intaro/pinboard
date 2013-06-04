@@ -24,7 +24,7 @@ function checkUserAccess($app, $serverName) {
     }
 
     if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
-        $app->abort(404, "Access denied");
+        $app->abort(403, "Access denied");
     }
 }
 
