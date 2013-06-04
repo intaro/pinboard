@@ -15,8 +15,8 @@ class GenerateCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('adduser')
-            ->setDescription('Generate string of parametrs')
+            ->setName('add-user')
+            ->setDescription('Add section for new user in configuration file')
             ->addArgument(
                 'username',
                 InputArgument::REQUIRED,
@@ -53,7 +53,6 @@ class GenerateCommand extends Command
         {
             $users[$username] = array(
                 'password' => $encodePassword,
-                'roles' => 'ROLE_USER',
                 'hosts' => $hosts,
             );
         }
@@ -61,7 +60,6 @@ class GenerateCommand extends Command
         {
             $users[$username] = array(
                 'password' => $encodePassword,
-                'roles' => 'ROLE_USER',
             );
         }
 
@@ -84,7 +82,7 @@ class GenerateCommand extends Command
         }
         else {
             file_put_contents($filename, $newFile);
-            $output->writeln("The configuration file is updated");
+            $output->writeln("<info>The configuration file is updated</info>");
         }
     }
 }

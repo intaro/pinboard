@@ -27,7 +27,7 @@ $users = array();
 if (isset($app['params']['secure']['users'])) {
     foreach ($app['params']['secure']['users'] as $userName => $userData) {
         $users[$userName] = array(
-                $userData['roles'],
+                "ROLE_USER",
                 $userData['password'],
             );
     }

@@ -24,8 +24,6 @@ secure:
     users:
         testuser1:
             password: my_sha512_password
-            roles: ROLE_USER
         testuser2:
             password: my_sha512_password
-            roles: ROLE_USER
             hosts: '.*mysite.com'
