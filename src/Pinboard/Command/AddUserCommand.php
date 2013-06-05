@@ -48,7 +48,7 @@ class AddUserCommand extends Command
         $filename = __DIR__ . '/../../../config/parameters.yml';
         $yaml = Yaml::parse($filename);
 
-        $users = $yaml['secure']['users'];
+        $users = isset($yaml['secure']['users']) ? $yaml['secure']['users'] : array();
         if ($hosts)
         {
             if ($hosts == "") {
@@ -76,24 +76,29 @@ class AddUserCommand extends Command
 
         $newYaml = array(
             'db' => $yaml['db'],
-            'logging' => $yaml['logging'],
-            'locale' => $yaml['locale'],
-            'pagination' => $yaml['pagination'],
-            'secure' => array(
-                'enable' => $yaml['secure']['enable'],
-                'users' => $users,
-            ),
+        );
+        
+        foreach(array('logging', 'locale', 'pagination') as $section) {
+            if (isset($yaml[$section]))
+                $newYaml[$section] = $yaml[$section];
+        }
+            
+        $newYaml['secure'] = array(
+            'enable' => isset($yaml['secure']['enable']) ? $yaml['secure']['enable'] : true,
+            'users' => $users,
         );
 
         $dumper = new Dumper();
         $newFile = $dumper->dump($newYaml, 5);
 
-        if (!copy($filename, $filename . '~old')) {
-            $output->writeln("Error during the backup configuration file");
+        $oldFilename = $filename . '~' . substr(md5(rand()), 0, 5);
+        if (!copy($filename, $oldFilename)) {
+            $output->writeln("<error>Error during the backup configuration file</error>");
         }
         else {
+            $output->writeln("<info>Old configuration backuped to file $oldFilename</info>");            
             file_put_contents($filename, $newFile);
-            $output->writeln("<info>The configuration file is updated</info>");
+            $output->writeln("<info>The configuration file is updated successfully</info>");
         }
     }
 }

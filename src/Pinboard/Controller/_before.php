@@ -5,29 +5,32 @@ $app->before(function() use ($app) {
 
     $hosts = ".*";
 
-    if (isset($app['params']['secure']['enable'])) {
-        if ($app['params']['secure']['enable'] == "true") {
-            $user = $app['security']->getToken()->getUser();
-            $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
-                        : ".*";
-            if (trim($hosts) == "") {
-                $hosts = ".*";
-            }
+    if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
+        $user = $app['security']->getToken()->getUser();
+        $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
+                    ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
+                    : ".*";
+        if (trim($hosts) == "") {
+            $hosts = ".*";
         }
     }
 
-    $params = array(
-        'hosts' => $hosts,
-    );
+    $hostsWhere = '';
+    $params = array();
+    
+    if ($hosts != '.*') {
+        $params = array(
+            'hosts' => $hosts,
+        );
+        $hostsWhere = 'WHERE server_name REGEXP :hosts';
+    }    
 
     $sql = '
         SELECT
             server_name, req_count, count(created_at) cnt
         FROM
             ipm_report_by_server_name
-        WHERE
-            server_name REGEXP :hosts
+        ' . $hostsWhere . '
         GROUP BY
             server_name
         HAVING

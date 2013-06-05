@@ -7,7 +7,7 @@
         "symfony/console": "dev-master",
         "symfony/process": "dev-master",
         "symfony/yaml": "dev-master",
-        "symfony/security": "dev-master",
+        "symfony/security": "dev-master"
     },
     "autoload": {
         "psr-0": {
