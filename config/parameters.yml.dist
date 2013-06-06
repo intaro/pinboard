@@ -16,6 +16,8 @@ logging:
         
 locale:  en
 
+records_lifetime: '1 month'
+
 pagination:
     row_per_page: 50
 
