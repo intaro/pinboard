@@ -4,6 +4,7 @@
         <title>{% block title %}Intaro Pinboard{% endblock %}</title>
         <link href="/css/bootstrap.min.css" rel="stylesheet" />
         <link href="/css/application.css" rel="stylesheet" />
+        <link href="/css/tableStyle.css" rel="stylesheet" />
         <script src="/js/amcharts/amcharts.js" type="text/javascript"></script>
     </head>
     <body>
@@ -31,8 +32,14 @@
     
         {% block javascripts %}
         <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+        <script src="/js/jquery.tablesorter.min.js" type="text/javascript"></script>
         <script src="/js/micro_tpl.js" type="text/javascript"></script>
         <script src="/js/bootstrap.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            $(function() {    
+              $("#sortedTable").tablesorter();
+            }); 
+        </script>
         {% endblock %}
     </body>
 </html>

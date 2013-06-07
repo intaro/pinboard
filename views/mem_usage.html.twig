@@ -7,13 +7,16 @@
       <div class="span12">
         <p class="lead">Heavy pages for a last day</p>
         {% if pages|length > 0 %}
-          <table class="table table-bordered table-hover table-striped">
+          <table id="sortedTable" class="table table-bordered table-hover table-striped tablesorter">
+            <thead>
             <tr>
               <th>Host name</th>
               <th>Script name</th>
               <th>Memory peak usage, kB</th>
               <th>Registered around</th>
             </tr>
+            </thead>
+            <tbody>
             {% for page in pages %}
             <tr class="{{ page.mem_peak_usage >= 50000 ? 'error' : (page.mem_peak_usage >= 30000 ? 'warning' : '') }}">
               <td>{{ page.hostname }}</a></td>
@@ -22,6 +25,7 @@
               <td>{{ page.created_at }}</td>
             </tr>
             {% endfor %}
+            </tbody>
           </table>
           {% if rowCount > rowPerPage %}
             <div class="pagination">
