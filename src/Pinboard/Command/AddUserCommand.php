@@ -74,13 +74,12 @@ class AddUserCommand extends Command
             );
         }
 
-        $newYaml = array(
-            'db' => $yaml['db'],
-        );
-        
-        foreach(array('logging', 'locale', 'pagination') as $section) {
-            if (isset($yaml[$section]))
-                $newYaml[$section] = $yaml[$section];
+        $newYaml = array();        
+        //copy other sections
+        foreach($yaml as $key => $section) {
+            if ($key != 'secure') {
+                $newYaml[$key] = $section;
+            }
         }
             
         $newYaml['secure'] = array(
