@@ -22,6 +22,7 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
         'password' => $app['params']['db']['pass'],
     )
 ));
+$app['db']->getConfiguration()->setResultCacheImpl(new \Doctrine\Common\Cache\ApcCache());
 
 $users = array();
 if (isset($app['params']['secure']['users'])) {

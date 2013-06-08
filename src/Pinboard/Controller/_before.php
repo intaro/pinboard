@@ -1,5 +1,7 @@
 <?php
 
+use Doctrine\DBAL\Cache\QueryCacheProfile;
+
 $app->before(function() use ($app) {
     $result = array();
 
@@ -39,7 +41,9 @@ $app->before(function() use ($app) {
             server_name
     ';
     
-    $list = $app['db']->fetchAll($sql, $params);
+    $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
+    $list = $stmt->fetchAll();
+    $stmt->closeCursor();
     
     $maxReqCount = 0;
     foreach($list as $item) {
