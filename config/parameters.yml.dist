@@ -22,10 +22,10 @@ pagination:
     row_per_page: 50
 
 secure:
-#    enable: true
+    enable: false
 #    users:
 #        testuser1:
 #            password: my_sha512_password
 #        testuser2:
 #            password: my_sha512_password
-#            hosts: '.*mysite.com'
+#            hosts: '.*mysite\.com'
