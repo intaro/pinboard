@@ -25,15 +25,12 @@ class AggregateCommand extends Command
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
 
-        if (isset($yaml['records_lifetime'])) {
-            $lifetime = date('Y-m-d H:i:s', strtotime('-' . $yaml['records_lifetime']));
-        }
-        else {
-            $lifetime = date('Y-m-d H:i:s', strtotime('-1 month'));
-        }
+        $delta = new \DateInterval(isset($yaml['records_lifetime']) ? $yaml['records_lifetime'] : 'P1M');
+        $date = new \DateTime();
+        $date->sub($delta);
 
         $params = array(
-            'created_at'  => $lifetime,
+            'created_at' => $date->format('Y-m-d H:i:s'),
         );
 
         $tablesForClear = array(

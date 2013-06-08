@@ -16,7 +16,8 @@ logging:
         
 locale:  en
 
-records_lifetime: '1 month'
+# format ISO8601 (see http://en.wikipedia.org/wiki/Iso8601#Durations)
+records_lifetime: P1M
 
 pagination:
     row_per_page: 50
