@@ -45,7 +45,7 @@ $app->before(function() use ($app) {
         ORDER BY
             server_name
     ';
-    
+
     $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
     $list = $stmt->fetchAll();
     $stmt->closeCursor();

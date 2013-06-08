@@ -1,5 +1,6 @@
 <?php
 
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Pinboard\Utils\IDNaConvert;
 
 $index = $app['controllers_factory'];
@@ -34,11 +35,11 @@ $index->get('/', function() use ($app) {
             avg(a.req_per_sec) as req_per_sec, 
             (
                 SELECT 
-                    count(b.script_name) 
+                    count(*) 
                 FROM 
                     ipm_status_details b 
                 WHERE 
-                    a.server_name = b.server_name AND b.status >= 500 AND b.created_at > :created_at
+                    a.server_name = b.server_name AND b.created_at > :created_at
             ) 
             as error_count
         FROM
@@ -49,8 +50,10 @@ $index->get('/', function() use ($app) {
             a.server_name
     ';
     
-    $result['servers'] = $app['db']->fetchAll($sql, $params);
-    
+    $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
+    $result['servers'] = $stmt->fetchAll();
+    $stmt->closeCursor();
+
     $idn = new IDNaConvert(array('idn_version' => 2008));
 
     foreach($result['servers'] as &$item) {
