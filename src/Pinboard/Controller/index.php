@@ -1,5 +1,7 @@
 <?php
 
+use Pinboard\Utils\IDNaConvert;
+
 $index = $app['controllers_factory'];
 
 $index->get('/', function() use ($app) {
@@ -49,7 +51,13 @@ $index->get('/', function() use ($app) {
     
     $result['servers'] = $app['db']->fetchAll($sql, $params);
     
+    $idn = new IDNaConvert(array('idn_version' => 2008));
+
     foreach($result['servers'] as &$item) {
+        if (stripos($item['server_name'], 'xn--') !== false) {
+            $item['server_name'] = $idn->decode($item['server_name']);
+        }
+
         $item['req_per_sec'] = number_format($item['req_per_sec'], 3, ',', '');
     }
     

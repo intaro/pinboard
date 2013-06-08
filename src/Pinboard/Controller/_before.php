@@ -1,6 +1,7 @@
 <?php
 
 use Doctrine\DBAL\Cache\QueryCacheProfile;
+use Pinboard\Utils\IDNaConvert;
 
 $app->before(function() use ($app) {
     $result = array();
@@ -45,22 +46,22 @@ $app->before(function() use ($app) {
     $list = $stmt->fetchAll();
     $stmt->closeCursor();
     
-    $maxReqCount = 0;
-    foreach($list as $item) {
-        if ($item['req_count'] > $maxReqCount) {
-            $maxReqCount = $item['req_count'];
-        }
-    }
+    $idn = new IDNaConvert(array('idn_version' => 2008));
     
     foreach($list as $data) {
-        if ($data['req_count'] > $maxReqCount / 2) {
-            $data['label'] = 'important';
+        if (stripos($data['server_name'], 'xn--') !== false) {
+            $data['server_name'] = $idn->decode($data['server_name']);
+        }
+        
+        $domainParts = explode('.', $data['server_name']);
+        if (sizeof($domainParts) > 1) {
+            $baseDomain = $domainParts[sizeof($domainParts) - 2] . '.' . $domainParts[sizeof($domainParts) - 1];
         }
         else {
-            $data['label'] = 'inverse';
+            $baseDomain = $data['server_name'];
         }
-        $result['servers'][$data['server_name']] = $data;
+        $result['servers'][$baseDomain][$data['server_name']] = $data;
     }        
-    
+
     $app['menu'] = $result;
 });
