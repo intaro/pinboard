@@ -332,37 +332,6 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-/*
-$server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
-
-    $result = array(
-        'server_name' => $serverName,
-        'hostname'    => $hostName,
-        'title'       => 'Request time / ' . $serverName,
-        'pageNum'     => 1,
-    );
-
-    $result['rowPerPage'] = $rowPerPage;
-
-    $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
-    $result['rowCount'] = $rowCount;
-
-    $pageCount = ceil($rowCount / $rowPerPage);
-    $result['pageCount'] = $pageCount;
-
-    $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
-
-    return $app['twig']->render(
-        'req_time.html.twig', 
-        $result
-    );
-})
-->value('hostName', 'all')
-->bind('server_req_time');
-*/
-
 $server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
     
