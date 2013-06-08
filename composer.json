@@ -6,7 +6,8 @@
         "symfony/twig-bridge": "~2.1",
         "symfony/console": "dev-master",
         "symfony/process": "dev-master",
-        "symfony/yaml": "dev-master"
+        "symfony/yaml": "dev-master",
+        "symfony/security": "dev-master"
     },
     "autoload": {
         "psr-0": {

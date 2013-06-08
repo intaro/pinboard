@@ -18,3 +18,12 @@ locale:  en
 
 pagination:
     row_per_page: 50
+
+secure:
+#    enable: true
+#    users:
+#        testuser1:
+#            password: my_sha512_password
+#        testuser2:
+#            password: my_sha512_password
+#            hosts: '.*mysite.com'

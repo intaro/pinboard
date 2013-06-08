@@ -2,6 +2,7 @@
 Thumbs.db
 
 /config/parameters.yml
+/config/parameters.yml~*
 /composer.lock
 /composer.phar
 /vendor
