@@ -3,10 +3,26 @@
 $index = $app['controllers_factory'];
 
 $index->get('/', function() use ($app) {
+    
     $result = array();
+
+    $hosts = ".*";
+
+    if (isset($app['params']['secure']['enable'])) {
+        if ($app['params']['secure']['enable'] == "true") {
+            $user = $app['security']->getToken()->getUser();
+            $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
+                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
+                        : ".*";
+            if (trim($hosts) == "") {
+                $hosts = ".*";
+            }
+        }
+    }
 
     $params = array(
         'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'hosts' => $hosts,
     );
     
     $sql = '
@@ -26,7 +42,7 @@ $index->get('/', function() use ($app) {
         FROM
             ipm_report_by_hostname_and_server a
         WHERE
-            a.created_at > :created_at
+            a.created_at > :created_at AND a.server_name REGEXP :hosts
         GROUP BY
             a.server_name
     ';
@@ -38,6 +54,7 @@ $index->get('/', function() use ($app) {
     }
     
     return $app['twig']->render('index.html.twig', $result);
-})->bind('index');
+})
+->bind('index');
 
 return $index;

@@ -22,3 +22,26 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
         'password' => $app['params']['db']['pass'],
     )
 ));
+
+$users = array();
+if (isset($app['params']['secure']['users'])) {
+    foreach ($app['params']['secure']['users'] as $userName => $userData) {
+        $users[$userName] = array(
+                "ROLE_USER",
+                $userData['password'],
+            );
+    }
+}
+
+if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
+    $app->register(new Silex\Provider\SecurityServiceProvider(), array(
+        'security.firewalls' => array(
+            'secure_area' => array(
+                'pattern' => "^/",
+                'logout' => array(),
+                'http' => true,
+                'users' => $users,
+            ),
+        )
+    ));
+}

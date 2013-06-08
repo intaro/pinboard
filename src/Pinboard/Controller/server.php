@@ -9,7 +9,28 @@ $rowPerPage = ($rowPerPage > 0) ? $rowPerPage : $ROW_PER_PAGE;
 
 $server = $app['controllers_factory'];
 
+function checkUserAccess($app, $serverName) {
+    $hostsRegExp = ".*";
+    if (isset($app['params']['secure']['enable'])) {
+        if ($app['params']['secure']['enable'] == "true") {
+            $user = $app['security']->getToken()->getUser();
+            $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
+                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
+                        : ".*";
+            if (trim($hostsRegExp) == "") {
+                $hosts = ".*";
+            }
+        }
+    }
+
+    if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
+        $app->abort(403, "Access denied");
+    }
+}
+
 $server->get('/{serverName}/{hostName}', function($serverName, $hostName) use ($app) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -187,6 +208,8 @@ function getRequestReview($conn, $serverName, $hostName) {
 }
 
 $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostName) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -214,6 +237,8 @@ $server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostNam
 ->bind('server_statuses');
 
 $server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -308,6 +333,8 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
 }
 
 $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -335,6 +362,8 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
 ->bind('server_req_time');
 
 $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -434,6 +463,8 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
 }
 
 $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostName) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -461,6 +492,8 @@ $server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostNa
 ->bind('server_mem_usage');
 
 $server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+    checkUserAccess($app, $serverName);
+
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -560,6 +593,8 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
 }
 
 $server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
+    checkUserAccess($app, $serverName);
+    
     if ($request->isXmlHttpRequest()) {
         $result = array(
             'pages' => getLivePages($app['db'], $serverName, $hostName, $request->get('last_id')),

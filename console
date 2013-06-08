@@ -10,5 +10,6 @@ $console->setSilex($app);
 
 $console->add(new Pinboard\Command\InitCommand());
 $console->add(new Pinboard\Command\AggregateCommand());
+$console->add(new Pinboard\Command\AddUserCommand());
 
 $console->run();
