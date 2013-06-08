@@ -85,14 +85,13 @@ function getStatusesReview($conn, $serverName, $hostName) {
     
     $sql = '
         SELECT
-            created_at, status, sum(req_count) as cnt
+            created_at, status, count(*) as cnt
         FROM
-            ipm_report_status
+            ipm_status_details
         WHERE
             server_name = :server_name
             ' . $hostCondition . '
             AND created_at > :created_at
-            AND status >= 500
         GROUP BY
             created_at
         ORDER BY
