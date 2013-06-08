@@ -6,6 +6,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Yaml\Yaml;
 
 class AggregateCommand extends Command
 {
@@ -21,7 +22,47 @@ class AggregateCommand extends Command
     {
         $silexApp = $this->getApplication()->getSilex();
         $db = $silexApp['db'];
-        
+
+        $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
+
+        $delta = new \DateInterval(isset($yaml['records_lifetime']) ? $yaml['records_lifetime'] : 'P1M');
+        $date = new \DateTime();
+        $date->sub($delta);
+
+        $params = array(
+            'created_at' => $date->format('Y-m-d H:i:s'),
+        );
+
+        $tablesForClear = array(
+            "ipm_info",
+            "ipm_mem_peak_usage_details",
+            "ipm_report_2_by_hostname_and_server",
+            "ipm_report_by_hostname",
+            "ipm_report_by_hostname_and_script",
+            "ipm_report_by_hostname_and_server",
+            "ipm_report_by_hostname_server_and_script",
+            "ipm_report_by_script_name",
+            "ipm_report_by_server_and_script",
+            "ipm_report_by_server_name",
+            "ipm_report_status",
+            "ipm_req_time_details",
+            "ipm_status_details",
+        );
+
+        $sql = '';
+
+        foreach ($tablesForClear as $value) {
+            $sql .= '
+            DELETE
+            FROM
+                ' . $value . '
+            WHERE
+                created_at < :created_at
+            ;';
+        }
+
+        $db->executeQuery($sql, $params);
+
         $sql = '
             SELECT 
                 server_name, hostname, COUNT(*) AS cnt
