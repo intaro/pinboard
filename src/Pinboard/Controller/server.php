@@ -332,6 +332,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
+/*
 $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
 
@@ -360,10 +361,13 @@ $server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostNam
 })
 ->value('hostName', 'all')
 ->bind('server_req_time');
+*/
 
-$server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
-
+    
+    $pageNum = str_replace('page', '', $pageNum);
+    
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -394,9 +398,9 @@ $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serve
     );
 })
 ->value('hostName', 'all')
-->value('pageNum', '1')
-->assert('pageNum', '\d+')
-->bind('server_req_time_page');
+->value('pageNum', 'page1')
+->assert('pageNum', 'page\d+')
+->bind('server_req_time');
 
 function getSlowPagesCount($conn, $serverName, $hostName) {
     $params = array(
