@@ -4,7 +4,11 @@ use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Pinboard\Utils\IDNaConvert;
 
 $app->before(function() use ($app) {
-    $result = array();
+    $result = array(
+        'servers' => array(
+            'IPs' => array(),
+        ),
+    );
 
     $hosts = ".*";
 
@@ -53,15 +57,24 @@ $app->before(function() use ($app) {
             $data['server_name'] = $idn->decode($data['server_name']);
         }
         
-        $domainParts = explode('.', $data['server_name']);
-        if (sizeof($domainParts) > 1) {
-            $baseDomain = $domainParts[sizeof($domainParts) - 2] . '.' . $domainParts[sizeof($domainParts) - 1];
+        if (preg_match('/\d+\.\d+\.\d+\.\d+/', $data['server_name'])) {
+            $result['servers']['IPs'][$data['server_name']] = $data;
         }
         else {
-            $baseDomain = $data['server_name'];
+            $domainParts = explode('.', $data['server_name']);
+            if (sizeof($domainParts) > 1) {
+                $baseDomain = $domainParts[sizeof($domainParts) - 2] . '.' . $domainParts[sizeof($domainParts) - 1];
+            }
+            else {
+                $baseDomain = $data['server_name'];
+            }
+            $result['servers'][$baseDomain][$data['server_name']] = $data;
         }
-        $result['servers'][$baseDomain][$data['server_name']] = $data;
     }        
-
+    
+    if (!sizeof($result['servers']['IPs'])) {
+        unset($result['servers']['IPs']);
+    }
+    
     $app['menu'] = $result;
 });
