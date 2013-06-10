@@ -30,3 +30,7 @@ secure:
 #        testuser2:
 #            password: my_sha512_password
 #            hosts: '.*mysite\.com'
+
+notification:
+    #- {hosts: '.*mysite.com', email: 'my@mail.com'}
+    #- {hosts: '.*mysite2.com', email: 'my2@mail.com'}
