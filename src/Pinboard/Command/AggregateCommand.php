@@ -76,13 +76,54 @@ class AggregateCommand extends Command
             
             $errorPages = $db->fetchAll($sql);
 
-            foreach ($errorPages as $errorPage) {
-                foreach ($yaml['notification'] as $value) {
-                    if (preg_match('/' . $value['hosts'] . '/', $errorPage['server_name'])) {
-                        $body = 'Error on page ' . $errorPage['server_name'] . $errorPage["script_name"] .
-                                ' ! Status code ' . $errorPage['status'];
+            if (isset($yaml['smtp'])) {
+                $transport = \Swift_SmtpTransport::newInstance()
+                ->setHost($yaml['smtp']['server'])
+                ->setPort($yaml['smtp']['port'])
+                ;
+                if (isset($yaml['smtp']['username'])) {
+                    $transport->setUsername($yaml['smtp']['username']);
+                }
+                if (isset($yaml['smtp']['password'])) {
+                    $transport->setPassword($yaml['smtp']['password']);
+                }
+                if (isset($yaml['smtp']['encryption'])) {
+                    $transport->setEncryption($yaml['smtp']['encryption']);
+                }
+                if (isset($yaml['smtp']['auth_mode'])) {
+                    $transport->setAuthMode($yaml['smtp']['auth_mode']);
+                }
+            }
+            else {
+                $transport = \Swift_MailTransport::newInstance();
+            }
 
-                        mail($value['email'], 'Error Page!', $body);
+            $mailer = \Swift_Mailer::newInstance($transport);
+
+            foreach ($errorPages as $errorPage) {
+                $body = 'Error on page ' . $errorPage['server_name'] . $errorPage['script_name'] .
+                        ' ! Status code ' . $errorPage['status'];
+                $message = \Swift_Message::newInstance()
+                ->setSubject('Error page!')
+                ->setBody($body)
+                ;
+                if (isset($yaml['smtp'])) {
+                    $message->setFrom(array($yaml['smtp']['username']));
+                }
+                else {
+                    $message->setFrom('robot@pinboard.ru');
+                }
+                if (isset($yaml['notification']['global_email'])) {
+                    $message->setTo(array($yaml['notification']['global_email']));
+                    $mailer->send($message);
+                }
+
+                if (isset($yaml['notification']['list'])) {
+                    foreach ($yaml['notification']['list'] as $value) {
+                        if (preg_match('/' . $value['hosts'] . '/', $errorPage['server_name'])) {
+                            $message->setTo(array($value['email']));
+                            $mailer->send($message);
+                        }
                     }
                 }
             }
