@@ -63,6 +63,31 @@ class AggregateCommand extends Command
 
         $db->executeQuery($sql, $params);
 
+        if (isset($yaml['notification']))
+        {
+            $sql = '
+                SELECT DISTINCT
+                    server_name, script_name, status 
+                FROM 
+                    request
+                WHERE
+                    status >= 500
+            ';
+            
+            $errorPages = $db->fetchAll($sql);
+
+            foreach ($errorPages as $errorPage) {
+                foreach ($yaml['notification'] as $value) {
+                    if (preg_match('/' . $value['hosts'] . '/', $errorPage['server_name'])) {
+                        $body = 'Error on page ' . $errorPage['server_name'] . $errorPage["script_name"] .
+                                ' ! Status code ' . $errorPage['status'];
+
+                        mail($value['email'], 'Error Page!', $body);
+                    }
+                }
+            }
+        }
+
         $sql = '
             SELECT 
                 server_name, hostname, COUNT(*) AS cnt
