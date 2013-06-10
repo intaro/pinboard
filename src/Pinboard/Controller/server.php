@@ -206,37 +206,11 @@ function getRequestReview($conn, $serverName, $hostName) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/statuses', function($serverName, $hostName) use ($app, $rowPerPage) {
+
+$server->get('/{serverName}/{hostName}/statuses/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
 
-    $result = array(
-        'server_name' => $serverName,
-        'hostname'    => $hostName,
-        'title'       => 'Error pages / ' . $serverName,
-        'pageNum'     => 1,
-    );
-    
-    $result['rowPerPage'] = $rowPerPage;
-
-    $rowCount = getErrorPagesCount($app['db'], $serverName, $hostName);
-    $result['rowCount'] = $rowCount;
-
-    $pageCount = ceil($rowCount / $rowPerPage);
-    $result['pageCount'] = $pageCount;
-
-    $result['hosts']    = getHosts($app['db'], $serverName);    
-    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
-
-    return $app['twig']->render(
-        'statuses.html.twig', 
-        $result
-    );
-})
-->value('hostName', 'all')
-->bind('server_statuses');
-
-$server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    $pageNum = str_replace('page', '', $pageNum);
 
     $result = array(
         'server_name' => $serverName,
@@ -267,9 +241,9 @@ $server->get('/{serverName}/{hostName}/statuses/page/{pageNum}', function($serve
     );
 })
 ->value('hostName', 'all')
-->value('pageNum', '1')
-->assert('pageNum', '\d+')
-->bind('server_statuses_page');
+->value('pageNum', 'page1')
+->assert('pageNum', 'page\d+')
+->bind('server_statuses');
 
 function getErrorPagesCount($conn, $serverName, $hostName) {
     $params = array(
@@ -331,38 +305,11 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/req-time', function($serverName, $hostName) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
-
-    $result = array(
-        'server_name' => $serverName,
-        'hostname'    => $hostName,
-        'title'       => 'Request time / ' . $serverName,
-        'pageNum'     => 1,
-    );
-
-    $result['rowPerPage'] = $rowPerPage;
-
-    $rowCount = getSlowPagesCount($app['db'], $serverName, $hostName);
-    $result['rowCount'] = $rowCount;
-
-    $pageCount = ceil($rowCount / $rowPerPage);
-    $result['pageCount'] = $pageCount;
-
-    $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
-
-    return $app['twig']->render(
-        'req_time.html.twig', 
-        $result
-    );
-})
-->value('hostName', 'all')
-->bind('server_req_time');
-
-$server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
-
+    
+    $pageNum = str_replace('page', '', $pageNum);
+    
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -393,9 +340,9 @@ $server->get('/{serverName}/{hostName}/req-time/page/{pageNum}', function($serve
     );
 })
 ->value('hostName', 'all')
-->value('pageNum', '1')
-->assert('pageNum', '\d+')
-->bind('server_req_time_page');
+->value('pageNum', 'page1')
+->assert('pageNum', 'page\d+')
+->bind('server_req_time');
 
 function getSlowPagesCount($conn, $serverName, $hostName) {
     $params = array(
@@ -461,38 +408,11 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/mem-usage', function($serverName, $hostName) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
-
-    $result = array(
-        'server_name' => $serverName,
-        'hostname'    => $hostName,
-        'title'       => 'Memory peak usage / ' . $serverName,
-        'pageNum'     => 1,
-    );
     
-    $result['rowPerPage'] = $rowPerPage;
-
-    $rowCount = getHeavyPagesCount($app['db'], $serverName, $hostName);
-    $result['rowCount'] = $rowCount;
-
-    $pageCount = ceil($rowCount / $rowPerPage);
-    $result['pageCount'] = $pageCount;
-
-    $result['hosts'] = getHosts($app['db'], $serverName);    
-    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName, 0, $rowPerPage);
-
-    return $app['twig']->render(
-        'mem_usage.html.twig', 
-        $result
-    );
-})
-->value('hostName', 'all')
-->bind('server_mem_usage');
-
-$server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
-
+    $pageNum = str_replace('page', '', $pageNum);
+    
     $result = array(
         'server_name' => $serverName,
         'hostname'    => $hostName,
@@ -523,9 +443,9 @@ $server->get('/{serverName}/{hostName}/mem-usage/page/{pageNum}', function($serv
     );
 })
 ->value('hostName', 'all')
-->value('pageNum', '1')
-->assert('pageNum', '\d+')
-->bind('server_mem_usage_page');
+->value('pageNum', 'page1')
+->assert('pageNum', 'page\d+')
+->bind('server_mem_usage');
 
 function getHeavyPagesCount($conn, $serverName, $hostName){
     $params = array(
