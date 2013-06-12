@@ -1,9 +1,10 @@
 {% extends "base.html.twig" %}
 
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% set frequency = 5 %}
 {% block content %}
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
-    <p class="lead">The page is refreshed every 5 seconds</p>
+    <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
     <div class="row">
       <div class="span6">
         <h3>Request time</h3>
@@ -154,9 +155,11 @@
                                 $('#table-header').after(resHtml);
                                 $('#table-data tr:hidden').fadeIn();
                                 
-                                while ($('#table-data tr').length > limit + 1) {
-                                    $('#table-data tr:last').remove();
-                                }
+                                $('#table-data tr').each(function(index) {
+                                    if (index >= limit) {
+                                        $(this).remove();
+                                    }
+                                });
 
                                 for (var i = data.pages.length - 1; i >= 0; i--) {
                                     if (rtChartData.length >= limit)
@@ -182,7 +185,7 @@
                         }, 
                         dataType: "json"
                     });
-              }, 5000);
+              }, {{ frequency * 1000 }});
             })();
         });
     </script>
