@@ -215,7 +215,7 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
-            $maxReqTime = 0.3;
+            $maxReqTime = 1;
             if (isset($silexApp['params']['logging']['long_request_time']['global'])) {
                 $maxReqTime = $silexApp['params']['logging']['long_request_time']['global'];
             }
@@ -243,7 +243,7 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
-            $maxMemoryUsage = 4000;
+            $maxMemoryUsage = 30000;
             if (isset($silexApp['params']['logging']['heavy_request']['global'])) {
                 $maxMemoryUsage = $silexApp['params']['logging']['heavy_request']['global'];
             }

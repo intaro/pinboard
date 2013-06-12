@@ -7,11 +7,11 @@ db:
 logging:
     # in seconds
     long_request_time:
-        global: 0.5
+        global: 1.0
 #        "some.site.ru": 1
     # max memory usage in kB
     heavy_request:
-        global: 10000
+        global: 30000
 #        "some.site.ru": 30000
         
 locale:  en
