@@ -9,7 +9,7 @@ Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
 
 1. Download application:
 
-        $ git clone https://github.com/intaro/pinboard.git
+        $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
 
 2. Download [composer](http://getcomposer.org):
@@ -55,8 +55,7 @@ Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
                 fastcgi_pass unix:/tmp/php-fpm.sock;
                 include fastcgi_params;
                 fastcgi_param  SCRIPT_FILENAME $document_root/index.php;
-                #uncomment when running via https
-                #fastcgi_param HTTPS on;
+                fastcgi_param HTTPS $https if_not_empty;
             }
     
             location ~ /\.(ht|svn|git) {
