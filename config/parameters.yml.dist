@@ -39,7 +39,7 @@ secure:
 #smtp:
 #    server: localhost
 #    port: 25
-#    username: username@gmail.com
+#    username: username@example.com
 #    password: my_password
 #    encryption: null
 #    auth_mode: null
