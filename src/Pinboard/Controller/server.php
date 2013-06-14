@@ -228,9 +228,11 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}', function($serverName
     $pageCount = ceil($rowCount / $rowPerPage);
     $result['pageCount'] = $pageCount;
 
-    if ($pageNum < 1 || $pageNum > $pageCount) {
-        $app->abort(404, "Page $pageNum does not exist.");
-    }
+    if ($pageCount != 0) {
+        if ($pageNum < 1 || $pageNum > $pageCount) {
+            $app->abort(404, "Page $pageNum does not exist.");
+        }
+    }   
 
     $startPos = ($pageNum - 1) * $rowPerPage;
     $result['hosts']    = getHosts($app['db'], $serverName);    
@@ -325,11 +327,11 @@ $server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName
 
     $pageCount = ceil($rowCount / $rowPerPage);
     $result['pageCount'] = $pageCount;
-
-    if ($pageNum < 1 || $pageNum > $pageCount) {
-        $app->abort(404, "Page $pageNum does not exist.");
+    if ($pageCount != 0) {
+        if ($pageNum < 1 || $pageNum > $pageCount) {
+            $app->abort(404, "Page $pageNum does not exist.");
+        }
     }
-
     $startPos = ($pageNum - 1) * $rowPerPage;
 
     $result['hosts'] = getHosts($app['db'], $serverName);    
@@ -428,11 +430,11 @@ $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverNam
 
     $pageCount = ceil($rowCount / $rowPerPage);
     $result['pageCount'] = $pageCount;
-
-    if ($pageNum < 1 || $pageNum > $pageCount) {
-        $app->abort(404, "Page $pageNum does not exist.");
+    if ($pageCount != 0) {
+        if ($pageNum < 1 || $pageNum > $pageCount) {
+            $app->abort(404, "Page $pageNum does not exist.");
+        }
     }
-
     $startPos = ($pageNum - 1) * $rowPerPage;
 
     $result['hosts'] = getHosts($app['db'], $serverName);    
