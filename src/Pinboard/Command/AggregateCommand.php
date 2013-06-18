@@ -75,10 +75,10 @@ class AggregateCommand extends Command
         }
 
         if (isset($yaml['notification']['list'])) {
-            foreach ($yaml['notification']['list'] as $user) {
+            foreach ($yaml['notification']['list'] as $item) {
                 $body = '<html><body><h1>Errors on pages</h1><br>';
                 foreach ($errorPages as $host => $errors) {
-                    if (preg_match("/" . $user['hosts'] . '/', $host)) {
+                    if (preg_match("/" . $item['hosts'] . '/', $host)) {
                         $body .= '<h2>' . $host . '</h2><ul>';
                         foreach ($errors as $value) {
                             $body .= '<li>Status ' . $value['status'] . 
@@ -90,7 +90,7 @@ class AggregateCommand extends Command
                 $body .= '<hr><p>Sent by Pinboard<p></body></html>';
 
                 $message->setBody($body);
-                $message->setTo(array($user['email']));
+                $message->setTo($item['email']);
                 if (preg_match("/.*<li>.*/", $body)) {
                     $mailer->send($message);
                 }
