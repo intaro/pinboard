@@ -48,7 +48,7 @@ class AggregateCommand extends Command
         ->setSubject('Pinboard found error pages')
         ->setContentType('text/html')
         ->setFrom($yaml['notification']['sender']);
-
+        
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
@@ -82,6 +82,7 @@ class AggregateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $silexApp = $this->getApplication()->getSilex();
+        $silexApp->boot();
         $db = $silexApp['db'];
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
