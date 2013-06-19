@@ -45,7 +45,7 @@ class AggregateCommand extends Command
         $mailer = \Swift_Mailer::newInstance($transport);
 
         $message = \Swift_Message::newInstance()
-            ->setSubject('Pinboard found error pages')
+            ->setSubject('Intaro Pinboard found error pages')
             ->setContentType('text/html')
             ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard');
         
