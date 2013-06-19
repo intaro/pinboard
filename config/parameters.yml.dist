@@ -44,4 +44,4 @@ secure:
 #    username: username@example.com
 #    password: my_password
 #    encryption: null
-#    auth_mode: null
+#    auth_mode: login

@@ -45,16 +45,16 @@ class AggregateCommand extends Command
         $mailer = \Swift_Mailer::newInstance($transport);
 
         $message = \Swift_Message::newInstance()
-        ->setSubject('Pinboard found error pages')
-        ->setContentType('text/html')
-        ->setFrom($yaml['notification']['sender']);
+            ->setSubject('Pinboard found error pages')
+            ->setContentType('text/html')
+            ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard');
         
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
                 $pages[$page['server_name']][] = $page;
             }
-            $body = $silexApp['twig']->render('notification.html.twig', array('pages' => $pages));
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
 
             $message->setBody($body);
             $message->setTo($yaml['notification']['global_email']);
@@ -70,7 +70,7 @@ class AggregateCommand extends Command
                     }
                 }
                 if (count($pages) > 0) {
-                    $body = $silexApp['twig']->render('notification.html.twig', array('pages' => $pages));
+                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
                     $message->setBody($body);
                     $message->setTo($item['email']);
                     $mailer->send($message);
@@ -125,7 +125,7 @@ class AggregateCommand extends Command
 
         $db->executeQuery($sql, $params);
 
-        if (isset($yaml['notification']) && $yaml['notification']['enable']) {
+        if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
             $sql = '
                 SELECT
                     server_name, script_name, status 
