@@ -18,7 +18,7 @@ class AggregateCommand extends Command
         ;
     }
 
-    private function sendEmails($yaml, $errorPages)
+    private function sendEmails($silexApp, $yaml, $errorPages)
     {
         if (isset($yaml['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
@@ -45,53 +45,34 @@ class AggregateCommand extends Command
         $mailer = \Swift_Mailer::newInstance($transport);
 
         $message = \Swift_Message::newInstance()
-        ->setSubject('Error pages!')
+        ->setSubject('Pinboard found error pages')
         ->setContentType('text/html')
-        ;
-        if (isset($yaml['smtp'])) {
-            $message->setFrom(array($yaml['smtp']['username']));
-        }
-        else {
-            $message->setFrom('robot@pinboard.ru');
-        }
+        ->setFrom($yaml['notification']['sender']);
 
         if (isset($yaml['notification']['global_email'])) {
-            $body = '<html><body><h1>Errors on pages</h1><br>';
-            foreach ($errorPages as $host => $errors) {
-                $body .= '<h2>' . $host . '</h2><ul>';
-
-                foreach ($errors as $value) {
-                    $body .= '<li>Status ' . $value['status'] . 
-                    ': <pre>' . $value['server_name'] . $value['script_name'] . '</pre></li>';
-                }
-
-                $body .= '</ul><br>';
+            $pages = array();
+            foreach ($errorPages as $page) {
+                $pages[$page['server_name']][] = $page;
             }
-            $body .= '<hr><p>Sent by Pinboard<p></body></html>';
+            $body = $silexApp['twig']->render('notification.html.twig', array('pages' => $pages));
 
             $message->setBody($body);
-            $message->setTo(array($yaml['notification']['global_email']));
+            $message->setTo($yaml['notification']['global_email']);
             $mailer->send($message);
         }
 
         if (isset($yaml['notification']['list'])) {
             foreach ($yaml['notification']['list'] as $item) {
-                $body = '<html><body><h1>Errors on pages</h1><br>';
-                foreach ($errorPages as $host => $errors) {
-                    if (preg_match("/" . $item['hosts'] . '/', $host)) {
-                        $body .= '<h2>' . $host . '</h2><ul>';
-                        foreach ($errors as $value) {
-                            $body .= '<li>Status ' . $value['status'] . 
-                            ': <pre>' . $value['server_name'] . $value['script_name'] . '</pre></li>';
-                        }
-                        $body .= '</ul><br>';
+                $pages = array();
+                foreach ($errorPages as $page) {
+                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
+                        $pages[$page['server_name']][] = $page;
                     }
                 }
-                $body .= '<hr><p>Sent by Pinboard<p></body></html>';
-
-                $message->setBody($body);
-                $message->setTo($item['email']);
-                if (preg_match("/.*<li>.*/", $body)) {
+                if (count($pages) > 0) {
+                    $body = $silexApp['twig']->render('notification.html.twig', array('pages' => $pages));
+                    $message->setBody($body);
+                    $message->setTo($item['email']);
                     $mailer->send($message);
                 }
             }
@@ -143,43 +124,21 @@ class AggregateCommand extends Command
 
         $db->executeQuery($sql, $params);
 
-        if (isset($yaml['notification']))
-        {
+        if (isset($yaml['notification']) && $yaml['notification']['enable']) {
             $sql = '
                 SELECT
-                    server_name
+                    server_name, script_name, status 
                 FROM
                     request
                 WHERE
                     status >= 500
-                GROUP BY
-                    server_name
             ';
 
-            $hosts = $db->fetchAll($sql);
-
-            $errorPages = array();
-            foreach ($hosts as $host) {
-                $params = array(
-                    'host' => $host['server_name'],
-                );
-                
-                $sql = '
-                    SELECT
-                        server_name, script_name, status 
-                    FROM 
-                        request
-                    WHERE
-                        status >= 500 AND server_name = :host
-                ';
-                
-                $pages = $db->fetchAll($sql, $params);
-                $errorPages[$host['server_name']] = $pages;
-            }
+            $errorPages = $db->fetchAll($sql);
 
             if (count($errorPages) > 0) {
                 try {
-                    $this->sendEmails($yaml, $errorPages);
+                    $this->sendEmails($silexApp, $yaml, $errorPages);
                 } catch (\Exception $e) {
                     $output->writeln("<error>Notification sending error\n" . $e->getMessage() . "</error>");
                 }

@@ -1,0 +1,13 @@
+<html>
+	<body>
+		<h1>Error on pages</h1>
+		{% for host, info in pages %}
+			<h2>{{ host }}</h2>
+			<ul>
+				{% for page in info %}
+					<li>Status {{ page.status }}: {{ page.server_name ~ page.script_name }}</li>
+				{% endfor %}
+			</ul>
+		{% endfor %}
+	</body>
+</html>
