@@ -26,7 +26,22 @@ secure:
     enable: false
 #    users:
 #        testuser1:
-#            password: my_sha512_password
+#            password: my_password1
 #        testuser2:
-#            password: my_sha512_password
-#            hosts: '.*mysite\.com'
+#            password: my_password2
+#            hosts: '.*example\.com'
+
+#notification:
+#    enable: true
+#    sender: noreply@example.com
+#    global_email: my_email@example.com
+#    list:
+#        - {hosts: '.*example\.com', email: [admin@example.com, my_email@example.com]}
+#        - {hosts: '.*forum\.example\.com', email: moderator@example.com}
+#smtp:
+#    server: smtp.example.com
+#    port: 25
+#    username: username@example.com
+#    password: my_password
+#    encryption: null
+#    auth_mode: login
