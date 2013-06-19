@@ -18,9 +18,71 @@ class AggregateCommand extends Command
         ;
     }
 
+    private function sendEmails($silexApp, $yaml, $errorPages)
+    {
+        if (isset($yaml['smtp'])) {
+            $transport = \Swift_SmtpTransport::newInstance()
+            ->setHost($yaml['smtp']['server'])
+            ->setPort($yaml['smtp']['port'])
+            ;
+            if (isset($yaml['smtp']['username'])) {
+                $transport->setUsername($yaml['smtp']['username']);
+            }
+            if (isset($yaml['smtp']['password'])) {
+                $transport->setPassword($yaml['smtp']['password']);
+            }
+            if (isset($yaml['smtp']['encryption'])) {
+                $transport->setEncryption($yaml['smtp']['encryption']);
+            }
+            if (isset($yaml['smtp']['auth_mode'])) {
+                $transport->setAuthMode($yaml['smtp']['auth_mode']);
+            }
+        }
+        else {
+            $transport = \Swift_MailTransport::newInstance();
+        }
+
+        $mailer = \Swift_Mailer::newInstance($transport);
+
+        $message = \Swift_Message::newInstance()
+            ->setSubject('Intaro Pinboard found error pages')
+            ->setContentType('text/html')
+            ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard');
+        
+        if (isset($yaml['notification']['global_email'])) {
+            $pages = array();
+            foreach ($errorPages as $page) {
+                $pages[$page['server_name']][] = $page;
+            }
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+
+            $message->setBody($body);
+            $message->setTo($yaml['notification']['global_email']);
+            $mailer->send($message);
+        }
+
+        if (isset($yaml['notification']['list'])) {
+            foreach ($yaml['notification']['list'] as $item) {
+                $pages = array();
+                foreach ($errorPages as $page) {
+                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
+                        $pages[$page['server_name']][] = $page;
+                    }
+                }
+                if (count($pages) > 0) {
+                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+                    $message->setBody($body);
+                    $message->setTo($item['email']);
+                    $mailer->send($message);
+                }
+            }
+        }
+    }
+    
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $silexApp = $this->getApplication()->getSilex();
+        $silexApp->boot();
         $db = $silexApp['db'];
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
@@ -62,6 +124,27 @@ class AggregateCommand extends Command
         }
 
         $db->executeQuery($sql, $params);
+
+        if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
+            $sql = '
+                SELECT
+                    server_name, script_name, status 
+                FROM
+                    request
+                WHERE
+                    status >= 500
+            ';
+
+            $errorPages = $db->fetchAll($sql);
+
+            if (count($errorPages) > 0) {
+                try {
+                    $this->sendEmails($silexApp, $yaml, $errorPages);
+                } catch (\Exception $e) {
+                    $output->writeln("<error>Notification sending error\n" . $e->getMessage() . "</error>");
+                }
+            }
+        }
 
         $sql = '
             SELECT 

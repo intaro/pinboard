@@ -7,7 +7,8 @@
         "symfony/console": "dev-master",
         "symfony/process": "dev-master",
         "symfony/yaml": "dev-master",
-        "symfony/security": "dev-master"
+        "symfony/security": "dev-master",
+        "swiftmailer/swiftmailer": ">=4.1.2,<4.2-dev"
     },
     "autoload": {
         "psr-0": {
