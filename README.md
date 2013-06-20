@@ -1,9 +1,9 @@
 Intaro Pinboard
 =============================
 
-Intaro Pinboard (Pinba Board) is a simple web monitoring system which aggregates and displays [Pinba][1] data. 
+[Intaro Pinboard][1] (Pinba Board) is a simple web monitoring system which aggregates and displays [Pinba][2] data. 
 
-Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
+Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
 ## Installation
 
@@ -29,7 +29,7 @@ Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
 
         $ ./console init
 
-6. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][3]. Example for nginx + php-fpm:
+6. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
 
         server {        
             listen 80;
@@ -65,13 +65,14 @@ Developed on [Silex][2] framework and works with PHP 5.3.3 or later.
 
 ## More Information
 
-Documentation in [Wiki][4].
+Documentation in [Wiki][5].
 
 ## License
 
 Intaro Pinboard is licensed under the MIT license.
 
-[1]: http://pinba.org
-[2]: http://silex.sensiolabs.org
-[3]: http://silex.sensiolabs.org/doc/web_servers.html
-[4]: https://github.com/intaro/pinboard/wiki
+[1]: http://intaro.github.io/pinboard/
+[2]: http://pinba.org
+[3]: http://silex.sensiolabs.org
+[4]: http://silex.sensiolabs.org/doc/web_servers.html
+[5]: https://github.com/intaro/pinboard/wiki
