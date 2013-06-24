@@ -29,15 +29,15 @@ secure:
 #            password: my_password1
 #        testuser2:
 #            password: my_password2
-#            hosts: '.*example\.com'
+#            hosts: 'example\.com$'
 
 #notification:
 #    enable: true
 #    sender: noreply@example.com
 #    global_email: my_email@example.com
 #    list:
-#        - {hosts: '.*example\.com', email: [admin@example.com, my_email@example.com]}
-#        - {hosts: '.*forum\.example\.com', email: moderator@example.com}
+#        - { hosts: 'example\.com$', email: [admin@example.com, my_email@example.com] }
+#        - { hosts: 'forum\.example\.com$', email: moderator@example.com }
 #smtp:
 #    server: smtp.example.com
 #    port: 25
