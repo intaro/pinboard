@@ -13,7 +13,7 @@
         </tr>
         </thead>
         <tbody>
-        {% for server in servers %}
+        {% for server in servers if server.server_name is not empty %}
         <tr class="{{ server.error_count > 0 ? 'error' : '' }}">
           <td><a href="{{ path('server', { serverName: server.server_name }) }}" title="">{{ server.server_name }}</a></td>
           <td>{{ server.req_count }}</td>
