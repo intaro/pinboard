@@ -585,4 +585,70 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     return $data;
 }
 
+$server->get('/{serverName}/{hostName}/overview.json', function(Request $request, $serverName, $hostName) use ($app) {
+    if (!$request->get('apiKey'))
+    {
+        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
+            'errorMsg' => 'Need "apiKey" value',
+            'success' => 'false',
+        ));
+        $responce->setStatusCode(400);
+        return $responce;
+    }
+    
+    $apiKey = $request->get('apiKey');
+    
+    if (!isset($app['params']['api_keys'][$apiKey])) {
+        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
+            'errorMsg' => 'Wrong "apiKey" value',
+            'success' => 'false',
+        ));
+        $responce->setStatusCode(403);
+        return $responce;
+    }
+    
+    $hostsRegExp = '.*';
+    if (isset($app['params']['api_keys'][$apiKey]['hosts'])) {
+        $hostsRegExp = $app['params']['api_keys'][$apiKey]['hosts'];
+    }
+    
+    if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
+        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
+            'errorMsg' => 'Access denied',
+            'success' => 'false',
+        ));
+        $responce->setStatusCode(403);
+        return $responce;
+    }
+    
+    $result = array();
+    $result['statuses']    = getStatusesReview($app['db'], $serverName, $hostName);
+    $result['req_per_sec'] = getRequestPerSecReview($app['db'], $serverName, $hostName);
+    
+    $req = getRequestReview($app['db'], $serverName, $hostName);
+    foreach ($req as $key => $value) {
+        $result['mem_peak_usage'][$key] = array(
+            'created_at' => $value['created_at'],
+            'date' => $value['date'],
+            'mem_peak_usage_90' => $value['mem_peak_usage_90'],
+            'mem_peak_usage_95' => $value['mem_peak_usage_95'],
+            'mem_peak_usage_99' => $value['mem_peak_usage_99'],
+            'mem_peak_usage_100' => $value['mem_peak_usage_100'],
+        );
+        $result['req_time'][$key] = array(
+            'created_at' => $value['created_at'],
+            'date' => $value['date'],
+            'req_time_90' => $value['req_time_90'],
+            'req_time_95' => $value['req_time_95'],
+            'req_time_99' => $value['req_time_99'],
+            'req_time_100' => $value['req_time_100'],
+        );
+    }
+    $responce = new Symfony\Component\HttpFoundation\JsonResponse($result);
+    $responce->setStatusCode(200);
+    return $responce;
+})
+->value('hostName', 'all')
+->bind('api_overview');
+
 return $server;
