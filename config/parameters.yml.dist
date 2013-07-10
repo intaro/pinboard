@@ -45,3 +45,7 @@ secure:
 #    password: my_password
 #    encryption: null
 #    auth_mode: login
+
+#api_keys:
+#    my_key123:
+#        hosts: '.*'

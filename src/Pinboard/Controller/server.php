@@ -645,6 +645,7 @@ $server->get('/{serverName}/{hostName}/overview.json', function(Request $request
         );
     }
     $responce = new Symfony\Component\HttpFoundation\JsonResponse($result);
+    $responce['success'] = 'true';
     $responce->setStatusCode(200);
     return $responce;
 })
