@@ -47,5 +47,5 @@ secure:
 #    auth_mode: login
 
 #api_keys:
-#    my_key123:
-#        hosts: '.*'
+#    first_api_key: ~
+#    second_api_key: 'example\.com$'
