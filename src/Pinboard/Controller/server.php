@@ -624,6 +624,8 @@ $server->get('/{serverName}/{hostName}/overview.json', function(Request $request
     $result = array();
 
     $req = getRequestReview($app['db'], $serverName, $hostName);
+    $result['req_time'] = array();
+    $result['mem_peak_usage'] = array();
     foreach ($req as $key => $value) {
         $result['req_time'][$key] = array(
             'created_at' => $value['created_at'],
