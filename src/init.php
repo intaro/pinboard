@@ -38,7 +38,7 @@ if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enabl
     $app->register(new Silex\Provider\SecurityServiceProvider(), array(        
         'security.firewalls' => array(  
             'api' => array(
-                'pattern' => '^/.*/overview\.json',
+                'pattern' => '.*\.json.*',
                 'anonymous' => true,
             ),
             'secure_area' => array(
