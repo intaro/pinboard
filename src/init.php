@@ -35,11 +35,14 @@ if (isset($app['params']['secure']['users'])) {
 }
 
 if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
-    $app->register(new Silex\Provider\SecurityServiceProvider(), array(
-        'security.firewalls' => array(
+    $app->register(new Silex\Provider\SecurityServiceProvider(), array(        
+        'security.firewalls' => array(  
+            'api' => array(
+                'pattern' => '^/.*/overview\.json',
+                'anonymous' => true,
+            ),
             'secure_area' => array(
                 'pattern' => "^/",
-                'logout' => array(),
                 'http' => true,
                 'users' => $users,
             ),
