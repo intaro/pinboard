@@ -585,45 +585,12 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/overview.json', function(Request $request, $serverName, $hostName) use ($app) {
-    if (!$request->get('apiKey'))
-    {
-        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
-            'errorMsg' => 'Need "apiKey" value',
-            'success' => 'false',
-        ));
-        $responce->setStatusCode(400);
-        return $responce;
-    }
+$server->get('/{serverName}/{hostName}/overview.json', function(Request $request, $serverName, $hostName) use ($app) {   
+    checkUserAccess($app, $serverName);
     
-    $apiKey = $request->get('apiKey');
- 
-    if (!array_key_exists($apiKey, $app['params']['api_keys'])) {
-        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
-            'errorMsg' => 'Wrong "apiKey" value',
-            'success' => 'false',
-        ));
-        $responce->setStatusCode(403);
-        return $responce;
-    }
-    
-    $hostsRegExp = '.*';
-    if ($app['params']['api_keys'][$apiKey] != NULL) {
-        $hostsRegExp = $app['params']['api_keys'][$apiKey];
-    }
-    
-    if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
-        $responce = new Symfony\Component\HttpFoundation\JsonResponse(array(
-            'errorMsg' => 'Access denied',
-            'success' => 'false',
-        ));
-        $responce->setStatusCode(403);
-        return $responce;
-    }
-        
     $result = array();
-
     $req = getRequestReview($app['db'], $serverName, $hostName);
+
     $result['req_time'] = array();
     $result['mem_peak_usage'] = array();
     foreach ($req as $key => $value) {
