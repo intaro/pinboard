@@ -45,7 +45,3 @@ secure:
 #    password: my_password
 #    encryption: null
 #    auth_mode: login
-
-#api_keys:
-#    first_api_key: ~
-#    second_api_key: 'example\.com$'
