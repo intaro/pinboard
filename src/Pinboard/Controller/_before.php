@@ -14,10 +14,9 @@ $app->before(function() use ($app) {
 
     if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
         $user = $app['security']->getToken()->getUser();
-        if ($user != 'anon.')
-            $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
-                        : ".*";
+        $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
+                    ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
+                    : ".*";
         if (trim($hosts) == "") {
             $hosts = ".*";
         }
