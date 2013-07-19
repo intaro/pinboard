@@ -277,11 +277,9 @@
             var statusChart;
 
             var statusChartData = [];
-            {% for date, item in statuses.data %}
-            statusChartData.push({ date: new Date({{ date }})
-                {% for code, value in item %}
-                , status{{ code }}: {{ value }}
-                {% endfor %}                
+            {% for item in statuses.data %}
+            statusChartData.push({ date: new Date({{ item.date }})
+                , status{{ item.error_code }}: {{ item.error_count }}              
             });
             {% endfor %}    
 
