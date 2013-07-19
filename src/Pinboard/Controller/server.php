@@ -31,10 +31,6 @@ function checkUserAccess($app, $serverName) {
 $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName, $hostName, $format) use ($app) {
     checkUserAccess($app, $serverName);
 
-    if ($format != 'html' && $format != 'json') {
-        $app->abort(404, "Page not exist.");
-    }
-
     $result = array();
     $result['hosts']       = getHosts($app['db'], $serverName);    
     $result['req']         = getRequestReview($app['db'], $serverName, $hostName);
@@ -50,7 +46,8 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
             'server.html.twig', 
             $result
         );
-    } elseif ($format == 'json') {
+    } 
+    if ($format == 'json') {
         unset($result['hosts']);
         foreach ($result['req'] as &$value) {
             unset($value['date']);
@@ -70,6 +67,7 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
 })
 ->value('hostName', 'all')
 ->value('format', 'html')
+->assert('format', 'json|html')
 ->bind('server');
 
 function getHosts($conn, $serverName) {
