@@ -28,26 +28,46 @@ function checkUserAccess($app, $serverName) {
     }
 }
 
-$server->get('/{serverName}/{hostName}', function($serverName, $hostName) use ($app) {
+$server->get('/{serverName}/{hostName}/overview.{format}', function($serverName, $hostName, $format) use ($app) {
     checkUserAccess($app, $serverName);
 
-    $result = array(
-        'server_name' => $serverName,
-        'hostname'    => $hostName,
-        'title'       => $serverName,
-    );
-    
+    $result = array();
     $result['hosts']       = getHosts($app['db'], $serverName);    
-    $result['statuses']    = getStatusesReview($app['db'], $serverName, $hostName);
-    $result['req_per_sec'] = getRequestPerSecReview($app['db'], $serverName, $hostName);
     $result['req']         = getRequestReview($app['db'], $serverName, $hostName);
+    $result['req_per_sec'] = getRequestPerSecReview($app['db'], $serverName, $hostName);
+    $result['statuses']    = getStatusesReview($app['db'], $serverName, $hostName);
 
-    return $app['twig']->render(
-        'server.html.twig', 
-        $result
-    );
+    if ($format == 'html') {        
+        $result['server_name'] = $serverName;
+        $result['hostname'] = $hostName;
+        $result['title'] = $serverName;
+
+        return $app['twig']->render(
+            'server.html.twig', 
+            $result
+        );
+    } 
+    if ($format == 'json') {
+        unset($result['hosts']);
+        foreach ($result['req'] as &$value) {
+            unset($value['date']);
+        }
+        foreach ($result['req_per_sec'] as &$value) {
+            unset($value['date']);
+        }
+        foreach ($result['statuses']['data'] as &$value) {
+            unset($value['date']);
+        }
+
+        $result['success'] = 'true';
+        $response = new Symfony\Component\HttpFoundation\JsonResponse($result);
+        $response->setStatusCode(200);
+        return $response;
+    }
 })
 ->value('hostName', 'all')
+->value('format', 'html')
+->assert('format', 'json|html')
 ->bind('server');
 
 function getHosts($conn, $serverName) {
@@ -108,7 +128,12 @@ function getStatusesReview($conn, $serverName, $hostName) {
         $t = strtotime($data['created_at']);
         $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
         
-        $statuses['data'][$date][$data['status'] > 0 ? $data['status'] : 'none'] = $data['cnt'];
+        $statuses['data'][] = array(
+            'created_at' => $data['created_at'],
+            'date' => $date,
+            'error_code' => $data['status'],
+            'error_count' => $data['cnt'],
+        );
         if (!isset($statuses['codes'][$data['status']])) {
             //set color
             $statuses['codes'][$data['status']] = Utils::generateColor();
@@ -116,7 +141,7 @@ function getStatusesReview($conn, $serverName, $hostName) {
     }          
     ksort($statuses['codes']);
 
-    return $statuses;            
+    return $statuses;
 }
 
 function getRequestPerSecReview($conn, $serverName, $hostName) {
