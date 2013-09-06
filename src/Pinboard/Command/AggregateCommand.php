@@ -122,8 +122,8 @@ class AggregateCommand extends Command
                 created_at < :created_at
             ;';
         }
-
-        $db->executeQuery($sql, $params);
+        if ($sql != '')
+            $db->executeQuery($sql, $params);
 
         if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
             $sql = '
@@ -199,7 +199,8 @@ class AggregateCommand extends Command
                     r2.server_name = "' . $server['server_name'] . '" and r2.hostname = "' . $server['hostname'] . '"
             ;';        
         }
-        $db->query($sql);
+        if ($sql != '')
+            $db->query($sql);
         
         $date = date('Y-m-d H:i:s', strtotime('-1 month'));
         
@@ -322,7 +323,8 @@ class AggregateCommand extends Command
                     10
             ;';        
         }
-        $db->query($sql);
+        if ($sql != '')
+            $db->query($sql);
 
         $sql = '';
         foreach($servers as $server) {
@@ -351,7 +353,8 @@ class AggregateCommand extends Command
                     10
             ;';        
         }
-        $db->query($sql);
+        if ($sql != '')
+            $db->query($sql);
         
         $output->writeln('<info>Data are aggregated successfully</info>');
     }
