@@ -22,7 +22,7 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
         'password' => $app['params']['db']['pass'],
     )
 ));
-if ($app['params']['cache'] == 'array')
+if (isset($app['params']['cache']) && $app['params']['cache'] == 'array')
     $app['db']->getConfiguration()->setResultCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
 else
     $app['db']->getConfiguration()->setResultCacheImpl(new \Doctrine\Common\Cache\ApcCache());
