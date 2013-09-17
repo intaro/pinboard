@@ -3,7 +3,7 @@
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% set frequency = 5 %}
 {% block content %}
-    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
     <div class="row">
       <div class="span6">
@@ -14,7 +14,7 @@
             rtChartData = [];
             {% for item in pages|reverse %}
             rtChartData.push({ page: "{{ item.script_name }}", value: "{{ item.req_time }}" });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -64,7 +64,7 @@
             muChartData = [];
             {% for item in pages|reverse %}
             muChartData.push({ page: "{{ item.script_name }}", value: "{{ item.mem_peak_usage }}" });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -114,6 +114,7 @@
               <th>Host name</th>
               <th>Script name</th>
               <th><div class="text-right">Request time, ms</div></th>
+              <th><div class="text-right">Status</div></th>
               <th><div class="text-right">Memory peak usage, kB</div></th>
             </tr>
             {% for page in pages %}
@@ -121,6 +122,7 @@
               <td>{{ page.hostname }}</a></td>
               <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
               <td><div class="text-right">{{ page.req_time }}</div></td>
+              <td><div class="text-right">{{ page.status }}</div></td>
               <td><div class="text-right">{{ page.mem_peak_usage }}</div></td>
             </tr>
             {% endfor %}
@@ -139,22 +141,22 @@
           <td><div class="text-right"><%=pages[i].mem_peak_usage%></div></td>
         </tr>
         <% } %>
-    </script>    
+    </script>
     <script type="text/javascript">
         $(function() {
             var lastId = {{ last_id }}, limit = {{ limit }};
-            
+
             (function poll(){
                 setTimeout(function(){
-                    $.ajax({ 
-                        url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}", 
+                    $.ajax({
+                        url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}",
                         data: { last_id: lastId },
                         success: function(data){
                             if (typeof data.pages !== undefined && data.pages.length > 0) {
                                 var resHtml = tmpl("row_tpl", { pages: data.pages });
                                 $('#table-header').after(resHtml);
                                 $('#table-data tr:hidden').fadeIn();
-                                
+
                                 $('#table-data tr').each(function(index) {
                                     if (index >= limit) {
                                         $(this).remove();
@@ -164,25 +166,25 @@
                                 for (var i = data.pages.length - 1; i >= 0; i--) {
                                     if (rtChartData.length >= limit)
                                         rtChartData.shift();
-                                    rtChartData.push({ 
-                                        page: data.pages[i].script_name, 
-                                        value: data.pages[i].req_time 
+                                    rtChartData.push({
+                                        page: data.pages[i].script_name,
+                                        value: data.pages[i].req_time
                                     });
                                     if (muChartData.length >= limit)
                                         muChartData.shift();
-                                    muChartData.push({ 
-                                        page: data.pages[i].script_name, 
-                                        value: data.pages[i].mem_peak_usage 
-                                    });                                    
+                                    muChartData.push({
+                                        page: data.pages[i].script_name,
+                                        value: data.pages[i].mem_peak_usage
+                                    });
                                 }
                                 rtChart.validateData();
                                 muChart.validateData();
-                                
+
                                 lastId = data.pages[0].id;
                             }
-                            
+
                             poll();
-                        }, 
+                        },
                         dataType: "json"
                     });
               }, {{ frequency * 1000 }});
