@@ -232,7 +232,7 @@ function getRequestReview($conn, $serverName, $hostName) {
 }
 
 
-$server->get('/{serverName}/{hostName}/statuses/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
@@ -260,7 +260,7 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}', function($serverName
 
     $startPos = ($pageNum - 1) * $rowPerPage;
     $result['hosts']    = getHosts($app['db'], $serverName);
-    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
+    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
 
     return $app['twig']->render(
         'statuses.html.twig',
@@ -269,6 +269,8 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}', function($serverName
 })
 ->value('hostName', 'all')
 ->value('pageNum', 'page1')
+->value('colOrder', null)
+->value('colDir', null)
 ->assert('pageNum', 'page\d+')
 ->bind('server_statuses');
 
@@ -300,7 +302,7 @@ function getErrorPagesCount($conn, $serverName, $hostName) {
     return (int)$data[0]['COUNT(*)'];
 }
 
-function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
+function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -310,6 +312,11 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
         $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $orderBy = 'created_at DESC';
+    if (null !== $colOrder) {
+        $orderBy = generateOrderBy($colOrder, $colDir, 'ipm_status_details');
     }
 
     $sql = '
@@ -322,7 +329,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
             ' . $hostCondition . '
             AND created_at > :created_at
         ORDER BY
-            created_at DESC
+            ' . $orderBy. '
         LIMIT
             ' . $startPos . ', ' . $rowCount . '
     ';
@@ -332,7 +339,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/req-time/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
@@ -342,6 +349,8 @@ $server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName
         'hostname'    => $hostName,
         'title'       => 'Request time / ' . $serverName,
         'pageNum'     => $pageNum,
+        'colOrder'    => $colOrder,
+        'colDir'      => $colDir
     );
 
     $result['rowPerPage'] = $rowPerPage;
@@ -359,7 +368,7 @@ $server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName
     $startPos = ($pageNum - 1) * $rowPerPage;
 
     $result['hosts'] = getHosts($app['db'], $serverName);
-    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
+    $result['pages'] = getSlowPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
 
     return $app['twig']->render(
         'req_time.html.twig',
@@ -368,6 +377,8 @@ $server->get('/{serverName}/{hostName}/req-time/{pageNum}', function($serverName
 })
 ->value('hostName', 'all')
 ->value('pageNum', 'page1')
+->value('colOrder', null)
+->value('colDir', null)
 ->assert('pageNum', 'page\d+')
 ->bind('server_req_time');
 
@@ -399,7 +410,7 @@ function getSlowPagesCount($conn, $serverName, $hostName) {
     return (int)$data[0]['COUNT(*)'];
 }
 
-function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
+function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -409,6 +420,11 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
         $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $orderBy = 'created_at DESC, req_time DESC';
+    if (null !== $colOrder) {
+        $orderBy = generateOrderBy($colOrder, $colDir, 'ipm_req_time_details');
     }
 
     $sql = '
@@ -421,7 +437,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
             ' . $hostCondition . '
             AND created_at > :created_at
         ORDER BY
-            created_at DESC, req_time DESC
+            ' . $orderBy .'
         LIMIT
             ' . $startPos . ', ' . $rowCount . '
     ';
@@ -435,7 +451,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     return $data;
 }
 
-$server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverName, $hostName, $pageNum) use ($app, $rowPerPage) {
+$server->get('/{serverName}/{hostName}/mem-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
     checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
@@ -445,6 +461,8 @@ $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverNam
         'hostname'    => $hostName,
         'title'       => 'Memory peak usage / ' . $serverName,
         'pageNum'     => $pageNum,
+        'colOrder'    => $colOrder,
+        'colDir'      => $colDir
     );
 
     $result['rowPerPage'] = $rowPerPage;
@@ -462,7 +480,7 @@ $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverNam
     $startPos = ($pageNum - 1) * $rowPerPage;
 
     $result['hosts'] = getHosts($app['db'], $serverName);
-    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage);
+    $result['pages'] = getHeavyPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
 
     return $app['twig']->render(
         'mem_usage.html.twig',
@@ -471,6 +489,8 @@ $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}', function($serverNam
 })
 ->value('hostName', 'all')
 ->value('pageNum', 'page1')
+->value('colOrder', null)
+->value('colDir', null)
 ->assert('pageNum', 'page\d+')
 ->bind('server_mem_usage');
 
@@ -502,7 +522,7 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
     return (int)$data[0]['COUNT(*)'];
 }
 
-function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
+function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
@@ -512,6 +532,11 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
         $hostCondition = 'AND hostname = :hostname';
+    }
+
+    $orderBy = 'created_at DESC, mem_peak_usage DESC';
+    if (null !== $colOrder) {
+        $orderBy = generateOrderBy($colOrder, $colDir, 'ipm_mem_peak_usage_details');
     }
 
     $sql = '
@@ -524,7 +549,7 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
             ' . $hostCondition . '
             AND created_at > :created_at
         ORDER BY
-            created_at DESC, mem_peak_usage DESC
+            ' . $orderBy .'
         LIMIT
             ' . $startPos . ', ' . $rowCount . '
     ';
@@ -537,6 +562,7 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount) {
 
     return $data;
 }
+
 
 $server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
     checkUserAccess($app, $serverName);
@@ -608,6 +634,37 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     }
 
     return $data;
+}
+
+function generateOrderBy($colOrder, $colDir, $table) {
+    $orderBy = 'created_at DESC, req_time DESC';
+    if (null !== $colOrder) {
+        if ('asc' == $colDir) {
+            $dir = 'ASC';
+        } else {
+            $dir = 'DESC';
+        }
+
+        if ('ipm_req_time_details' == $table && 'time' == $colOrder) {
+            $orderBy = 'req_time ' . $dir . ', created_at DESC';
+        } elseif ('ipm_mem_peak_usage_details' == $table && 'mem' == $colOrder) {
+            $orderBy = 'mem_peak_usage ' . $dir . ', created_at DESC';
+        } else {
+            switch ($colOrder) {
+                case 'host':
+                    $orderBy = 'hostname ' . $dir . ', created_at DESC';
+                    break;
+                case 'script':
+                    $orderBy = 'script_name ' . $dir . ', created_at DESC';
+                    break;
+                default:
+                    $orderBy = 'created_at ' . $dir;
+                    break;
+            }
+        }
+    }
+
+    return $orderBy;
 }
 
 return $server;
