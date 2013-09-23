@@ -637,7 +637,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 }
 
 function generateOrderBy($colOrder, $colDir, $table) {
-    $orderBy = 'created_at DESC, req_time DESC';
+    $orderBy = 'created_at DESC';
     if (null !== $colOrder) {
         if ('asc' == $colDir) {
             $dir = 'ASC';
