@@ -22,7 +22,18 @@ $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
         'password' => $app['params']['db']['pass'],
     )
 ));
-$app['db']->getConfiguration()->setResultCacheImpl(new \Doctrine\Common\Cache\ApcCache());
+
+//query caching
+$cacheClassName =
+    'Doctrine\\Common\\Cache\\' .
+    (isset($app['params']['cache']) ?
+        Doctrine\Common\Util\Inflector::classify($app['params']['cache']) :
+        'Array'
+    ) .
+    'Cache'
+    ;
+
+$app['db']->getConfiguration()->setResultCacheImpl(new $cacheClassName());
 
 $users = array();
 if (isset($app['params']['secure']['users'])) {
@@ -35,7 +46,7 @@ if (isset($app['params']['secure']['users'])) {
 }
 
 if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
-    $app->register(new Silex\Provider\SecurityServiceProvider(), array(        
+    $app->register(new Silex\Provider\SecurityServiceProvider(), array(
         'security.firewalls' => array(
             'secure_area' => array(
                 'pattern' => "^/",

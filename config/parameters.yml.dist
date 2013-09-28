@@ -3,7 +3,7 @@ db:
     name: pinba
     user: user
     pass: password
-    
+
 logging:
     # in seconds
     long_request_time:
@@ -13,8 +13,11 @@ logging:
     heavy_request:
         global: 30000
 #        "some.site.ru": 30000
-        
+
 locale:  en
+
+# can be 'array', 'apc', 'xcache', 'zend_data'
+cache: apc
 
 # format ISO8601 (see http://en.wikipedia.org/wiki/Iso8601#Durations)
 records_lifetime: P1M
