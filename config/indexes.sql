@@ -1,6 +1,6 @@
 ALTER TABLE `ipm_report_2_by_hostname_and_server` ADD INDEX `sn_h_c` (`server_name` , `hostname`, `created_at`);
 ALTER TABLE `ipm_report_2_by_hostname_and_server` ADD INDEX `sn_c` (`server_name`, `created_at`);
-ALTER TABLE `ipm_status_details` ADD INDEX `isd_c` (`created_at`);
+ALTER TABLE `ipm_status_details` ADD INDEX `isd_c` (`server_name`, `created_at`);
 ALTER TABLE `ipm_req_time_details` ADD INDEX `irtd_sn_ca` (`server_name`, `created_at`);
 ALTER TABLE `ipm_req_time_details` ADD INDEX `irtd_ca_rt` (`created_at`, `req_time`);
 ALTER TABLE `ipm_mem_peak_usage_details` ADD INDEX `impu_sn_ca` (`server_name`, `created_at`);
