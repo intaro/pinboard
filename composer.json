@@ -1,5 +1,10 @@
 {
+    "name": "intaro/pinboard",
+    "description": "Simple web monitoring system which aggregates and displays Pinba data.",
     "require": {
+	"php": ">=5.3.3",
+	"ext-PDO": "*",
+        "ext-pdo_mysql": "*",
         "silex/silex": "1.0.*@dev",
         "doctrine/dbal": "2.2.*",
         "twig/twig": ">=1.8,<2.0-dev",
@@ -10,6 +15,21 @@
         "symfony/security": "2.3.*",
         "swiftmailer/swiftmailer": ">=4.1.2,<4.2-dev"
     },
+    "suggest": {
+        "ext-apc": "Opcode cache. Improves Application performance."
+    },
+    "homepage": "http://intaro.github.io/pinboard/",
+    "authors": [
+      {
+        "name": "Ilyas Salikhov",
+        "homepage": "http://intaro.ru",
+	"email": "mail@intaro.ru"
+      }
+    ],
+    "support": {
+      "issues": "https://github.com/intaro/pinboard/issues"
+    },
+    "license": "MIT",
     "autoload": {
         "psr-0": {
             "Pinboard": "src/"
