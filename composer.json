@@ -2,8 +2,8 @@
     "name": "intaro/pinboard",
     "description": "Simple web monitoring system which aggregates and displays Pinba data.",
     "require": {
-	"php": ">=5.3.3",
-	"ext-PDO": "*",
+        "php": ">=5.3.3",
+        "ext-PDO": "*",
         "ext-pdo_mysql": "*",
         "silex/silex": "1.0.*@dev",
         "doctrine/dbal": "2.2.*",
@@ -20,14 +20,14 @@
     },
     "homepage": "http://intaro.github.io/pinboard/",
     "authors": [
-      {
-        "name": "Ilyas Salikhov",
-        "homepage": "http://intaro.ru",
-	"email": "mail@intaro.ru"
-      }
+        {
+            "name": "Ilyas Salikhov",
+            "homepage": "http://intaro.ru",
+            "email": "support@intaro.ru"
+        }
     ],
     "support": {
-      "issues": "https://github.com/intaro/pinboard/issues"
+        "issues": "https://github.com/intaro/pinboard/issues"
     },
     "license": "MIT",
     "autoload": {
