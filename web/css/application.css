@@ -23,3 +23,16 @@ footer {
 .navbar .brand {
     padding: 5px 20px 5px 5px;
 }
+
+table.table th.hostname {
+    min-width: 110px;
+}
+table.table th.req-time {
+    min-width: 160px;
+}
+table.table th.mem-peak-usage {
+    min-width: 200px;
+}
+table.table th.date {
+    min-width: 160px;
+}

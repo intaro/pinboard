@@ -9,21 +9,21 @@
         {% if pages|length > 0 %}
           <table class="table table-bordered table-hover table-striped">
             <tr>
-              <th>Host name
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'asc' }) }}"><i class="icon-arrow-up"></i></a>
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'desc' }) }}"><i class="icon-arrow-down"></i></a>
+              <th class="hostname">Host name
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
                </th>
               <th>Script name
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'asc' }) }}"><i class="icon-arrow-up"></i></a>
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}"><i class="icon-arrow-down"></i></a>
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
-              <th>Request time, ms
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'asc' }) }}"><i class="icon-arrow-up"></i></a>
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'desc' }) }}"><i class="icon-arrow-down"></i></a>
+              <th class="req-time">Request time, ms
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
-              <th>Registered around
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class="icon-arrow-up"></i></a>
-                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class="icon-arrow-down"></i></a>
+              <th class="date">Registered around
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
             </tr>
             {% for page in pages %}
