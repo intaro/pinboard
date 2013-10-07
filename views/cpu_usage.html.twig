@@ -1,0 +1,59 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    <div class="row">
+      <div class="span12">
+        <p class="lead">CPU heavy pages for a last day</p>
+        {% if pages|length > 0 %}
+          <table class="table table-bordered table-hover table-striped">
+            <tr>
+              <th class="hostname">Host name
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+              </th>
+              <th>Script name
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+              </th>
+              <th class="mem-peak-usage">CPU peak usage
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+              </th>
+              <th class="date">Registered around
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+              </th>
+            </tr>
+            {% for page in pages %}
+            <tr class="{{ page.cpu_peak_usage >= 2 ? 'error' : (page.cpu_peak_usage >= 1 ? 'warning' : '') }}">
+              <td>{{ page.hostname }}</a></td>
+              <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
+              <td>{{ page.cpu_peak_usage }}</td>
+              <td>{{ page.created_at }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+          {% if rowCount > rowPerPage %}
+            <div class="pagination">
+              <ul>
+                {% if pageNum > 1 %}
+                  <li><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum - 1), colOrder: colOrder, colDir: colDir }) }}">Prev</a></li>
+                {% endif %}
+                  {% for i in 1..pageCount %}
+                    <li {{ pageNum == i ? 'class="active"' : '' }}><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ i, colOrder: colOrder, colDir: colDir }) }}">{{ i }}</a></li>
+                  {% endfor %}
+                {% if pageNum < pageCount %}
+                  <li><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum + 1), colOrder: colOrder, colDir: colDir }) }}">Next</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+        <p>No CPU heavy pages for a last day.</p>
+        {% endif %}
+      </div>
+    </div>
+{% endblock %}
+

@@ -5,6 +5,8 @@ ALTER TABLE `ipm_req_time_details` ADD INDEX `irtd_sn_ca` (`server_name`, `creat
 ALTER TABLE `ipm_req_time_details` ADD INDEX `irtd_ca_rt` (`created_at`, `req_time`);
 ALTER TABLE `ipm_mem_peak_usage_details` ADD INDEX `impu_sn_ca` (`server_name`, `created_at`);
 ALTER TABLE `ipm_mem_peak_usage_details` ADD INDEX `impu_ca_mpu` (`created_at`, `mem_peak_usage`);
+ALTER TABLE `ipm_cpu_usage_details` ADD INDEX `impu_sn_ca` (`server_name`, `created_at`);
+ALTER TABLE `ipm_cpu_usage_details` ADD INDEX `impu_ca_cpu` (`created_at`, `cpu_peak_usage`);
 ALTER TABLE `ipm_report_by_server_name` ADD INDEX `irsn_sn` (`server_name`);
 ALTER TABLE `ipm_report_by_hostname_and_server` ADD INDEX `irhas_sn_hn` (`server_name`, `hostname`);
 ALTER TABLE `ipm_report_status` ADD INDEX `irs_ca` (`created_at`);

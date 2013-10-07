@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS `ipm_report_2_by_hostname_and_server` (
   `mem_peak_usage_95` float DEFAULT NULL,
   `mem_peak_usage_99` float DEFAULT NULL,
   `mem_peak_usage_100` float DEFAULT NULL,
+  `cpu_peak_usage_90` float DEFAULT NULL,
+  `cpu_peak_usage_95` float DEFAULT NULL,
+  `cpu_peak_usage_99` float DEFAULT NULL,
+  `cpu_peak_usage_100` float DEFAULT NULL,
   `doc_size_90` float DEFAULT NULL,
   `doc_size_95` float DEFAULT NULL,
   `doc_size_99` float DEFAULT NULL,
@@ -194,5 +198,13 @@ CREATE TABLE IF NOT EXISTS `ipm_mem_peak_usage_details` (
   `hostname` varchar(32) DEFAULT NULL,
   `script_name` varchar(128) DEFAULT NULL,
   `mem_peak_usage` float DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `ipm_cpu_usage_details` (
+  `server_name` varchar(64) DEFAULT NULL,
+  `hostname` varchar(32) DEFAULT NULL,
+  `script_name` varchar(128) DEFAULT NULL,
+  `cpu_peak_usage` float DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
