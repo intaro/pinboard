@@ -27,7 +27,7 @@
               </th>
             </tr>
             {% for page in pages %}
-            <tr class="{{ page.cpu_peak_usage >= 2 ? 'error' : (page.cpu_peak_usage >= 1 ? 'warning' : '') }}">
+            <tr class="{{ page.cpu_peak_usage >= 10 ? 'error' : (page.cpu_peak_usage >= 1 ? 'warning' : '') }}">
               <td>{{ page.hostname }}</a></td>
               <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
               <td>{{ page.cpu_peak_usage }}</td>
