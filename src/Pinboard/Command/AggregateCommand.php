@@ -367,6 +367,13 @@ class AggregateCommand extends Command
 
           $maxCPUUsage = 1;
 
+          if (isset($silexApp['params']['logging']['heavy_cpu_request']['global'])) {
+             $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request']['global'];
+          }
+          if (isset($silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']])) {
+             $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']];
+          }
+
           $sql .= '
                 INSERT INTO ipm_cpu_usage_details
                     (server_name, hostname, script_name, cpu_peak_usage)
