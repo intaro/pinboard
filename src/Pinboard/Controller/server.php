@@ -629,8 +629,10 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
-        $item['req_time']        = number_format($item['req_time'] * 1000, 0, '.', ',');
-        $item['mem_peak_usage']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+        $item['req_time']        = $item['req_time'] * 1000;
+        $item['mem_peak_usage']  = $item['mem_peak_usage'];
+        $item['req_time_format']        = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item['mem_peak_usage_format']  = number_format($item['mem_peak_usage'], 0, '.', ',');
     }
 
     return $data;

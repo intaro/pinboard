@@ -121,9 +121,9 @@
             <tr>
               <td>{{ page.hostname }}</a></td>
               <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
-              <td><div class="text-right">{{ page.req_time }}</div></td>
+              <td><div class="text-right">{{ page.req_time_format }}</div></td>
               <td><div class="text-right">{{ page.status }}</div></td>
-              <td><div class="text-right">{{ page.mem_peak_usage }}</div></td>
+              <td><div class="text-right">{{ page.mem_peak_usage_format }}</div></td>
             </tr>
             {% endfor %}
           </table>
@@ -137,9 +137,9 @@
         <tr style="display: none;">
           <td><%=pages[i].hostname%></a></td>
           <td><a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a></td>
-          <td><div class="text-right"><%=pages[i].req_time%></div></td>
+          <td><div class="text-right"><%=pages[i].req_time_format%></div></td>
           <td><div class="text-right"><%=pages[i].status%></div></td>
-          <td><div class="text-right"><%=pages[i].mem_peak_usage%></div></td>
+          <td><div class="text-right"><%=pages[i].mem_peak_usage_format%></div></td>
         </tr>
         <% } %>
     </script>
