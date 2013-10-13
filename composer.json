@@ -7,6 +7,7 @@
         "ext-pdo_mysql": "*",
         "silex/silex": "1.0.*@dev",
         "doctrine/dbal": "2.2.*",
+        "doctrine/migrations": "dev-master",
         "twig/twig": ">=1.8,<2.0-dev",
         "symfony/twig-bridge": "~2.1",
         "symfony/console": "dev-master",

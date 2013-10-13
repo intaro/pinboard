@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 //ini_set('display_errors', 'on');
 require __DIR__ . '/src/init.php';
 
@@ -7,6 +8,27 @@ require __DIR__ . '/src/init.php';
 
 $console = new Pinboard\Console\Application('Intaro Pinboard');
 $console->setSilex($app);
+
+$doctrineConfiguration = new Doctrine\DBAL\Migrations\Configuration\Configuration($app['db']);
+$doctrineConfiguration->setMigrationsNamespace('Pinboard\\DoctrineMigrations');
+$doctrineConfiguration->setMigrationsDirectory(__DIR__ . '/src/Pinboard/DoctrineMigrations');
+$doctrineConfiguration->registerMigrationsFromDirectory(__DIR__ . '/src/Pinboard/DoctrineMigrations');
+
+$doctrineCommands = array(
+    'ExecuteCommand',
+    'GenerateCommand',
+    'MigrateCommand',
+    'StatusCommand',
+    'VersionCommand',
+);
+
+foreach($doctrineCommands as $commandName) {
+    $fullCommandName = 'Doctrine\\DBAL\\Migrations\\Tools\\Console\\Command\\' . $commandName;
+    $command = new $fullCommandName();
+    $command->setMigrationConfiguration($doctrineConfiguration);
+
+    $console->add($command);
+}
 
 $console->add(new Pinboard\Command\InitCommand());
 $console->add(new Pinboard\Command\AggregateCommand());
