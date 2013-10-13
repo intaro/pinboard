@@ -11,6 +11,7 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
+        $ git checkout v1.0
 
 2. Download [composer](http://getcomposer.org):
 
@@ -27,7 +28,8 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
 5. Initialize app (command will create additional tables and define crontab task):
 
-        $ ./console init
+        $ ./console migrations:migrate
+        $ ./console register-crontab
 
 6. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
 
@@ -62,6 +64,40 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
                 deny  all;
             }
         }
+
+## Update
+
+### Update from 0.1.x to 1.0.x
+
+Branch 1.0 brings migrations machinery which allows to update Pinboard easy when it requires database schema transformation. 
+
+Switch to branch 1.0
+
+    $ git fetch
+    $ git checkout v1.0
+
+Update vendors
+
+    $ php composer.phar update
+
+Register migration
+
+    $ ./console migrations:version --add 20131013132150
+
+### Update between 1.x versions
+
+Switch to branch 1.x
+
+    $ git fetch
+    $ git checkout v1.x
+
+Update vendors
+
+    $ php composer.phar update
+
+Apply changes to database
+
+    $ ./console migrations:migrate
 
 ## More Information
 
