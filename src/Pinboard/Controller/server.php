@@ -200,7 +200,8 @@ function getRequestReview($conn, $serverName, $hostName) {
         SELECT
             created_at,
             req_time_90, req_time_95, req_time_99, req_time_100,
-            mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100
+            mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
+            cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100
         FROM
             ipm_report_2_by_hostname_and_server
         USE INDEX
@@ -226,6 +227,10 @@ function getRequestReview($conn, $serverName, $hostName) {
         $item['mem_peak_usage_95']  = number_format($item['mem_peak_usage_95'], 0, '.', '');
         $item['mem_peak_usage_99']  = number_format($item['mem_peak_usage_99'], 0, '.', '');
         $item['mem_peak_usage_100'] = number_format($item['mem_peak_usage_100'], 0, '.', '');
+        $item['cpu_peak_usage_90']  = number_format($item['cpu_peak_usage_90'], 0, '.', '');
+        $item['cpu_peak_usage_95']  = number_format($item['cpu_peak_usage_95'], 0, '.', '');
+        $item['cpu_peak_usage_99']  = number_format($item['cpu_peak_usage_99'], 0, '.', '');
+        $item['cpu_peak_usage_100'] = number_format($item['cpu_peak_usage_100'], 0, '.', '');
     }
 
     return $data;
@@ -522,6 +527,75 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
     return (int)$data[0]['COUNT(*)'];
 }
 
+function getCPUPagesCount($conn, $serverName, $hostName){
+   $params = array(
+      'server_name' => $serverName,
+      'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+   );
+   $hostCondition = '';
+
+   if ($hostName != 'all') {
+      $params['hostname'] = $hostName;
+      $hostCondition = 'AND hostname = :hostname';
+   }
+
+   $sql = '
+        SELECT
+            COUNT(*)
+        FROM
+            ipm_cpu_usage_details
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            AND created_at > :created_at
+    ';
+
+   $data = $conn->fetchAll($sql, $params);
+
+   return (int)$data[0]['COUNT(*)'];
+}
+
+function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir){
+   $params = array(
+      'server_name' => $serverName,
+      'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+   );
+   $hostCondition = '';
+
+   if ($hostName != 'all') {
+      $params['hostname'] = $hostName;
+      $hostCondition = 'AND hostname = :hostname';
+   }
+
+   $orderBy = 'created_at DESC, cpu_peak_usage DESC';
+   if (null !== $colOrder) {
+      $orderBy = generateOrderBy($colOrder, $colDir, 'ipm_cpu_usage_details');
+   }
+
+   $sql = '
+        SELECT
+            DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at
+        FROM
+            ipm_cpu_usage_details
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            AND created_at > :created_at
+        ORDER BY
+            ' . $orderBy .'
+        LIMIT
+            ' . $startPos . ', ' . $rowCount . '
+    ';
+
+   $data = $conn->fetchAll($sql, $params);
+
+   foreach($data as &$item) {
+      $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 0, '.', ',');
+   }
+
+   return $data;
+}
+
 function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
     $params = array(
         'server_name' => $serverName,
@@ -562,6 +636,49 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     return $data;
 }
+
+$server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
+   checkUserAccess($app, $serverName);
+
+   $pageNum = str_replace('page', '', $pageNum);
+
+   $result = array(
+      'server_name' => $serverName,
+      'hostname'    => $hostName,
+      'title'       => 'Memory peak usage / ' . $serverName,
+      'pageNum'     => $pageNum,
+      'colOrder'    => $colOrder,
+      'colDir'      => $colDir
+   );
+
+   $result['rowPerPage'] = $rowPerPage;
+
+   $rowCount = getCPUPagesCount($app['db'], $serverName, $hostName);
+   $result['rowCount'] = $rowCount;
+
+   $pageCount = ceil($rowCount / $rowPerPage);
+   $result['pageCount'] = $pageCount;
+   if ($pageCount != 0) {
+      if ($pageNum < 1 || $pageNum > $pageCount) {
+         $app->abort(404, "Page $pageNum does not exist.");
+      }
+   }
+   $startPos = ($pageNum - 1) * $rowPerPage;
+
+   $result['hosts'] = getHosts($app['db'], $serverName);
+   $result['pages'] = getCPUPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
+
+   return $app['twig']->render(
+      'cpu_usage.html.twig',
+      $result
+   );
+})
+->value('hostName', 'all')
+->value('pageNum', 'page1')
+->value('colOrder', null)
+->value('colDir', null)
+->assert('pageNum', 'page\d+')
+->bind('server_cpu_usage');
 
 
 $server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
@@ -613,7 +730,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     $sql = '
         SELECT
-            id, server_name, hostname, script_name, req_time, status, mem_peak_usage
+            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime
         FROM
             request
         WHERE

@@ -22,6 +22,9 @@
   <li class="{{ (app.request.get('_route') == 'server_mem_usage') ? 'active' : '' }}">
     <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname }) }}">Memory peak usage</a>
   </li>
+  <li class="{{ (app.request.get('_route') == 'server_cpu_usage') ? 'active' : '' }}">
+    <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname }) }}">CPU peak usage</a>
+  </li>
   <li class="{{ (app.request.get('_route') == 'server_statuses') ? 'active' : '' }}">
     <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname }) }}">Statuses</a>
   </li>

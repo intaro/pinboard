@@ -336,4 +336,107 @@
         {% endif %}
       </div>
     </div>
+    <div class="row">
+        <div class="span6">
+            <h2>CPU usage <small><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
+            {% if req|length > 0 %}
+                <div id="cpu-usage-chart" style="height: 450px;"></div>
+                <script type="text/javascript">
+                    var cpuChart;
+
+                    var cpuChartData = [];
+                    {% for item in req %}
+                    cpuChartData.push({
+                        date: new Date({{ item.date }}),
+                        cpu_peak_usage_90: {{ item.cpu_peak_usage_90 }},
+                        cpu_peak_usage_95: {{ item.cpu_peak_usage_95 }},
+                        cpu_peak_usage_99: {{ item.cpu_peak_usage_99 }},
+                        cpu_peak_usage_100: {{ item.cpu_peak_usage_100 }}
+                    });
+                    {% endfor %}
+
+                    AmCharts.ready(function () {
+                        // SERIAL CHART
+                        cpuChart = new AmCharts.AmSerialChart();
+                        cpuChart.pathToImages = "/js/amcharts/images/";
+                        cpuChart.dataProvider = cpuChartData;
+                        cpuChart.categoryField = "date";
+
+                        var categoryAxis = cpuChart.categoryAxis;
+                        categoryAxis.parseDates = true;
+                        categoryAxis.equalSpacing = false;
+                        categoryAxis.minPeriod = "mm";
+                        categoryAxis.gridAlpha = 0.07;
+                        categoryAxis.axisColor = "#DADADA";
+
+                        // Value
+                        var valueAxis = new AmCharts.ValueAxis();
+                        valueAxis.gridAlpha = 0.07;
+                        cpuChart.addValueAxis(valueAxis);
+
+                        // GRAPH
+                        var graph;
+
+                        graph = new AmCharts.AmGraph();
+                        graph.type = "line"; // try to change it to "column"
+                        graph.title = "Max CPU peak usage";
+                        graph.balloonText = "[[value]]";
+                        graph.valueField = "mem_peak_usage_100";
+                        graph.lineAlpha = 1;
+                        graph.lineColor = "#729462";
+                        graph.fillAlphas = 0.9;
+                        graph.fillColor = "#729462";
+                        cpuChart.addGraph(graph);
+
+                        graph = new AmCharts.AmGraph();
+                        graph.type = "line"; // try to change it to "column"
+                        graph.title = "CPU peak usage of 99% requests";
+                        graph.balloonText = "[[value]]";
+                        graph.valueField = "cpu_peak_usage_99";
+                        graph.lineAlpha = 1;
+                        graph.lineColor = "#C38630";
+                        graph.fillAlphas = 0.9;
+                        graph.fillColor = "#C38630";
+                        cpuChart.addGraph(graph);
+
+                        graph = new AmCharts.AmGraph();
+                        graph.type = "line"; // try to change it to "column"
+                        graph.title = "CPU usage of 95% requests";
+                        graph.balloonText = "[[value]]";
+                        graph.valueField = "cpu_peak_usage_95";
+                        graph.lineAlpha = 1;
+                        graph.lineColor = "#700193";
+                        graph.fillAlphas = 0.9;
+                        graph.fillColor = "#700193";
+                        cpuChart.addGraph(graph);
+
+                        graph = new AmCharts.AmGraph();
+                        graph.type = "line"; // try to change it to "column"
+                        graph.title = "CPU peak usage of 90% requests";
+                        graph.balloonText = "[[value]]";
+                        graph.valueField = "cpu_peak_usage_90";
+                        graph.lineAlpha = 1;
+                        graph.lineColor = "#39A3B9";
+                        graph.fillAlphas = 0.9;
+                        cpuChart.addGraph(graph);
+
+                        // CURSOR
+                        var chartCursor = new AmCharts.ChartCursor();
+                        chartCursor.cursorPosition = "mouse";
+                        chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
+                        cpuChart.addChartCursor(chartCursor);
+
+                        // LEGEND
+                        var legend = new AmCharts.AmLegend();
+                        cpuChart.addLegend(legend);
+
+                        // WRITE
+                        cpuChart.write("cpu-usage-chart");
+                    });
+                </script>
+            {% else %}
+                <p>No data for requests.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
