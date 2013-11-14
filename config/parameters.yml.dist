@@ -41,6 +41,10 @@ secure:
 #    list:
 #        - { hosts: 'example\.com$', email: [admin@example.com, my_email@example.com] }
 #        - { hosts: 'forum\.example\.com$', email: moderator@example.com }
+#    ignore:
+#        - (foo|otp)\.example\.com$
+#        - second-example\.ru$
+
 #smtp:
 #    server: smtp.example.com
 #    port: 25

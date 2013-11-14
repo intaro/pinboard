@@ -17,6 +17,18 @@ class AggregateCommand extends Command
             ->setDescription('Aggregate data from source tables and save to report tables')
         ;
     }
+    
+    private function isNotIgnore($host) {
+        $notIgnore = true;
+        if (isset($yaml['notification']['ignore'])) {
+            $countIgnores = count($yaml['notification']['ignore']);
+            for($i = 0; i < $countIgnores && $notIgnore; $i++) {
+                $notIgnore = !preg_match('#' . $yaml['notification']['ignore'][$i] . '#', $host);
+            }
+        }
+
+        return $notIgnore;
+    }
 
     private function sendEmails($silexApp, $yaml, $errorPages)
     {
@@ -52,7 +64,9 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                $pages[$page['server_name']][] = $page;
+                if($this->isNotIgnore($page['server_name'])) {
+                    $pages[$page['server_name']][] = $page;
+                }
             }
             $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
 
@@ -63,17 +77,19 @@ class AggregateCommand extends Command
 
         if (isset($yaml['notification']['list'])) {
             foreach ($yaml['notification']['list'] as $item) {
-                $pages = array();
-                foreach ($errorPages as $page) {
-                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
-                        $pages[$page['server_name']][] = $page;
+                if($this->isNotIgnore($item['hosts'])) {
+                    $pages = array();
+                    foreach ($errorPages as $page) {
+                        if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
+                            $pages[$page['server_name']][] = $page;
+                        }
                     }
-                }
-                if (count($pages) > 0) {
-                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-                    $message->setBody($body);
-                    $message->setTo($item['email']);
-                    $mailer->send($message);
+                    if (count($pages) > 0) {
+                        $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+                        $message->setBody($body);
+                        $message->setTo($item['email']);
+                        $mailer->send($message);
+                    }
                 }
             }
         }
