@@ -21,9 +21,11 @@ class AggregateCommand extends Command
     private function isNotIgnore($host, $yaml) {
         $notIgnore = true;
         if (isset($yaml['notification']['ignore'])) {
-            $countIgnores = count($yaml['notification']['ignore']);
-            for($i = 0; $i < $countIgnores && $notIgnore; $i++) {
-                $notIgnore = !preg_match('#' . $yaml['notification']['ignore'][$i] . '#', $host);
+            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
+                if(preg_match('#' . $hostToIgnore . '#', $host)) {
+                    $notIgnore = false;
+                    break;
+                }
             }
         }
 
@@ -34,8 +36,8 @@ class AggregateCommand extends Command
     {
         if (isset($yaml['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
-            ->setHost($yaml['smtp']['server'])
-            ->setPort($yaml['smtp']['port'])
+                ->setHost($yaml['smtp']['server'])
+                ->setPort($yaml['smtp']['port'])
             ;
             if (isset($yaml['smtp']['username'])) {
                 $transport->setUsername($yaml['smtp']['username']);
