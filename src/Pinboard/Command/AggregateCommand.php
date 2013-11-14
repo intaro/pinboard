@@ -17,12 +17,12 @@ class AggregateCommand extends Command
             ->setDescription('Aggregate data from source tables and save to report tables')
         ;
     }
-    
-    private function isNotIgnore($host) {
+
+    private function isNotIgnore($host, $yaml) {
         $notIgnore = true;
         if (isset($yaml['notification']['ignore'])) {
             $countIgnores = count($yaml['notification']['ignore']);
-            for($i = 0; i < $countIgnores && $notIgnore; $i++) {
+            for($i = 0; $i < $countIgnores && $notIgnore; $i++) {
                 $notIgnore = !preg_match('#' . $yaml['notification']['ignore'][$i] . '#', $host);
             }
         }
@@ -64,20 +64,21 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                if($this->isNotIgnore($page['server_name'])) {
+                if($this->isNotIgnore($page['server_name'], $yaml)) {
                     $pages[$page['server_name']][] = $page;
                 }
             }
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-
-            $message->setBody($body);
-            $message->setTo($yaml['notification']['global_email']);
-            $mailer->send($message);
+            if(count($pages) > 0){
+                $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+                $message->setBody($body);
+                $message->setTo($yaml['notification']['global_email']);
+                $mailer->send($message);
+            }
         }
 
         if (isset($yaml['notification']['list'])) {
             foreach ($yaml['notification']['list'] as $item) {
-                if($this->isNotIgnore($item['hosts'])) {
+                if($this->isNotIgnore($item['hosts'], $yaml)) {
                     $pages = array();
                     foreach ($errorPages as $page) {
                         if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
