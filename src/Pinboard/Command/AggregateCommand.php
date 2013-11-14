@@ -34,7 +34,29 @@ class AggregateCommand extends Command
     
     private function sendErrorPages($silexApp, $pages, $message, $mailer, $address) {
         if (count($pages) > 0) {
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $parsedPages = array();
+            foreach($pages as $serverName => $pagesServer) {
+                usort($pagesServer, (function ($a, $b) {
+                    if($a['status'] != $b['status']) {
+                        return ($a['status'] < $b['status']) ? -1 : 1;
+                    } else {
+                        return ($a['script_name'] < $b['script_name']) ? -1 : 1;
+                    }
+                }));
+                $serverCount = 0;
+                foreach($pagesServer as $page) {
+                    if($serverCount > 0 && $page['status'] == $parsedPages[$serverName][$serverCount - 1]['status'] && $page['script_name'] == $parsedPages[$serverName][$serverCount - 1]['script_name']) {
+                        $parsedPages[$serverName][$serverCount - 1]['count']++;
+                    } else {
+                        $parsedPages[$serverName][$serverCount]['status'] = $page['status'];
+                        $parsedPages[$serverName][$serverCount]['server_name'] = $page['server_name'];
+                        $parsedPages[$serverName][$serverCount]['script_name'] = $page['script_name'];
+                        $parsedPages[$serverName][$serverCount]['count'] = 1;
+                        $serverCount++;
+                    }
+                }
+            }
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $parsedPages));
             $message->setBody($body);
             $message->setTo($address);
             $mailer->send($message);
