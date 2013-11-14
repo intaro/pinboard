@@ -31,6 +31,15 @@ class AggregateCommand extends Command
 
         return $notIgnore;
     }
+    
+    private function sendErrorPages($silexApp, $pages, $message, $mailer, $address) {
+        if (count($pages) > 0) {
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $message->setBody($body);
+            $message->setTo($address);
+            $mailer->send($message);
+        }
+    }
 
     private function sendEmails($silexApp, $yaml, $errorPages)
     {
@@ -70,12 +79,7 @@ class AggregateCommand extends Command
                     $pages[$page['server_name']][] = $page;
                 }
             }
-            if(count($pages) > 0){
-                $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-                $message->setBody($body);
-                $message->setTo($yaml['notification']['global_email']);
-                $mailer->send($message);
-            }
+            $this->sendErrorPages($silexApp, $pages, $message, $mailer, $yaml['notification']['global_email']);
         }
 
         if (isset($yaml['notification']['list'])) {
@@ -86,12 +90,7 @@ class AggregateCommand extends Command
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                if (count($pages) > 0) {
-                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-                    $message->setBody($body);
-                    $message->setTo($item['email']);
-                    $mailer->send($message);
-                }
+                $this->sendErrorPages($silexApp, $pages, $message, $mailer, $item['email']);
             }
         }
     }
