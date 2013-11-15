@@ -14,6 +14,10 @@ logging:
         global: 30000
 #        "some.site.ru": 30000
 
+    heavy_cpu_request:
+        global: 1
+#        "some.site.ru": 1
+
 locale:  en
 
 # can be 'array', 'apc', 'xcache', 'zend_data'
