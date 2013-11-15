@@ -48,10 +48,8 @@ class AggregateCommand extends Command
                     if($serverCount > 0 && $page['status'] == $parsedPages[$serverName][$serverCount - 1]['status'] && $page['script_name'] == $parsedPages[$serverName][$serverCount - 1]['script_name']) {
                         $parsedPages[$serverName][$serverCount - 1]['count']++;
                     } else {
-                        $parsedPages[$serverName][$serverCount]['status'] = $page['status'];
-                        $parsedPages[$serverName][$serverCount]['server_name'] = $page['server_name'];
-                        $parsedPages[$serverName][$serverCount]['script_name'] = $page['script_name'];
-                        $parsedPages[$serverName][$serverCount]['count'] = 1;
+                        $page['count'] = 1;
+                        $parsedPages[$serverName][] = $page;
                         $serverCount++;
                     }
                 }
