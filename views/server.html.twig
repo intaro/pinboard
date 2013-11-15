@@ -216,12 +216,10 @@
             var rpsChart;
 
             var rpsChartData = [];
-            {% for item in req_per_sec.data %}
-            rpsChartData.push({ date: new Date({{ item.date }})
-                {% for iter in req_per_sec.data %}
-                    {% if iter.date == item.date %}
-                        , rps{{ iter.parsed_hostname }}: {{ iter.req_per_sec }}
-                    {% endif %}
+            {% for date, item in req_per_sec.data %}
+            rpsChartData.push({ date: new Date({{ date }})
+                {% for iter in item %}
+                    , rps{{ iter.parsed_hostname }}: {{ iter.req_per_sec }}
                 {% endfor %}
             });
             {% endfor %}

@@ -53,6 +53,15 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
             unset($value['date']);
         }
         
+        $allPoints = array();
+        foreach ($result['req_per_sec']['data'] as $value) {
+            foreach ($value as $item) {
+                $allPoints[] = $item;
+            }
+        }
+        
+        $result['req_per_sec']['data'] = $allPoints;
+        
         if(isset($result['req_per_sec']['hosts']['_'])) {
             foreach ($result['req_per_sec']['data'] as &$value) {
                 if($value['parsed_hostname'] == '_') {
@@ -200,9 +209,9 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
         $t = strtotime($item['created_at']);
         $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
         $parsedHostname = '_' . str_replace('.', '_', str_replace('-', '_', $item['hostname']));
-        $rpqData['data'][] = array(
+        $rpqData['data'][$date][] = array(
             'created_at' => $item['created_at'],
-            'date' => $date,
+            // 'date' => $date,
             'hostname' => $item['hostname'],
             'parsed_hostname' => $parsedHostname,
             'req_per_sec' => number_format($item['req_per_sec'], 2, '.', ''),
@@ -234,9 +243,9 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
         foreach($data as &$item) {
             $t = strtotime($item['created_at']);
             $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
-            $rpqData['data'][] = array(
+            $rpqData['data'][$date][] = array(
                 'created_at' => $item['created_at'],
-                'date' => $date,
+                //'date' => $date,
                 'hostname' => '_',
                 'parsed_hostname' => '_',
                 'req_per_sec' => number_format($item['req_per_sec'], 2, '.', ''),
