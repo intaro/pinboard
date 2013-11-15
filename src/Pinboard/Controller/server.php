@@ -52,8 +52,10 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
         foreach ($result['req'] as &$value) {
             unset($value['date']);
         }
-        foreach ($result['req_per_sec']['data'] as &$value) {
+        $result['req_per_sec'] = $result['req_per_sec']['data'];
+        foreach ($result['req_per_sec'] as &$value) {
             unset($value['date']);
+            unset($value['parsed_hostname']);
         }
         foreach ($result['statuses']['data'] as &$value) {
             unset($value['date']);
