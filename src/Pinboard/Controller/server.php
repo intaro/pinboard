@@ -52,7 +52,7 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
         foreach ($result['req'] as &$value) {
             unset($value['date']);
         }
-        foreach ($result['req_per_sec'] as &$value) {
+        foreach ($result['req_per_sec']['data'] as &$value) {
             unset($value['date']);
         }
         foreach ($result['statuses']['data'] as &$value) {
@@ -149,37 +149,54 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
     );
-    $table = 'ipm_report_by_server_name';
     $hostCondition = '';
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
-        $table = 'ipm_report_by_hostname_and_server';
         $hostCondition = 'AND hostname = :hostname';
     }
 
     $sql = '
         SELECT
-            created_at, req_per_sec
+            created_at, req_per_sec, hostname
         FROM
-            ' . $table . '
+            ipm_report_by_hostname_and_server
         WHERE
             server_name = :server_name
             ' . $hostCondition . '
             AND created_at > :created_at
+        GROUP BY
+            created_at, hostname
         ORDER BY
             created_at
     ';
 
     $data = $conn->fetchAll($sql, $params);
 
+    $rpqData = array(
+        'data'  => array(),
+        'hosts' => array(),
+    );
+
     foreach($data as &$item) {
         $t = strtotime($item['created_at']);
-        $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
-        $item['req_per_sec'] = number_format($item['req_per_sec'], 2, '.', '');
+        $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        $parsedHostname = '_' . str_replace('.', '_', str_replace('-', '_', $item['hostname']));
+        $rpqData['data'][] = array(
+            'created_at' => $item['created_at'],
+            'date' => $date,
+            'hostname' => $item['hostname'],
+            'parsed_hostname' => $parsedHostname,
+            'req_per_sec' => number_format($item['req_per_sec'], 2, '.', ''),
+        );
+        if (!isset($rpqData['hosts'][$parsedHostname])) {
+            $rpqData['hosts'][$parsedHostname]['color'] = Utils::generateColor();
+            $rpqData['hosts'][$parsedHostname]['host'] = $item['hostname'];
+        }
     }
+    ksort($rpqData['hosts']);
 
-    return $data;
+    return $rpqData;
 }
 
 function getRequestReview($conn, $serverName, $hostName) {

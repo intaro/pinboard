@@ -2,7 +2,7 @@
 
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% block content %}
-    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <div class="row">
       <div class="span6">
         <h2>Request time <small><a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
@@ -13,14 +13,14 @@
 
             var rtChartData = [];
             {% for item in req %}
-            rtChartData.push({ 
-                date: new Date({{ item.date }}), 
+            rtChartData.push({
+                date: new Date({{ item.date }}),
                 req_time_90: {{ item.req_time_90 }},
                 req_time_95: {{ item.req_time_95 }},
                 req_time_99: {{ item.req_time_99 }},
                 req_time_100: {{ item.req_time_100 }}
             });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -93,7 +93,7 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 rtChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
                 rtChart.addLegend(legend);
 
@@ -114,14 +114,14 @@
 
             var muChartData = [];
             {% for item in req %}
-            muChartData.push({ 
-                date: new Date({{ item.date }}), 
+            muChartData.push({
+                date: new Date({{ item.date }}),
                 mem_peak_usage_90: {{ item.mem_peak_usage_90 }},
                 mem_peak_usage_95: {{ item.mem_peak_usage_95 }},
                 mem_peak_usage_99: {{ item.mem_peak_usage_99 }},
                 mem_peak_usage_100: {{ item.mem_peak_usage_100 }}
             });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -194,7 +194,7 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 muChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
                 muChart.addLegend(legend);
 
@@ -210,15 +210,17 @@
     <div class="row">
       <div class="span6">
         <h2>Requests per sec {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}</h2>
-        {% if req_per_sec|length > 0 %}
+        {% if req_per_sec.data|length > 0 %}
         <div id="req-per-sec-chart" style="height: 350px;"></div>
         <script type="text/javascript">
             var rpsChart;
 
             var rpsChartData = [];
-            {% for item in req_per_sec %}
-            rpsChartData.push({ date: new Date({{ item.date }}), value: {{ item.req_per_sec }} });
-            {% endfor %}    
+            {% for item in req_per_sec.data %}
+            rpsChartData.push({ date: new Date({{ item.date }})
+                , rps{{ item.parsed_hostname }}: {{ item.req_per_sec }}
+            });
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -242,14 +244,16 @@
                 // GRAPH
                 var graph;
 
-                graph = new AmCharts.AmGraph();
-                graph.type = "line"; // try to change it to "column"
-                graph.valueField = "value";
-                graph.lineAlpha = 1;
-                graph.lineColor = "#39A3B9";
-                graph.fillAlphas = 0.2;
-                graph.title = "Requests per second";
-                rpsChart.addGraph(graph);
+                {% for host, keydata in req_per_sec.hosts %}
+                    graph = new AmCharts.AmGraph();
+                    graph.type = "line"; // try to change it to "column"
+                    graph.title = "Requests per second at host {{ keydata.host }}";
+                    graph.valueField = "rps{{ host }}";
+                    graph.lineAlpha = 1;
+                    graph.lineColor = "#{{ keydata.color }}";
+                    graph.fillAlphas = 0.1;
+                    rpsChart.addGraph(graph);
+                {% endfor %}
 
                 // CURSOR
                 var chartCursor = new AmCharts.ChartCursor();
@@ -257,8 +261,9 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 rpsChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
+                legend.maxColumns = 2;
                 rpsChart.addLegend(legend);
 
                 // WRITE
@@ -266,7 +271,7 @@
             });
         </script>
         {% else %}
-        <p>No data for requests.</p>
+        <p>No data for requests frequency</p>
         {% endif %}
       </div>
       <div class="span6">
@@ -279,9 +284,9 @@
             var statusChartData = [];
             {% for item in statuses.data %}
             statusChartData.push({ date: new Date({{ item.date }})
-                , status{{ item.error_code }}: {{ item.error_count }}              
+                , status{{ item.error_code }}: {{ item.error_count }}
             });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -314,7 +319,7 @@
                     graph.lineColor = "#{{ color }}";
                     graph.fillAlphas = 0.1;
                     statusChart.addGraph(graph);
-                {% endfor %}                                
+                {% endfor %}
 
                 // CURSOR
                 var chartCursor = new AmCharts.ChartCursor();
@@ -322,7 +327,7 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 statusChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
                 legend.maxColumns = 2;
                 statusChart.addLegend(legend);
