@@ -252,7 +252,7 @@
                 {% for host, keydata in req_per_sec.hosts %}
                     graph = new AmCharts.AmGraph();
                     graph.type = "line"; // try to change it to "column"
-                    graph.title = "{% if host == '_' %}Total requests per second at all hosts{% else %}Requests per second at host {{ keydata.host }}{% endif %}";
+                    graph.title = "{{ host == '_' ? 'Total requests per second at all hosts' : 'Requests per second at host ' ~ keydata.host }}";
                     graph.valueField = "rps{{ host }}";
                     graph.lineAlpha = 1;
                     graph.lineColor = "#{{ keydata.color }}";
