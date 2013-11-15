@@ -100,6 +100,14 @@ class AggregateCommand extends Command
         $silexApp = $this->getApplication()->getSilex();
         $silexApp->boot();
         $db = $silexApp['db'];
+        
+        $fh = fopen(__FILE__, 'r');
+
+        if( !flock($fh, LOCK_EX | LOCK_NB) ) {
+            $output->writeln('Cannot run data aggregating: the another instance of this script is already executing.');
+            
+            return;
+        }
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
 
