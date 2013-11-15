@@ -18,12 +18,35 @@ class AggregateCommand extends Command
         ;
     }
 
+    private function isNotIgnore($host, $yaml) {
+        $notIgnore = true;
+        if (isset($yaml['notification']['ignore'])) {
+            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
+                if(preg_match('#' . $hostToIgnore . '#', $host)) {
+                    $notIgnore = false;
+                    break;
+                }
+            }
+        }
+
+        return $notIgnore;
+    }
+
+    private function sendErrorPages($silexApp, $pages, $message, $mailer, $address) {
+        if (count($pages) > 0) {
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $message->setBody($body);
+            $message->setTo($address);
+            $mailer->send($message);
+        }
+    }
+
     private function sendEmails($silexApp, $yaml, $errorPages)
     {
         if (isset($yaml['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
-            ->setHost($yaml['smtp']['server'])
-            ->setPort($yaml['smtp']['port'])
+                ->setHost($yaml['smtp']['server'])
+                ->setPort($yaml['smtp']['port'])
             ;
             if (isset($yaml['smtp']['username'])) {
                 $transport->setUsername($yaml['smtp']['username']);
@@ -52,29 +75,22 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                $pages[$page['server_name']][] = $page;
+                if($this->isNotIgnore($page['server_name'], $yaml)) {
+                    $pages[$page['server_name']][] = $page;
+                }
             }
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-
-            $message->setBody($body);
-            $message->setTo($yaml['notification']['global_email']);
-            $mailer->send($message);
+            $this->sendErrorPages($silexApp, $pages, $message, $mailer, $yaml['notification']['global_email']);
         }
 
         if (isset($yaml['notification']['list'])) {
             foreach ($yaml['notification']['list'] as $item) {
                 $pages = array();
                 foreach ($errorPages as $page) {
-                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
+                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name']) && $this->isNotIgnore($page['server_name'], $yaml)) {
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                if (count($pages) > 0) {
-                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-                    $message->setBody($body);
-                    $message->setTo($item['email']);
-                    $mailer->send($message);
-                }
+                $this->sendErrorPages($silexApp, $pages, $message, $mailer, $item['email']);
             }
         }
     }
@@ -122,11 +138,13 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
             $sql = '
                 SELECT
-                    server_name, script_name, status
+                    server_name, script_name, status, count(*) AS count
                 FROM
                     request
                 WHERE
                     status >= 500
+                GROUP BY
+                    server_name, script_name, status
             ';
 
             $errorPages = $db->fetchAll($sql);

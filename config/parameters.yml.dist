@@ -36,11 +36,15 @@ secure:
 
 #notification:
 #    enable: true
+#    ignore:
+#        - (foo|otp)\.example\.com$
+#        - second-example\.ru$
 #    sender: noreply@example.com
 #    global_email: my_email@example.com
 #    list:
 #        - { hosts: 'example\.com$', email: [admin@example.com, my_email@example.com] }
 #        - { hosts: 'forum\.example\.com$', email: moderator@example.com }
+
 #smtp:
 #    server: smtp.example.com
 #    port: 25
