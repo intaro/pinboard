@@ -100,13 +100,15 @@ class AggregateCommand extends Command
         $silexApp = $this->getApplication()->getSilex();
         $silexApp->boot();
         $db = $silexApp['db'];
-
-        $fh = fopen( __FILE__ , 'r');
-
-        if( !flock($fh, LOCK_EX | LOCK_NB) ) {
-            $output->writeln('Cannot run data aggregating: the another instance of this script is already executing.');
+        
+        if(file_exists( __FILE__ . '.lock')) {
+            $output->writeln('<info>Cannot run data aggregating: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</info>');
 
             return;
+        }
+        
+        if(!touch( __FILE__ . '.lock')) {
+            $output->writeln('<info>Warning: cannot create ' . __FILE__ . '.lock file</info>');
         }
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
@@ -333,5 +335,9 @@ class AggregateCommand extends Command
             $db->query($sql);
 
         $output->writeln('<info>Data are aggregated successfully</info>');
+        
+        if(!unlink( __FILE__ . '.lock')) {
+            $output->writeln('<info>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</info>');
+        }
     }
 }
