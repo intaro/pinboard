@@ -52,16 +52,16 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
         foreach ($result['req'] as &$value) {
             unset($value['date']);
         }
-        
+
         $allPoints = array();
         foreach ($result['req_per_sec']['data'] as $value) {
             foreach ($value as $item) {
                 $allPoints[] = $item;
             }
         }
-        
+
         $result['req_per_sec']['data'] = $allPoints;
-        
+
         if(isset($result['req_per_sec']['hosts']['_'])) {
             foreach ($result['req_per_sec']['data'] as &$value) {
                 if($value['parsed_hostname'] == '_') {
@@ -80,7 +80,7 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
                 unset($value['parsed_hostname']);
             }
         }
-        
+
         foreach ($result['statuses']['data'] as &$value) {
             unset($value['date']);
         }
@@ -222,7 +222,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
             $hostCount++;
         }
     }
-    
+
     if($hostCount > 1) {
         $sql = '
             SELECT
@@ -239,7 +239,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
         $data = $conn->fetchAll($sql, $params);
         $rpqData['hosts']['_']['color'] = Utils::generateColor();
         $rpqData['hosts']['_']['host'] = '_';
-        
+
         foreach($data as &$item) {
             $t = strtotime($item['created_at']);
             $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
@@ -252,7 +252,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
             );
         }
     }
-    
+
     ksort($rpqData['hosts']);
 
     return $rpqData;
@@ -318,6 +318,8 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', 
         'hostname'    => $hostName,
         'title'       => 'Error pages / ' . $serverName,
         'pageNum'     => $pageNum,
+        'colOrder'    => $colOrder,
+        'colDir'      => $colDir
     );
 
     $result['rowPerPage'] = $rowPerPage;
