@@ -101,6 +101,16 @@ class AggregateCommand extends Command
         $silexApp->boot();
         $db = $silexApp['db'];
 
+        if(file_exists( __FILE__ . '.lock')) {
+            $output->writeln('<error>Cannot run data aggregating: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
+
+            return;
+        }
+
+        if(!touch( __FILE__ . '.lock')) {
+            $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
+        }
+
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
 
         $delta = new \DateInterval(isset($yaml['records_lifetime']) ? $yaml['records_lifetime'] : 'P1M');
@@ -325,5 +335,9 @@ class AggregateCommand extends Command
             $db->query($sql);
 
         $output->writeln('<info>Data are aggregated successfully</info>');
+
+        if(!unlink( __FILE__ . '.lock')) {
+            $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
+        }
     }
 }
