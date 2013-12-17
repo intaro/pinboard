@@ -1,0 +1,18 @@
+CHANGELOG / Intaro Pinboard
+===========================
+
+* 1.1 (2013-12-16)
+
+ * bug #55 ./console aggregate return PDOException
+ * bug #52 String-like sorting fields at the main overview
+ * feature #50 Show request distribution by hostname on chart "Requests per sec"
+ * feature #49 Combine error pages in email notifications
+ * feature #48 Add option to ignore some hosts for notification
+
+* 1.0 (2013-10-13)
+
+ * feature #45 Embed migration machinery
+
+* 0.1
+
+ * First version of Intaro Pinboard
