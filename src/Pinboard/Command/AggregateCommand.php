@@ -235,7 +235,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname
                 )
-            SELECT * FROM report_by_hostname;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    hostname FROM report_by_hostname;
 
             INSERT INTO ipm_report_by_hostname_and_server
                 (
@@ -245,7 +249,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname, server_name
                 )
-            SELECT * FROM report_by_hostname_and_server;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    hostname, server_name FROM report_by_hostname_and_server;
 
             INSERT INTO ipm_report_by_server_name
                 (
@@ -255,7 +263,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     server_name
                 )
-            SELECT * FROM report_by_server_name;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    server_name FROM report_by_server_name;
         ';
         $db->query($sql);
 
