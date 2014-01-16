@@ -18,12 +18,35 @@ class AggregateCommand extends Command
         ;
     }
 
+    private function isNotIgnore($host, $yaml) {
+        $notIgnore = true;
+        if (isset($yaml['notification']['ignore'])) {
+            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
+                if(preg_match('#' . $hostToIgnore . '#', $host)) {
+                    $notIgnore = false;
+                    break;
+                }
+            }
+        }
+
+        return $notIgnore;
+    }
+
+    private function sendErrorPages($silexApp, $pages, $message, $mailer, $address) {
+        if (count($pages) > 0) {
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $message->setBody($body);
+            $message->setTo($address);
+            $mailer->send($message);
+        }
+    }
+
     private function sendEmails($silexApp, $yaml, $errorPages)
     {
         if (isset($yaml['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
-            ->setHost($yaml['smtp']['server'])
-            ->setPort($yaml['smtp']['port'])
+                ->setHost($yaml['smtp']['server'])
+                ->setPort($yaml['smtp']['port'])
             ;
             if (isset($yaml['smtp']['username'])) {
                 $transport->setUsername($yaml['smtp']['username']);
@@ -52,29 +75,22 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                $pages[$page['server_name']][] = $page;
+                if($this->isNotIgnore($page['server_name'], $yaml)) {
+                    $pages[$page['server_name']][] = $page;
+                }
             }
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-
-            $message->setBody($body);
-            $message->setTo($yaml['notification']['global_email']);
-            $mailer->send($message);
+            $this->sendErrorPages($silexApp, $pages, $message, $mailer, $yaml['notification']['global_email']);
         }
 
         if (isset($yaml['notification']['list'])) {
             foreach ($yaml['notification']['list'] as $item) {
                 $pages = array();
                 foreach ($errorPages as $page) {
-                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name'])) {
+                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name']) && $this->isNotIgnore($page['server_name'], $yaml)) {
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                if (count($pages) > 0) {
-                    $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-                    $message->setBody($body);
-                    $message->setTo($item['email']);
-                    $mailer->send($message);
-                }
+                $this->sendErrorPages($silexApp, $pages, $message, $mailer, $item['email']);
             }
         }
     }
@@ -84,6 +100,16 @@ class AggregateCommand extends Command
         $silexApp = $this->getApplication()->getSilex();
         $silexApp->boot();
         $db = $silexApp['db'];
+
+        if(file_exists( __FILE__ . '.lock')) {
+            $output->writeln('<error>Cannot run data aggregating: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
+
+            return;
+        }
+
+        if(!touch( __FILE__ . '.lock')) {
+            $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
+        }
 
         $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
 
@@ -123,11 +149,13 @@ class AggregateCommand extends Command
         if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
             $sql = '
                 SELECT
-                    server_name, script_name, status
+                    server_name, script_name, status, count(*) AS count
                 FROM
                     request
                 WHERE
                     status >= 500
+                GROUP BY
+                    server_name, script_name, status
             ';
 
             $errorPages = $db->fetchAll($sql);
@@ -213,7 +241,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname
                 )
-            SELECT * FROM report_by_hostname;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    hostname FROM report_by_hostname;
 
             INSERT INTO ipm_report_by_hostname_and_server
                 (
@@ -223,7 +255,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname, server_name
                 )
-            SELECT * FROM report_by_hostname_and_server;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    hostname, server_name FROM report_by_hostname_and_server;
 
             INSERT INTO ipm_report_by_server_name
                 (
@@ -233,7 +269,11 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     server_name
                 )
-            SELECT * FROM report_by_server_name;
+            SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
+                    ru_utime_total, ru_utime_percent, ru_utime_per_sec,
+                    ru_stime_total, ru_stime_percent, ru_stime_per_sec,
+                    traffic_total, traffic_percent, traffic_per_sec,
+                    server_name FROM report_by_server_name;
         ';
         $db->query($sql);
 
@@ -347,5 +387,9 @@ class AggregateCommand extends Command
        }
 
         $output->writeln('<info>Data are aggregated successfully</info>');
+
+        if(!unlink( __FILE__ . '.lock')) {
+            $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
+        }
     }
 }

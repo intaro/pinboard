@@ -2,7 +2,7 @@
 
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% block content %}
-    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}      
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <div class="row">
       <div class="span6">
         <h2>Request time <small><a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
@@ -13,14 +13,14 @@
 
             var rtChartData = [];
             {% for item in req %}
-            rtChartData.push({ 
-                date: new Date({{ item.date }}), 
+            rtChartData.push({
+                date: new Date({{ item.date }}),
                 req_time_90: {{ item.req_time_90 }},
                 req_time_95: {{ item.req_time_95 }},
                 req_time_99: {{ item.req_time_99 }},
                 req_time_100: {{ item.req_time_100 }}
             });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -93,7 +93,7 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 rtChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
                 rtChart.addLegend(legend);
 
@@ -106,6 +106,76 @@
         {% endif %}
       </div>
       <div class="span6">
+        <h2>Requests per sec {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}</h2>
+        {% if req_per_sec.data|length > 0 %}
+        <div id="req-per-sec-chart" style="height: {{ 346 + req_per_sec.hosts|length * 19 + (req_per_sec.hosts|length > 1 ? 19 : 0) }}px;"></div>
+        <script type="text/javascript">
+            var rpsChart;
+
+            var rpsChartData = [];
+            {% for date, item in req_per_sec.data %}
+            rpsChartData.push({ date: new Date({{ date }})
+                {% for iter in item %}
+                    , rps{{ iter.parsed_hostname }}: {{ iter.req_per_sec }}
+                {% endfor %}
+            });
+            {% endfor %}
+
+            AmCharts.ready(function () {
+                // SERIAL CHART
+                rpsChart = new AmCharts.AmSerialChart();
+                rpsChart.pathToImages = "/js/amcharts/images/";
+                rpsChart.dataProvider = rpsChartData;
+                rpsChart.categoryField = "date";
+
+                var categoryAxis = rpsChart.categoryAxis;
+                categoryAxis.parseDates = true;
+                categoryAxis.equalSpacing = false;
+                categoryAxis.minPeriod = "mm";
+                categoryAxis.gridAlpha = 0.07;
+                categoryAxis.axisColor = "#DADADA";
+
+                // Value
+                var valueAxis = new AmCharts.ValueAxis();
+                valueAxis.gridAlpha = 0.07;
+                rpsChart.addValueAxis(valueAxis);
+
+                // GRAPH
+                var graph;
+
+                {% for host, keydata in req_per_sec.hosts %}
+                    graph = new AmCharts.AmGraph();
+                    graph.type = "line"; // try to change it to "column"
+                    graph.title = "{{ host == '_' ? 'Total requests per second at all hosts' : 'Requests per second at host ' ~ keydata.host }}";
+                    graph.valueField = "rps{{ host }}";
+                    graph.lineAlpha = 1;
+                    graph.lineColor = "#{{ keydata.color }}";
+                    graph.fillAlphas = 0.1;
+                    rpsChart.addGraph(graph);
+                {% endfor %}
+
+                // CURSOR
+                var chartCursor = new AmCharts.ChartCursor();
+                chartCursor.cursorPosition = "mouse";
+                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
+                rpsChart.addChartCursor(chartCursor);
+
+                // LEGEND
+                var legend = new AmCharts.AmLegend();
+                legend.maxColumns = 2;
+                rpsChart.addLegend(legend);
+
+                // WRITE
+                rpsChart.write("req-per-sec-chart");
+            });
+        </script>
+        {% else %}
+        <p>No data for requests frequency</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="span6">
         <h2>Memory peak usage <small><a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
         {% if req|length > 0 %}
         <div id="mem-usage-chart" style="height: 450px;"></div>
@@ -114,14 +184,14 @@
 
             var muChartData = [];
             {% for item in req %}
-            muChartData.push({ 
-                date: new Date({{ item.date }}), 
+            muChartData.push({
+                date: new Date({{ item.date }}),
                 mem_peak_usage_90: {{ item.mem_peak_usage_90 }},
                 mem_peak_usage_95: {{ item.mem_peak_usage_95 }},
                 mem_peak_usage_99: {{ item.mem_peak_usage_99 }},
                 mem_peak_usage_100: {{ item.mem_peak_usage_100 }}
             });
-            {% endfor %}    
+            {% endfor %}
 
             AmCharts.ready(function () {
                 // SERIAL CHART
@@ -194,7 +264,7 @@
                 chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
                 muChart.addChartCursor(chartCursor);
 
-                // LEGEND                
+                // LEGEND
                 var legend = new AmCharts.AmLegend();
                 muChart.addLegend(legend);
 
@@ -203,142 +273,11 @@
             });
         </script>
         {% else %}
-        <p>No data for requests.</p>
+        <p>No data for memory usage.</p>
         {% endif %}
       </div>
-    </div>
-    <div class="row">
-      <div class="span6">
-        <h2>Requests per sec {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}</h2>
-        {% if req_per_sec|length > 0 %}
-        <div id="req-per-sec-chart" style="height: 350px;"></div>
-        <script type="text/javascript">
-            var rpsChart;
-
-            var rpsChartData = [];
-            {% for item in req_per_sec %}
-            rpsChartData.push({ date: new Date({{ item.date }}), value: {{ item.req_per_sec }} });
-            {% endfor %}    
-
-            AmCharts.ready(function () {
-                // SERIAL CHART
-                rpsChart = new AmCharts.AmSerialChart();
-                rpsChart.pathToImages = "/js/amcharts/images/";
-                rpsChart.dataProvider = rpsChartData;
-                rpsChart.categoryField = "date";
-
-                var categoryAxis = rpsChart.categoryAxis;
-                categoryAxis.parseDates = true;
-                categoryAxis.equalSpacing = false;
-                categoryAxis.minPeriod = "mm";
-                categoryAxis.gridAlpha = 0.07;
-                categoryAxis.axisColor = "#DADADA";
-
-                // Value
-                var valueAxis = new AmCharts.ValueAxis();
-                valueAxis.gridAlpha = 0.07;
-                rpsChart.addValueAxis(valueAxis);
-
-                // GRAPH
-                var graph;
-
-                graph = new AmCharts.AmGraph();
-                graph.type = "line"; // try to change it to "column"
-                graph.valueField = "value";
-                graph.lineAlpha = 1;
-                graph.lineColor = "#39A3B9";
-                graph.fillAlphas = 0.2;
-                graph.title = "Requests per second";
-                rpsChart.addGraph(graph);
-
-                // CURSOR
-                var chartCursor = new AmCharts.ChartCursor();
-                chartCursor.cursorPosition = "mouse";
-                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
-                rpsChart.addChartCursor(chartCursor);
-
-                // LEGEND                
-                var legend = new AmCharts.AmLegend();
-                rpsChart.addLegend(legend);
-
-                // WRITE
-                rpsChart.write("req-per-sec-chart");
-            });
-        </script>
-        {% else %}
-        <p>No data for requests.</p>
-        {% endif %}
-      </div>
-      <div class="span6">
-        <h2>Error statuses <small><a href="{{ path('server_statuses', { serverName: server_name }) }}">view details</a></small></h2>
-        {% if statuses.data|length > 0 %}
-        <div id="statuses-chart" style="height: 350px;"></div>
-        <script type="text/javascript">
-            var statusChart;
-
-            var statusChartData = [];
-            {% for item in statuses.data %}
-            statusChartData.push({ date: new Date({{ item.date }})
-                , status{{ item.error_code }}: {{ item.error_count }}              
-            });
-            {% endfor %}    
-
-            AmCharts.ready(function () {
-                // SERIAL CHART
-                statusChart = new AmCharts.AmSerialChart();
-                statusChart.pathToImages = "/js/amcharts/images/";
-                statusChart.dataProvider = statusChartData;
-                statusChart.categoryField = "date";
-
-                var categoryAxis = statusChart.categoryAxis;
-                categoryAxis.parseDates = true;
-                categoryAxis.equalSpacing = false;
-                categoryAxis.minPeriod = "mm";
-                categoryAxis.gridAlpha = 0.07;
-                categoryAxis.axisColor = "#DADADA";
-
-                // Value
-                var valueAxis = new AmCharts.ValueAxis();
-                valueAxis.gridAlpha = 0.07;
-                statusChart.addValueAxis(valueAxis);
-
-                // GRAPH
-                var graph;
-
-                {% for code, color in statuses.codes %}
-                    graph = new AmCharts.AmGraph();
-                    graph.type = "line"; // try to change it to "column"
-                    graph.title = "Status {{ code }}";
-                    graph.valueField = "status{{ code }}";
-                    graph.lineAlpha = 1;
-                    graph.lineColor = "#{{ color }}";
-                    graph.fillAlphas = 0.1;
-                    statusChart.addGraph(graph);
-                {% endfor %}                                
-
-                // CURSOR
-                var chartCursor = new AmCharts.ChartCursor();
-                chartCursor.cursorPosition = "mouse";
-                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
-                statusChart.addChartCursor(chartCursor);
-
-                // LEGEND                
-                var legend = new AmCharts.AmLegend();
-                legend.maxColumns = 2;
-                statusChart.addLegend(legend);
-
-                // WRITE
-                statusChart.write("statuses-chart");
-            });
-        </script>
-        {% else %}
-        <p>No data for error statuses</p>
-        {% endif %}
-      </div>
-    </div>
-    <div class="row">
         <div class="span6">
-            <h2>CPU usage <small><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
+            <h2>CPU peak usage <small><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
             {% if req|length > 0 %}
                 <div id="cpu-usage-chart" style="height: 450px;"></div>
                 <script type="text/javascript">
@@ -381,7 +320,7 @@
                         graph.type = "line"; // try to change it to "column"
                         graph.title = "Max CPU peak usage";
                         graph.balloonText = "[[value]]";
-                        graph.valueField = "mem_peak_usage_100";
+                        graph.valueField = "cpu_peak_usage_100";
                         graph.lineAlpha = 1;
                         graph.lineColor = "#729462";
                         graph.fillAlphas = 0.9;
@@ -435,8 +374,76 @@
                     });
                 </script>
             {% else %}
-                <p>No data for requests.</p>
+                <p>No data for CPU usage.</p>
             {% endif %}
         </div>
+    </div>
+    <div class="row">
+      <div class="span6">
+        <h2>Error statuses <small><a href="{{ path('server_statuses', { serverName: server_name }) }}">view details</a></small></h2>
+        {% if statuses.data|length > 0 %}
+        <div id="statuses-chart" style="height: 350px;"></div>
+        <script type="text/javascript">
+            var statusChart;
+
+            var statusChartData = [];
+            {% for item in statuses.data %}
+            statusChartData.push({ date: new Date({{ item.date }})
+                , status{{ item.error_code }}: {{ item.error_count }}
+            });
+            {% endfor %}
+
+            AmCharts.ready(function () {
+                // SERIAL CHART
+                statusChart = new AmCharts.AmSerialChart();
+                statusChart.pathToImages = "/js/amcharts/images/";
+                statusChart.dataProvider = statusChartData;
+                statusChart.categoryField = "date";
+
+                var categoryAxis = statusChart.categoryAxis;
+                categoryAxis.parseDates = true;
+                categoryAxis.equalSpacing = false;
+                categoryAxis.minPeriod = "mm";
+                categoryAxis.gridAlpha = 0.07;
+                categoryAxis.axisColor = "#DADADA";
+
+                // Value
+                var valueAxis = new AmCharts.ValueAxis();
+                valueAxis.gridAlpha = 0.07;
+                statusChart.addValueAxis(valueAxis);
+
+                // GRAPH
+                var graph;
+
+                {% for code, color in statuses.codes %}
+                    graph = new AmCharts.AmGraph();
+                    graph.type = "line"; // try to change it to "column"
+                    graph.title = "Status {{ code }}";
+                    graph.valueField = "status{{ code }}";
+                    graph.lineAlpha = 1;
+                    graph.lineColor = "#{{ color }}";
+                    graph.fillAlphas = 0.1;
+                    statusChart.addGraph(graph);
+                {% endfor %}
+
+                // CURSOR
+                var chartCursor = new AmCharts.ChartCursor();
+                chartCursor.cursorPosition = "mouse";
+                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
+                statusChart.addChartCursor(chartCursor);
+
+                // LEGEND
+                var legend = new AmCharts.AmLegend();
+                legend.maxColumns = 2;
+                statusChart.addLegend(legend);
+
+                // WRITE
+                statusChart.write("statuses-chart");
+            });
+        </script>
+        {% else %}
+        <p>No data for error statuses</p>
+        {% endif %}
+      </div>
     </div>
 {% endblock %}
