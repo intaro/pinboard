@@ -169,6 +169,8 @@ class AggregateCommand extends Command
             }
         }
 
+        $db->executeQuery('START TRANSACTION');
+
         $sql = '
             SELECT
                 server_name, hostname, COUNT(*) AS cnt
@@ -229,6 +231,8 @@ class AggregateCommand extends Command
         }
         if ($sql != '')
             $db->query($sql);
+
+        $db->executeQuery('COMMIT');
 
         $date = date('Y-m-d H:i:s', strtotime('-1 month'));
 

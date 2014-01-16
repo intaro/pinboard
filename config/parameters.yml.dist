@@ -13,7 +13,6 @@ logging:
     heavy_request:
         global: 30000
 #        "some.site.ru": 30000
-
     heavy_cpu_request:
         global: 1
 #        "some.site.ru": 1

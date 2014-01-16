@@ -6,9 +6,9 @@
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
     <div class="row">
-        <div class="span6">
+        <div class="span4">
             <h3>Request time</h3>
-            <div id="req-time-chart" style="height: 300px;"></div>
+            <div id="req-time-chart" style="height: 250px;"></div>
             <script type="text/javascript">
                 rtChart = null;
                 rtChartData = [];
@@ -56,9 +56,9 @@
                 });
             </script>
         </div>
-        <div class="span6">
+        <div class="span4">
             <h3>Memory peak usage</h3>
-            <div id="mem-usage-chart" style="height: 300px;"></div>
+            <div id="mem-usage-chart" style="height: 250px;"></div>
             <script type="text/javascript">
                 muChart = null;
                 muChartData = [];
@@ -105,11 +105,9 @@
                 });
             </script>
         </div>
-    </div>
-    <div class="row">
-        <div class="span6">
+        <div class="span4">
             <h3>CPU usage</h3>
-            <div id="cpu-usage-chart" style="height: 300px;"></div>
+            <div id="cpu-usage-chart" style="height: 250px;"></div>
             <script type="text/javascript">
                 cpuChart = null;
                 cpuChartData = [];
@@ -142,7 +140,7 @@
                     graph.valueField = "value";
                     graph.descriptionField = "page";
                     graph.lineAlpha = 1;
-                    graph.lineColor = "#39A3B9";
+                    graph.lineColor = "#b93939";
                     graph.fillAlphas = 0.2;
                     cpuChart.addGraph(graph);
 

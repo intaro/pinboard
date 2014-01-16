@@ -2,6 +2,7 @@
 
 use Pinboard\Utils\Utils;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 $ROW_PER_PAGE = 50;
 $rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params']['pagination']['row_per_page'] : $ROW_PER_PAGE;
@@ -86,7 +87,7 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function($serverName,
         }
 
         $result['success'] = 'true';
-        $response = new Symfony\Component\HttpFoundation\JsonResponse($result);
+        $response = new JsonResponse($result);
         $response->setStatusCode(200);
         return $response;
     }
@@ -303,10 +304,10 @@ function getRequestReview($conn, $serverName, $hostName) {
         $item['mem_peak_usage_95']  = number_format($item['mem_peak_usage_95'], 0, '.', '');
         $item['mem_peak_usage_99']  = number_format($item['mem_peak_usage_99'], 0, '.', '');
         $item['mem_peak_usage_100'] = number_format($item['mem_peak_usage_100'], 0, '.', '');
-        $item['cpu_peak_usage_90']  = number_format($item['cpu_peak_usage_90'], 0, '.', '');
-        $item['cpu_peak_usage_95']  = number_format($item['cpu_peak_usage_95'], 0, '.', '');
-        $item['cpu_peak_usage_99']  = number_format($item['cpu_peak_usage_99'], 0, '.', '');
-        $item['cpu_peak_usage_100'] = number_format($item['cpu_peak_usage_100'], 0, '.', '');
+        $item['cpu_peak_usage_90']  = number_format($item['cpu_peak_usage_90'], 3, '.', ',');
+        $item['cpu_peak_usage_95']  = number_format($item['cpu_peak_usage_95'], 3, '.', ',');
+        $item['cpu_peak_usage_99']  = number_format($item['cpu_peak_usage_99'], 3, '.', ',');
+        $item['cpu_peak_usage_100'] = number_format($item['cpu_peak_usage_100'], 3, '.', ',');
     }
 
     return $data;
@@ -591,7 +592,7 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
 
     $sql = '
         SELECT
-            COUNT(*)
+            COUNT(DISTINCT server_name, hostname, script_name, mem_peak_usage, created_at) as cnt
         FROM
             ipm_mem_peak_usage_details
         WHERE
@@ -602,7 +603,7 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
 
     $data = $conn->fetchAll($sql, $params);
 
-    return (int)$data[0]['COUNT(*)'];
+    return (int)$data[0]['cnt'];
 }
 
 function getCPUPagesCount($conn, $serverName, $hostName){
@@ -619,7 +620,7 @@ function getCPUPagesCount($conn, $serverName, $hostName){
 
    $sql = '
         SELECT
-            COUNT(*)
+            COUNT(DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at) as cnt
         FROM
             ipm_cpu_usage_details
         WHERE
@@ -630,7 +631,7 @@ function getCPUPagesCount($conn, $serverName, $hostName){
 
    $data = $conn->fetchAll($sql, $params);
 
-   return (int)$data[0]['COUNT(*)'];
+   return (int)$data[0]['cnt'];
 }
 
 function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir){
@@ -668,7 +669,7 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
    $data = $conn->fetchAll($sql, $params);
 
    foreach($data as &$item) {
-      $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 0, '.', ',');
+      $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 3, '.', ',');
    }
 
    return $data;
@@ -716,40 +717,40 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 }
 
 $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-   checkUserAccess($app, $serverName);
+    checkUserAccess($app, $serverName);
 
-   $pageNum = str_replace('page', '', $pageNum);
+    $pageNum = str_replace('page', '', $pageNum);
 
-   $result = array(
-      'server_name' => $serverName,
-      'hostname'    => $hostName,
-      'title'       => 'Memory peak usage / ' . $serverName,
-      'pageNum'     => $pageNum,
-      'colOrder'    => $colOrder,
-      'colDir'      => $colDir
-   );
+    $result = array(
+        'server_name' => $serverName,
+        'hostname'    => $hostName,
+        'title'       => 'CPU peak usage / ' . $serverName,
+        'pageNum'     => $pageNum,
+        'colOrder'    => $colOrder,
+        'colDir'      => $colDir
+    );
 
-   $result['rowPerPage'] = $rowPerPage;
+    $result['rowPerPage'] = $rowPerPage;
 
-   $rowCount = getCPUPagesCount($app['db'], $serverName, $hostName);
-   $result['rowCount'] = $rowCount;
+    $rowCount = getCPUPagesCount($app['db'], $serverName, $hostName);
+    $result['rowCount'] = $rowCount;
 
-   $pageCount = ceil($rowCount / $rowPerPage);
-   $result['pageCount'] = $pageCount;
-   if ($pageCount != 0) {
-      if ($pageNum < 1 || $pageNum > $pageCount) {
-         $app->abort(404, "Page $pageNum does not exist.");
-      }
-   }
-   $startPos = ($pageNum - 1) * $rowPerPage;
+    $pageCount = ceil($rowCount / $rowPerPage);
+    $result['pageCount'] = $pageCount;
+    if ($pageCount != 0) {
+        if ($pageNum < 1 || $pageNum > $pageCount) {
+            $app->abort(404, "Page $pageNum does not exist.");
+        }
+    }
+    $startPos = ($pageNum - 1) * $rowPerPage;
 
-   $result['hosts'] = getHosts($app['db'], $serverName);
-   $result['pages'] = getCPUPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
+    $result['hosts'] = getHosts($app['db'], $serverName);
+    $result['pages'] = getCPUPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
 
-   return $app['twig']->render(
-      'cpu_usage.html.twig',
-      $result
-   );
+    return $app['twig']->render(
+        'cpu_usage.html.twig',
+        $result
+    );
 })
 ->value('hostName', 'all')
 ->value('pageNum', 'page1')
@@ -774,7 +775,7 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Live / ' . $serverName,
-        'limit'       => 100,
+        'limit'       => 75,
     );
 
     $result['hosts'] = getHosts($app['db'], $serverName);
@@ -846,6 +847,8 @@ function generateOrderBy($colOrder, $colDir, $table) {
             $orderBy = 'req_time ' . $dir . ', created_at DESC';
         } elseif ('ipm_mem_peak_usage_details' == $table && 'mem' == $colOrder) {
             $orderBy = 'mem_peak_usage ' . $dir . ', created_at DESC';
+        } elseif ('ipm_cpu_peak_usage_details' == $table && 'cpu' == $colOrder) {
+            $orderBy = 'cpu_peak_usage ' . $dir . ', created_at DESC';
         } else {
             switch ($colOrder) {
                 case 'host':

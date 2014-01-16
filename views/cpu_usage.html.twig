@@ -18,8 +18,8 @@
                   <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
               <th class="mem-peak-usage">CPU peak usage
-                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
-                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'cpu', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'cpu', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
               <th class="date">Registered around
                   <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
