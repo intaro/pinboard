@@ -847,7 +847,7 @@ function generateOrderBy($colOrder, $colDir, $table) {
             $orderBy = 'req_time ' . $dir . ', created_at DESC';
         } elseif ('ipm_mem_peak_usage_details' == $table && 'mem' == $colOrder) {
             $orderBy = 'mem_peak_usage ' . $dir . ', created_at DESC';
-        } elseif ('ipm_cpu_peak_usage_details' == $table && 'cpu' == $colOrder) {
+        } elseif ('ipm_cpu_usage_details' == $table && 'cpu' == $colOrder) {
             $orderBy = 'cpu_peak_usage ' . $dir . ', created_at DESC';
         } else {
             switch ($colOrder) {
