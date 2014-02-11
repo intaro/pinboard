@@ -41,7 +41,8 @@ $app->before(function() use ($app) {
             ipm_report_by_server_name
         ' . $hostsWhere . '
         WHERE
-            created_at >= :created_at
+            created_at >= :created_at AND
+            server_name IS NOT NULL AND server_name != ""
         GROUP BY
             server_name
         HAVING
