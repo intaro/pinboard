@@ -15,7 +15,7 @@ $app->before(function() use ($app) {
     if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
         $user = $app['security']->getToken()->getUser();
         $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                    ? $app['params']['secure']['users'][$user->getUsername()]['hosts'] 
+                    ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
                     : ".*";
         if (trim($hosts) == "") {
             $hosts = ".*";
@@ -23,14 +23,16 @@ $app->before(function() use ($app) {
     }
 
     $hostsWhere = '';
-    $params = array();
-    
+    $params = array(
+        'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+    );
+
     if ($hosts != '.*') {
         $params = array(
             'hosts' => $hosts,
         );
         $hostsWhere = 'WHERE server_name REGEXP :hosts';
-    }    
+    }
 
     $sql = '
         SELECT
@@ -38,6 +40,8 @@ $app->before(function() use ($app) {
         FROM
             ipm_report_by_server_name
         ' . $hostsWhere . '
+        WHERE
+            created_at >= :created_at
         GROUP BY
             server_name
         HAVING
@@ -49,14 +53,14 @@ $app->before(function() use ($app) {
     $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
     $list = $stmt->fetchAll();
     $stmt->closeCursor();
-    
+
     $idn = new IDNaConvert(array('idn_version' => 2008));
-    
+
     foreach($list as $data) {
         if (stripos($data['server_name'], 'xn--') !== false) {
             $data['server_name'] = $idn->decode($data['server_name']);
         }
-        
+
         if (preg_match('/\d+\.\d+\.\d+\.\d+/', $data['server_name'])) {
             $result['servers']['IPs'][$data['server_name']] = $data;
         }
@@ -70,11 +74,11 @@ $app->before(function() use ($app) {
             }
             $result['servers'][$baseDomain][$data['server_name']] = $data;
         }
-    }        
-    
+    }
+
     if (!sizeof($result['servers']['IPs'])) {
         unset($result['servers']['IPs']);
     }
-    
+
     $app['menu'] = $result;
 });
