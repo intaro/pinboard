@@ -28,10 +28,8 @@ $app->before(function() use ($app) {
     );
 
     if ($hosts != '.*') {
-        $params = array(
-            'hosts' => $hosts,
-        );
-        $hostsWhere = 'WHERE server_name REGEXP :hosts';
+        $params['hosts'] = $hosts;
+        $hostsWhere = 'AND server_name REGEXP :hosts';
     }
 
     $sql = '
@@ -39,10 +37,10 @@ $app->before(function() use ($app) {
             server_name, req_count, count(created_at) cnt
         FROM
             ipm_report_by_server_name
-        ' . $hostsWhere . '
         WHERE
             created_at >= :created_at AND
             server_name IS NOT NULL AND server_name != ""
+            ' . $hostsWhere . '
         GROUP BY
             server_name
         HAVING
