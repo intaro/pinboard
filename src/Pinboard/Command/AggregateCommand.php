@@ -101,6 +101,15 @@ class AggregateCommand extends Command
         $silexApp->boot();
         $db = $silexApp['db'];
 
+        try {
+            $db->connect();
+        }
+        catch(\PDOException $e) {
+            $output->writeln('<error>Can\'t connect to MySQL server</error>');
+
+            return;
+        }
+
         if(file_exists( __FILE__ . '.lock')) {
             $output->writeln('<error>Cannot run data aggregating: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
 
