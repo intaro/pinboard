@@ -10,6 +10,8 @@ use Symfony\Component\Yaml\Yaml;
 
 class AggregateCommand extends Command
 {
+    protected $mailer;
+
     protected function configure()
     {
         $this
@@ -18,30 +20,7 @@ class AggregateCommand extends Command
         ;
     }
 
-    private function isNotIgnore($host, $yaml) {
-        $notIgnore = true;
-        if (isset($yaml['notification']['ignore'])) {
-            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
-                if(preg_match('#' . $hostToIgnore . '#', $host)) {
-                    $notIgnore = false;
-                    break;
-                }
-            }
-        }
-
-        return $notIgnore;
-    }
-
-    private function sendErrorPages($silexApp, $pages, $message, $mailer, $address) {
-        if (count($pages) > 0) {
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
-            $message->setBody($body);
-            $message->setTo($address);
-            $mailer->send($message);
-        }
-    }
-
-    private function sendEmails($silexApp, $yaml, $errorPages)
+    protected function initMailer($yaml)
     {
         if (isset($yaml['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
@@ -65,8 +44,37 @@ class AggregateCommand extends Command
             $transport = \Swift_MailTransport::newInstance();
         }
 
-        $mailer = \Swift_Mailer::newInstance($transport);
+        $this->mailer = \Swift_Mailer::newInstance($transport);
+    }
 
+    private function isNotIgnore($host, $yaml) {
+        $notIgnore = true;
+        if (isset($yaml['notification']['ignore'])) {
+            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
+                if(preg_match('#' . $hostToIgnore . '#', $host)) {
+                    $notIgnore = false;
+                    break;
+                }
+            }
+        }
+
+        return $notIgnore;
+    }
+
+    private function sendErrorPages($silexApp, $pages, $message, $address) {
+        if (count($pages) > 0) {
+            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $message->setBody($body);
+            $message->setTo($address);
+
+            if ($this->mailer) {
+                $this->mailer->send($message);
+            }
+        }
+    }
+
+    private function sendEmails($silexApp, $yaml, $errorPages)
+    {
         $message = \Swift_Message::newInstance()
             ->setSubject('Intaro Pinboard found error pages')
             ->setContentType('text/html')
@@ -79,7 +87,7 @@ class AggregateCommand extends Command
                     $pages[$page['server_name']][] = $page;
                 }
             }
-            $this->sendErrorPages($silexApp, $pages, $message, $mailer, $yaml['notification']['global_email']);
+            $this->sendErrorPages($silexApp, $pages, $message, $yaml['notification']['global_email']);
         }
 
         if (isset($yaml['notification']['list'])) {
@@ -90,16 +98,21 @@ class AggregateCommand extends Command
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                $this->sendErrorPages($silexApp, $pages, $message, $mailer, $item['email']);
+                $this->sendErrorPages($silexApp, $pages, $message, $item['email']);
             }
         }
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
+
         $silexApp = $this->getApplication()->getSilex();
         $silexApp->boot();
+
+        $this->initMailer($yaml);
         $db = $silexApp['db'];
+
 
         try {
             $db->connect();
@@ -111,7 +124,21 @@ class AggregateCommand extends Command
         }
 
         if(file_exists( __FILE__ . '.lock')) {
-            $output->writeln('<error>Cannot run data aggregating: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
+            $output->writeln('<error>Cannot run data aggregation: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
+
+            if ($this->mailer && isset($yaml['notification']['global_email'])) {
+                $body = $silexApp['twig']->render('lock_notification.html.twig');
+
+                $message = \Swift_Message::newInstance()
+                    ->setSubject('Intaro Pinboard can\'t run data aggregation')
+                    ->setContentType('text/html')
+                    ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard')
+                    ->setTo($yaml['notification']['global_email'])
+                    ->setBody($body);
+                    ;
+
+                $this->mailer->send($message);
+            }
 
             return;
         }
@@ -119,8 +146,6 @@ class AggregateCommand extends Command
         if(!touch( __FILE__ . '.lock')) {
             $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
         }
-
-        $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
 
         $delta = new \DateInterval(isset($yaml['records_lifetime']) ? $yaml['records_lifetime'] : 'P1M');
         $date = new \DateTime();
