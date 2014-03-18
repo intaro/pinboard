@@ -1,5 +1,6 @@
 db:
     host: localhost
+#    port: 3306
     name: pinba
     user: user
     pass: password

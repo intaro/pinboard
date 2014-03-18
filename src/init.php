@@ -13,15 +13,19 @@ $app->register(new Silex\Provider\TwigServiceProvider(), array(
 ));
 $app->register(new Silex\Provider\UrlGeneratorServiceProvider());
 
-$app->register(new Silex\Provider\DoctrineServiceProvider(), array(
-    'db.options' => array(
-        'driver'   => 'pdo_mysql',
-        'dbname'   => $app['params']['db']['name'],
-        'host'     => $app['params']['db']['host'],
-        'user'     => $app['params']['db']['user'],
-        'password' => $app['params']['db']['pass'],
-    )
-));
+$dbOptions = array(
+    'driver'   => 'pdo_mysql',
+    'dbname'   => $app['params']['db']['name'],
+    'host'     => $app['params']['db']['host'],
+    'port'     => isset($app['params']['db']['port']) ? $app['params']['db']['port'] : 3306,
+    'user'     => $app['params']['db']['user'],
+    'password' => $app['params']['db']['pass'],
+);
+if (isset($app['params']['db']['port'])) {
+    $dbOptions['port'] = $app['params']['db']['port'];
+}
+
+$app->register(new Silex\Provider\DoctrineServiceProvider(), array('db.options' => $dbOptions));
 
 //query caching
 $cacheClassName =
