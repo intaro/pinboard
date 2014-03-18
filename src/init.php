@@ -17,7 +17,6 @@ $dbOptions = array(
     'driver'   => 'pdo_mysql',
     'dbname'   => $app['params']['db']['name'],
     'host'     => $app['params']['db']['host'],
-    'port'     => isset($app['params']['db']['port']) ? $app['params']['db']['port'] : 3306,
     'user'     => $app['params']['db']['user'],
     'password' => $app['params']['db']['pass'],
 );
