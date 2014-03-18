@@ -1,6 +1,7 @@
 <?php
 
 use Pinboard\Utils\Utils;
+use Pinboard\Utils\SqlUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -9,6 +10,8 @@ $rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params
 $rowPerPage = ($rowPerPage > 0) ? $rowPerPage : $ROW_PER_PAGE;
 
 $server = $app['controllers_factory'];
+
+$allowedPeriods = array('1 day', '3 days', '1 week', '1 month');
 
 function checkUserAccess($app, $serverName) {
     $hostsRegExp = ".*";
@@ -29,18 +32,25 @@ function checkUserAccess($app, $serverName) {
     }
 }
 
-$server->get('/{serverName}/{hostName}/overview.{format}', function($serverName, $hostName, $format) use ($app) {
+$server->get('/{serverName}/{hostName}/overview.{format}', function(Request $request, $serverName, $hostName, $format) use ($app, $allowedPeriods) {
     checkUserAccess($app, $serverName);
+
+    $period = $request->get('period', '1 day');
+    if (!in_array($period, $allowedPeriods)) {
+        $period = '1 day';
+    }
 
     $result = array();
     $result['hosts']       = getHosts($app['db'], $serverName);
-    $result['req']         = getRequestReview($app['db'], $serverName, $hostName);
-    $result['req_per_sec'] = getRequestPerSecReview($app['db'], $serverName, $hostName);
-    $result['statuses']    = getStatusesReview($app['db'], $serverName, $hostName);
+    $result['req']         = getRequestReview($app['db'], $serverName, $hostName, $period);
+    $result['req_per_sec'] = getRequestPerSecReview($app['db'], $serverName, $hostName, $period);
+    $result['statuses']    = getStatusesReview($app['db'], $serverName, $hostName, $period);
 
     if ($format == 'html') {
         $result['server_name'] = $serverName;
         $result['hostname'] = $hostName;
+        $result['period'] = $period;
+        $result['periods'] = $allowedPeriods;
         $result['title'] = $serverName;
 
         return $app['twig']->render(
@@ -118,10 +128,10 @@ function getHosts($conn, $serverName) {
     return $hosts;
 }
 
-function getStatusesReview($conn, $serverName, $hostName) {
+function getStatusesReview($conn, $serverName, $hostName, $period) {
     $params = array(
         'server_name' => $serverName,
-        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-' . $period)),
     );
     $hostCondition = '';
 
@@ -140,7 +150,7 @@ function getStatusesReview($conn, $serverName, $hostName) {
             ' . $hostCondition . '
             AND created_at > :created_at
         GROUP BY
-            created_at
+            ' . SqlUtils::getDateGroupExpression($period) . ', status
         ORDER BY
             created_at
     ';
@@ -171,10 +181,10 @@ function getStatusesReview($conn, $serverName, $hostName) {
     return $statuses;
 }
 
-function getRequestPerSecReview($conn, $serverName, $hostName) {
+function getRequestPerSecReview($conn, $serverName, $hostName, $period) {
     $params = array(
         'server_name' => $serverName,
-        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-' . $period)),
     );
     $hostCondition = '';
 
@@ -185,7 +195,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
 
     $sql = '
         SELECT
-            created_at, req_per_sec, hostname
+            created_at, avg(req_per_sec) as req_per_sec, hostname
         FROM
             ipm_report_by_hostname_and_server
         WHERE
@@ -193,7 +203,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
             ' . $hostCondition . '
             AND created_at > :created_at
         GROUP BY
-            created_at, hostname
+            ' . SqlUtils::getDateGroupExpression($period) . ', hostname
         ORDER BY
             created_at
     ';
@@ -227,12 +237,14 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
     if($hostCount > 1) {
         $sql = '
             SELECT
-                created_at, req_per_sec
+                created_at, avg(req_per_sec) as req_per_sec
             FROM
                 ipm_report_by_server_name
             WHERE
                 server_name = :server_name
                 AND created_at > :created_at
+            GROUP BY
+                ' . SqlUtils::getDateGroupExpression($period) . '
             ORDER BY
                 created_at
         ';
@@ -259,10 +271,10 @@ function getRequestPerSecReview($conn, $serverName, $hostName) {
     return $rpqData;
 }
 
-function getRequestReview($conn, $serverName, $hostName) {
+function getRequestReview($conn, $serverName, $hostName, $period) {
     $params = array(
         'server_name' => $serverName,
-        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-' . $period)),
     );
     $selectFields = '
         avg(req_time_90) as req_time_90, avg(req_time_95) as req_time_95,
@@ -272,18 +284,12 @@ function getRequestReview($conn, $serverName, $hostName) {
         avg(cpu_peak_usage_90) as cpu_peak_usage_90, avg(cpu_peak_usage_95) as cpu_peak_usage_95,
         avg(cpu_peak_usage_99) as cpu_peak_usage_99, avg(cpu_peak_usage_100) as cpu_peak_usage_100
     ';
-    $groupBy = 'GROUP BY created_at';
+    $groupBy = 'GROUP BY ' . SqlUtils::getDateGroupExpression($period);
     $hostCondition = '';
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
         $hostCondition = 'AND hostname = :hostname';
-        $selectFields = '
-            req_time_90, req_time_95, req_time_99, req_time_100,
-            mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
-            cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100
-        ';
-        $groupBy = '';
     }
 
     $sql = '

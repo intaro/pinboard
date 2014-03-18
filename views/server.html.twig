@@ -3,8 +3,9 @@
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% block content %}
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    {% include '_period_menu.html.twig' with { server_name: server_name, hostname: hostname, period: period, periods: periods } %}
     <div class="row">
-      <div class="span6">
+      <div class="span{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
         <h2>Request time <small><a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
         {% if req|length > 0 %}
         <div id="req-time-chart" style="height: 450px;"></div>
@@ -105,7 +106,7 @@
         <p>No data for requests.</p>
         {% endif %}
       </div>
-      <div class="span6">
+      <div class="span{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
         <h2>Requests per sec {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}</h2>
         {% if req_per_sec.data|length > 0 %}
         <div id="req-per-sec-chart" style="height: {{ 346 + req_per_sec.hosts|length * 19 + (req_per_sec.hosts|length > 1 ? 19 : 0) }}px;"></div>
@@ -175,7 +176,7 @@
       </div>
     </div>
     <div class="row">
-      <div class="span6">
+      <div class="span{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
         <h2>Memory peak usage <small><a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
         {% if req|length > 0 %}
         <div id="mem-usage-chart" style="height: 450px;"></div>
@@ -276,7 +277,7 @@
         <p>No data for memory usage.</p>
         {% endif %}
       </div>
-        <div class="span6">
+        <div class="span{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
             <h2>CPU peak usage <small><a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname }) }}">view details</a></small></h2>
             {% if req|length > 0 %}
                 <div id="cpu-usage-chart" style="height: 450px;"></div>
@@ -379,7 +380,7 @@
         </div>
     </div>
     <div class="row">
-      <div class="span6">
+      <div class="span{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
         <h2>Error statuses <small><a href="{{ path('server_statuses', { serverName: server_name }) }}">view details</a></small></h2>
         {% if statuses.data|length > 0 %}
         <div id="statuses-chart" style="height: 350px;"></div>

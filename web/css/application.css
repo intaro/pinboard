@@ -36,3 +36,17 @@ table.table th.mem-peak-usage {
 table.table th.date {
     min-width: 170px;
 }
+
+.nav-pills.small>li>a {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 11px;
+    line-height: 12px;
+}
+.nav-pills.period {
+    margin-bottom: 10px;
+    margin-top: -10px;
+    margin-left: 10px;
+}
