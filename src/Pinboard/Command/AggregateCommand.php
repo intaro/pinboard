@@ -390,43 +390,39 @@ class AggregateCommand extends Command
         if ($sql != '')
             $db->query($sql);
 
-       $sql = '';
-       foreach($servers as $server){
+        $sql = '';
+        foreach($servers as $server) {
+            $maxCPUUsage = 1;
+            if (isset($silexApp['params']['logging']['heavy_cpu_request']['global'])) {
+               $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request']['global'];
+            }
+            if (isset($silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']])) {
+               $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']];
+            }
 
-          $maxCPUUsage = 1;
-
-          if (isset($silexApp['params']['logging']['heavy_cpu_request']['global'])) {
-             $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request']['global'];
-          }
-          if (isset($silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']])) {
-             $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']];
-          }
-
-          $sql .= '
-                INSERT INTO ipm_cpu_usage_details
-                    (server_name, hostname, script_name, cpu_peak_usage)
-                SELECT
-                    server_name, hostname, script_name, max(ru_utime)
-                FROM
-                    request
-                WHERE
-                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND ru_utime > ' . (int)$maxCPUUsage . '
-                GROUP BY
-                    server_name, hostname, script_name
-                ORDER BY
-                    ru_utime DESC
-                LIMIT
-                    10
+            $sql .= '
+                  INSERT INTO ipm_cpu_usage_details
+                      (server_name, hostname, script_name, cpu_peak_usage)
+                  SELECT
+                      server_name, hostname, script_name, max(ru_utime)
+                  FROM
+                      request
+                  WHERE
+                      server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND ru_utime > ' . (int)$maxCPUUsage . '
+                  GROUP BY
+                      server_name, hostname, script_name
+                  ORDER BY
+                      ru_utime DESC
+                  LIMIT
+                      10
             ;';
-
-          if ($sql != ''){
-             $db->query($sql);
-          }
-       }
+        }
+        if ($sql != '')
+           $db->query($sql);
 
         $output->writeln('<info>Data are aggregated successfully</info>');
 
-        if(!unlink( __FILE__ . '.lock')) {
+        if (!unlink( __FILE__ . '.lock')) {
             $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
         }
     }
