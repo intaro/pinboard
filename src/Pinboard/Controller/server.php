@@ -264,29 +264,39 @@ function getRequestReview($conn, $serverName, $hostName) {
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
     );
+    $selectFields = '
+        avg(req_time_90) as req_time_90, avg(req_time_95) as req_time_95,
+        avg(req_time_99) as req_time_99, avg(req_time_100) as req_time_100,
+        avg(mem_peak_usage_90) as mem_peak_usage_90, avg(mem_peak_usage_95) as mem_peak_usage_95,
+        avg(mem_peak_usage_99) as mem_peak_usage_99, avg(mem_peak_usage_100) as mem_peak_usage_100,
+        avg(cpu_peak_usage_90) as cpu_peak_usage_90, avg(cpu_peak_usage_95) as cpu_peak_usage_95,
+        avg(cpu_peak_usage_99) as cpu_peak_usage_99, avg(cpu_peak_usage_100) as cpu_peak_usage_100
+    ';
+    $groupBy = 'GROUP BY created_at';
     $hostCondition = '';
-    $index = 'sn_c';
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
         $hostCondition = 'AND hostname = :hostname';
-        $index = 'sn_h_c';
+        $selectFields = '
+            req_time_90, req_time_95, req_time_99, req_time_100,
+            mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
+            cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100
+        ';
+        $groupBy = '';
     }
 
     $sql = '
         SELECT
             created_at,
-            req_time_90, req_time_95, req_time_99, req_time_100,
-            mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
-            cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100
+            ' . $selectFields . '
         FROM
             ipm_report_2_by_hostname_and_server
-        USE INDEX
-            (' . $index . ')
         WHERE
             server_name = :server_name
             ' . $hostCondition . '
             AND created_at > :created_at
+        ' . $groupBy . '
         ORDER BY
             created_at
     ';
@@ -296,18 +306,16 @@ function getRequestReview($conn, $serverName, $hostName) {
     foreach($data as &$item) {
         $t = strtotime($item['created_at']);
         $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
-        $item['req_time_90']  = number_format($item['req_time_90'] * 1000, 0, '.', '');
-        $item['req_time_95']  = number_format($item['req_time_95'] * 1000, 0, '.', '');
-        $item['req_time_99']  = number_format($item['req_time_99'] * 1000, 0, '.', '');
-        $item['req_time_100'] = number_format($item['req_time_100'] * 1000, 0, '.', '');
-        $item['mem_peak_usage_90']  = number_format($item['mem_peak_usage_90'], 0, '.', '');
-        $item['mem_peak_usage_95']  = number_format($item['mem_peak_usage_95'], 0, '.', '');
-        $item['mem_peak_usage_99']  = number_format($item['mem_peak_usage_99'], 0, '.', '');
-        $item['mem_peak_usage_100'] = number_format($item['mem_peak_usage_100'], 0, '.', '');
-        $item['cpu_peak_usage_90']  = number_format($item['cpu_peak_usage_90'], 3, '.', ',');
-        $item['cpu_peak_usage_95']  = number_format($item['cpu_peak_usage_95'], 3, '.', ',');
-        $item['cpu_peak_usage_99']  = number_format($item['cpu_peak_usage_99'], 3, '.', ',');
-        $item['cpu_peak_usage_100'] = number_format($item['cpu_peak_usage_100'], 3, '.', ',');
+
+        foreach(array('90', '95', '99', '100') as $percent) {
+            $item['req_time_' . $percent]  = number_format($item['req_time_' . $percent] * 1000, 0, '.', '');
+        }
+        foreach(array('90', '95', '99', '100') as $percent) {
+            $item['mem_peak_usage_' . $percent]  = number_format($item['mem_peak_usage_' . $percent], 0, '.', '');
+        }
+        foreach(array('90', '95', '99', '100') as $percent) {
+            $item['cpu_peak_usage_' . $percent]  = number_format($item['cpu_peak_usage_' . $percent], 3, '.', ',');
+        }
     }
 
     return $data;
