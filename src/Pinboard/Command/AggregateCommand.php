@@ -506,6 +506,7 @@ class AggregateCommand extends Command
                             )
                         ) {
                             $result[$server]['req_time_' . $perc][] = array(
+                                'status' => $values[0]['value'] < $values[1]['value'] ? 'OK' : 'PROBLEM',
                                 'hostname' => $host,
                                 'current' => $values[0]['value'],
                                 'prev'    => $values[1]['value'],
@@ -550,30 +551,47 @@ class AggregateCommand extends Command
 
     private function sendBorderOutEmails($data)
     {
+        $subject = 'Intaro Pinboard has detected a drawdown of indicators';
+
         $message = \Swift_Message::newInstance()
-            ->setSubject('Intaro Pinboard fixed some drawdown of indicators')
             ->setContentType('text/html')
             ->setFrom(isset($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard');
 
         if (isset($this->params['notification']['global_email'])) {
+            $status = array();
             $d = array();
             foreach ($data as $server => $values) {
                 if($this->isNotIgnore($server)) {
                     $d[$server] = $values;
+                    foreach ($values as $indicator) {
+                        foreach ($indicator as $host) {
+                            $status[] = $host['status'];
+                        }
+                    }
                 }
             }
+            $status = array_unique($status);
+            $message->setSubject('[' . implode(', ', $status) . '] ' . $subject);
             $this->sendBorderOutEmail($d, $message, $this->params['notification']['global_email']);
             unset($d);
         }
 
         if (isset($this->params['notification']['list'])) {
             foreach ($this->params['notification']['list'] as $item) {
+                $status = array();
                 $d = array();
                 foreach ($data as $server => $values) {
                     if ($this->isNotIgnore($server) && preg_match('/' . $item['hosts'] . '/', $server)) {
                         $d[$server] = $values;
+                        foreach ($values as $indicator) {
+                            foreach ($indicator as $host) {
+                                $status[] = $host['status'];
+                            }
+                        }
                     }
                 }
+                $status = array_unique($status);
+                $message->setSubject('[' . implode(', ', $status) . '] ' . $subject);
                 $this->sendBorderOutEmail($d, $message, $item['email']);
                 unset($d);
             }

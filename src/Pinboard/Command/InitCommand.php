@@ -26,7 +26,7 @@ class InitCommand extends Command
         $dialog = $this->getHelperSet()->get('dialog');
         $frequency = $dialog->askAndValidate(
             $output,
-            'Frequency (in minutes, default "5"): ',
+            'Frequency (in minutes, default "15"): ',
             function ($answer) {
                 if (intval($answer) <= 0) {
                     throw new \RunTimeException(
@@ -45,7 +45,9 @@ class InitCommand extends Command
 
         $crontabString = $process->isSuccessful() ? $process->getOutput() : '';
 
-        $command = '*/' . $frequency . ' * * * * ' . __DIR__ . '/../../../console aggregate';
+        $path = realpath(__DIR__ . '/../../../console');
+        $command = '*/' . $frequency . ' * * * * ' . $path . ' aggregate';
+
         if (strpos($crontabString, $command) === false) {
             $crontabString .= "\n" . $command . "\n";
         }
@@ -62,5 +64,6 @@ class InitCommand extends Command
         }
 
         $output->writeln('<info>Crontab task are defined successfully</info>');
+        $output->writeln('<info>Please set parameter "aggregation_period" to value "PT' . $frequency . 'M" in config/parameters.yml</info>');
     }
 }

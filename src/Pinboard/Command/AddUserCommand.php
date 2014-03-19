@@ -23,13 +23,13 @@ class AddUserCommand extends Command
                 'User name'
             )
             ->addArgument(
-                'password', 
-                InputArgument::REQUIRED, 
+                'password',
+                InputArgument::REQUIRED,
                 'User password in plain text'
             )
             ->addArgument(
-                'hosts', 
-                InputArgument::OPTIONAL, 
+                'hosts',
+                InputArgument::OPTIONAL,
                 'Regexp string - hosts, allowed for this user'
             )
         ;
@@ -40,10 +40,10 @@ class AddUserCommand extends Command
         $username = $input->getArgument('username');
         $password = $input->getArgument('password');
         $hosts = $input->getArgument('hosts');
-        
+
         $passwordGenerator = new MessageDigestPasswordEncoder();
         $salt = "";
-        $encodePassword = $passwordGenerator->encodePassword($password, $salt); 
+        $encodePassword = $passwordGenerator->encodePassword($password, $salt);
 
         $filename = __DIR__ . '/../../../config/parameters.yml';
         $yaml = Yaml::parse($filename);
@@ -74,14 +74,14 @@ class AddUserCommand extends Command
             );
         }
 
-        $newYaml = array();        
+        $newYaml = array();
         //copy other sections
         foreach($yaml as $key => $section) {
             if ($key != 'secure') {
                 $newYaml[$key] = $section;
             }
         }
-            
+
         $newYaml['secure'] = array(
             'enable' => isset($yaml['secure']['enable']) ? $yaml['secure']['enable'] : true,
             'users' => $users,
@@ -95,7 +95,7 @@ class AddUserCommand extends Command
             $output->writeln("<error>Error during the backup configuration file</error>");
         }
         else {
-            $output->writeln("<info>Old configuration backuped to file $oldFilename</info>");            
+            $output->writeln("<info>Old configuration has been saved to file $oldFilename</info>");
             file_put_contents($filename, $newFile);
             $output->writeln("<info>The configuration file is updated successfully</info>");
         }
