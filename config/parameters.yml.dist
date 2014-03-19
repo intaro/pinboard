@@ -48,7 +48,7 @@ secure:
 #    global_email: my_email@example.com
 #    border:
 #        req_time:
-#            global: 1.25
+#            global: 1.5
 #            somesite.com: 2
 #    list:
 #        -

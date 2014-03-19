@@ -488,7 +488,7 @@ class AggregateCommand extends Command
 
             $defaultBorder =
                 isset($this->params['notification']['border']['req_time']['global']) ?
-                $this->params['notification']['border']['req_time']['global'] : 1;
+                $this->params['notification']['border']['req_time']['global'] : 1.5;
 
             foreach ($finalData as $server => $hosts) {
                 $border =
