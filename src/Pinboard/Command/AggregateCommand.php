@@ -11,6 +11,8 @@ use Symfony\Component\Yaml\Yaml;
 class AggregateCommand extends Command
 {
     protected $mailer;
+    protected $params;
+    protected $app;
 
     protected function configure()
     {
@@ -20,24 +22,24 @@ class AggregateCommand extends Command
         ;
     }
 
-    protected function initMailer($yaml)
+    protected function initMailer()
     {
-        if (isset($yaml['smtp'])) {
+        if (isset($this->params['smtp'])) {
             $transport = \Swift_SmtpTransport::newInstance()
-                ->setHost($yaml['smtp']['server'])
-                ->setPort($yaml['smtp']['port'])
+                ->setHost($this->params['smtp']['server'])
+                ->setPort($this->params['smtp']['port'])
             ;
-            if (isset($yaml['smtp']['username'])) {
-                $transport->setUsername($yaml['smtp']['username']);
+            if (isset($this->params['smtp']['username'])) {
+                $transport->setUsername($this->params['smtp']['username']);
             }
-            if (isset($yaml['smtp']['password'])) {
-                $transport->setPassword($yaml['smtp']['password']);
+            if (isset($this->params['smtp']['password'])) {
+                $transport->setPassword($this->params['smtp']['password']);
             }
-            if (isset($yaml['smtp']['encryption'])) {
-                $transport->setEncryption($yaml['smtp']['encryption']);
+            if (isset($this->params['smtp']['encryption'])) {
+                $transport->setEncryption($this->params['smtp']['encryption']);
             }
-            if (isset($yaml['smtp']['auth_mode'])) {
-                $transport->setAuthMode($yaml['smtp']['auth_mode']);
+            if (isset($this->params['smtp']['auth_mode'])) {
+                $transport->setAuthMode($this->params['smtp']['auth_mode']);
             }
         }
         else {
@@ -47,10 +49,10 @@ class AggregateCommand extends Command
         $this->mailer = \Swift_Mailer::newInstance($transport);
     }
 
-    private function isNotIgnore($host, $yaml) {
+    private function isNotIgnore($host) {
         $notIgnore = true;
-        if (isset($yaml['notification']['ignore'])) {
-            foreach($yaml['notification']['ignore'] as $hostToIgnore) {
+        if (isset($this->params['notification']['ignore'])) {
+            foreach($this->params['notification']['ignore'] as $hostToIgnore) {
                 if(preg_match('#' . $hostToIgnore . '#', $host)) {
                     $notIgnore = false;
                     break;
@@ -61,58 +63,61 @@ class AggregateCommand extends Command
         return $notIgnore;
     }
 
-    private function sendErrorPages($silexApp, $pages, $message, $address) {
+    private function sendErrorPages($pages, $message, $address) {
         if (count($pages) > 0) {
-            $body = $silexApp['twig']->render('error_notification.html.twig', array('pages' => $pages));
+            $body = $this->app['twig']->render('error_notification.html.twig', array('pages' => $pages));
             $message->setBody($body);
             $message->setTo($address);
 
             if ($this->mailer) {
                 $this->mailer->send($message);
             }
+
+            unset($body);
         }
     }
 
-    private function sendEmails($silexApp, $yaml, $errorPages)
+    private function sendErrorEmails($errorPages)
     {
         $message = \Swift_Message::newInstance()
             ->setSubject('Intaro Pinboard found error pages')
             ->setContentType('text/html')
-            ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard');
+            ->setFrom(isset($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard');
 
-        if (isset($yaml['notification']['global_email'])) {
+        if (isset($this->params['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                if($this->isNotIgnore($page['server_name'], $yaml)) {
+                if($this->isNotIgnore($page['server_name'])) {
                     $pages[$page['server_name']][] = $page;
                 }
             }
-            $this->sendErrorPages($silexApp, $pages, $message, $yaml['notification']['global_email']);
+            $this->sendErrorPages($pages, $message, $this->params['notification']['global_email']);
         }
 
-        if (isset($yaml['notification']['list'])) {
-            foreach ($yaml['notification']['list'] as $item) {
+        if (isset($this->params['notification']['list'])) {
+            foreach ($this->params['notification']['list'] as $item) {
                 $pages = array();
                 foreach ($errorPages as $page) {
-                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name']) && $this->isNotIgnore($page['server_name'], $yaml)) {
+                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name']) && $this->isNotIgnore($page['server_name'])) {
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                $this->sendErrorPages($silexApp, $pages, $message, $item['email']);
+                $this->sendErrorPages($pages, $message, $item['email']);
             }
         }
+
+        unset($message);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $yaml = Yaml::parse(__DIR__ . '/../../../config/parameters.yml');
+        $this->app = $this->getApplication()->getSilex();
+        $this->app->boot();
+        $this->params = $this->app['params'];
 
-        $silexApp = $this->getApplication()->getSilex();
-        $silexApp->boot();
+        $db = $this->app['db'];
 
-        $this->initMailer($yaml);
-        $db = $silexApp['db'];
-
+        $this->initMailer();
 
         try {
             $db->connect();
@@ -126,14 +131,14 @@ class AggregateCommand extends Command
         if(file_exists( __FILE__ . '.lock')) {
             $output->writeln('<error>Cannot run data aggregation: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
 
-            if ($this->mailer && isset($yaml['notification']['global_email'])) {
-                $body = $silexApp['twig']->render('lock_notification.html.twig');
+            if ($this->mailer && isset($this->params['notification']['global_email'])) {
+                $body = $this->app['twig']->render('lock_notification.html.twig');
 
                 $message = \Swift_Message::newInstance()
                     ->setSubject('Intaro Pinboard can\'t run data aggregation')
                     ->setContentType('text/html')
-                    ->setFrom(isset($yaml['notification']['sender']) ? $yaml['notification']['sender'] : 'noreply@pinboard')
-                    ->setTo($yaml['notification']['global_email'])
+                    ->setFrom(isset($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard')
+                    ->setTo($this->params['notification']['global_email'])
                     ->setBody($body);
                     ;
 
@@ -147,7 +152,7 @@ class AggregateCommand extends Command
             $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
         }
 
-        $delta = new \DateInterval(isset($yaml['records_lifetime']) ? $yaml['records_lifetime'] : 'P1M');
+        $delta = new \DateInterval(isset($this->params['records_lifetime']) ? $this->params['records_lifetime'] : 'P1M');
         $date = new \DateTime();
         $date->sub($delta);
 
@@ -180,7 +185,7 @@ class AggregateCommand extends Command
         if ($sql != '')
             $db->executeQuery($sql, $params);
 
-        if (isset($yaml['notification']['enable']) && $yaml['notification']['enable']) {
+        if (isset($this->params['notification']['enable']) && $this->params['notification']['enable']) {
             $sql = '
                 SELECT
                     server_name, script_name, status, count(*) AS count
@@ -196,11 +201,13 @@ class AggregateCommand extends Command
 
             if (count($errorPages) > 0) {
                 try {
-                    $this->sendEmails($silexApp, $yaml, $errorPages);
+                    $this->sendErrorEmails($errorPages);
                 } catch (\Exception $e) {
                     $output->writeln("<error>Notification sending error\n" . $e->getMessage() . "</error>");
                 }
             }
+
+            unset($errorPages);
         }
 
         $db->executeQuery('START TRANSACTION');
@@ -268,8 +275,6 @@ class AggregateCommand extends Command
 
         $db->executeQuery('COMMIT');
 
-        $date = date('Y-m-d H:i:s', strtotime('-1 month'));
-
         $sql = '
             INSERT INTO ipm_report_by_hostname
                 (
@@ -334,11 +339,11 @@ class AggregateCommand extends Command
         $sql = '';
         foreach($servers as $server) {
             $maxReqTime = 1;
-            if (isset($silexApp['params']['logging']['long_request_time']['global'])) {
-                $maxReqTime = $silexApp['params']['logging']['long_request_time']['global'];
+            if (isset($this->params['logging']['long_request_time']['global'])) {
+                $maxReqTime = $this->params['logging']['long_request_time']['global'];
             }
-            if (isset($silexApp['params']['logging']['long_request_time'][$server['server_name']])) {
-                $maxReqTime = $silexApp['params']['logging']['long_request_time'][$server['server_name']];
+            if (isset($this->params['logging']['long_request_time'][$server['server_name']])) {
+                $maxReqTime = $this->params['logging']['long_request_time'][$server['server_name']];
             }
             $sql .= '
                 INSERT INTO ipm_req_time_details
@@ -363,11 +368,11 @@ class AggregateCommand extends Command
         $sql = '';
         foreach($servers as $server) {
             $maxMemoryUsage = 30000;
-            if (isset($silexApp['params']['logging']['heavy_request']['global'])) {
-                $maxMemoryUsage = $silexApp['params']['logging']['heavy_request']['global'];
+            if (isset($this->params['logging']['heavy_request']['global'])) {
+                $maxMemoryUsage = $this->params['logging']['heavy_request']['global'];
             }
-            if (isset($silexApp['params']['logging']['heavy_request'][$server['server_name']])) {
-                $maxMemoryUsage = $silexApp['params']['logging']['heavy_request'][$server['server_name']];
+            if (isset($this->params['logging']['heavy_request'][$server['server_name']])) {
+                $maxMemoryUsage = $this->params['logging']['heavy_request'][$server['server_name']];
             }
 
             $sql .= '
@@ -393,11 +398,11 @@ class AggregateCommand extends Command
         $sql = '';
         foreach($servers as $server) {
             $maxCPUUsage = 1;
-            if (isset($silexApp['params']['logging']['heavy_cpu_request']['global'])) {
-               $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request']['global'];
+            if (isset($this->params['logging']['heavy_cpu_request']['global'])) {
+               $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
             }
-            if (isset($silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']])) {
-               $maxCPUUsage = $silexApp['params']['logging']['heavy_cpu_request'][$server['server_name']];
+            if (isset($this->params['logging']['heavy_cpu_request'][$server['server_name']])) {
+               $maxCPUUsage = $this->params['logging']['heavy_cpu_request'][$server['server_name']];
             }
 
             $sql .= '
@@ -420,10 +425,160 @@ class AggregateCommand extends Command
         if ($sql != '')
            $db->query($sql);
 
+        // notification about abrupt drawdown of indicators
+        $values = $this->getBorderOutValues($db, $servers);
+        $this->sendBorderOutEmails($values);
+
         $output->writeln('<info>Data are aggregated successfully</info>');
 
         if (!unlink( __FILE__ . '.lock')) {
             $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
         }
+    }
+
+
+    protected function getBorderOutValues($db, $servers)
+    {
+        $d = new \DateTime();
+        $di = new \DateInterval(
+            isset($this->params['aggregation_period']) ? $this->params['aggregation_period'] : 'P15M'
+        );
+        //2 aggregations ago
+        $d->sub($di);
+        $d->sub($di);
+
+        $result = array();
+        foreach ($servers as $server) {
+            if (!isset($result[$server['server_name']]))
+                $result[$server['server_name']] = array(
+                    'req_per_sec' => $server['cnt'] / ($di->format('%i') ?: 15) / 60,
+                );
+        }
+
+        //req_time
+        foreach (array('95', '90') as $perc) {
+            $sql = '
+                SELECT
+                  server_name,
+                  hostname,
+                  req_time_' . $perc . ',
+                  created_at
+                FROM
+                  ipm_report_2_by_hostname_and_server
+                WHERE
+                  server_name IS NOT NULL AND server_name != "unknown" AND hostname IS NOT NULL AND created_at >= :created_at
+                ORDER BY
+                  created_at DESC
+            ';
+
+            $data = $db->fetchAll($sql, array(
+                'created_at' => $d->format('Y-m-d H:i:s')
+            ));
+
+            $finalData = array();
+            foreach($data as $row) {
+                if (isset($result[$row['server_name']])) {
+                    $finalData[$row['server_name']][$row['hostname']][] = array(
+                        'value' => $row['req_time_' . $perc],
+                        'created_at' => $row['created_at'],
+                    );
+                }
+            }
+            unset($data);
+
+            $defaultBorder =
+                isset($this->params['notification']['border']['req_time']['global']) ?
+                $this->params['notification']['border']['req_time']['global'] : 1;
+
+            foreach ($finalData as $server => $hosts) {
+                $border =
+                    isset($this->params['notification']['border']['req_time'][$server]) ?
+                    $this->params['notification']['border']['req_time'][$server] :
+                    $defaultBorder;
+
+                foreach ($hosts as $host => $values) {
+                    if (sizeof($values) > 1) {
+                        if (
+                            $result[$server]['req_per_sec'] >= 0.2 &&
+                            (
+                                $values[0]['value'] >= $border && $values[1]['value'] < $border ||
+                                $values[0]['value'] < $border && $values[1]['value'] >= $border
+                            )
+                        ) {
+                            $result[$server]['req_time_' . $perc][] = array(
+                                'hostname' => $host,
+                                'current' => $values[0]['value'],
+                                'prev'    => $values[1]['value'],
+                                'current_formatted' => number_format($values[0]['value'] * 1000, 0, '.', '') . ' ms',
+                                'prev_formatted'    => number_format($values[1]['value'] * 1000, 0, '.', '') . ' ms',
+                                'current_date' => $values[0]['created_at'],
+                                'prev_date'    => $values[1]['created_at'],
+                                'border' => number_format($border * 1000, 0, '.', '') . ' ms',
+                            );
+                        }
+                    }
+                }
+            }
+            unset($finalData);
+        }
+
+        foreach ($result as $server => $values) {
+            if (sizeof($values) < 2) {
+                unset($result[$server]);
+            }
+            else {
+                unset($result[$server]['req_per_sec']);
+            }
+        }
+
+        return $result;
+    }
+
+    private function sendBorderOutEmail($data, $message, $address) {
+        if (count($data) > 0) {
+            $body = $this->app['twig']->render('drawdown_notification.html.twig', array('data' => $data));
+            $message->setBody($body);
+            $message->setTo($address);
+
+            if ($this->mailer) {
+                $this->mailer->send($message);
+            }
+
+            unset($body);
+        }
+    }
+
+    private function sendBorderOutEmails($data)
+    {
+        $message = \Swift_Message::newInstance()
+            ->setSubject('Intaro Pinboard fixed some drawdown of indicators')
+            ->setContentType('text/html')
+            ->setFrom(isset($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard');
+
+        if (isset($this->params['notification']['global_email'])) {
+            $d = array();
+            foreach ($data as $server => $values) {
+                if($this->isNotIgnore($server)) {
+                    $d[$server] = $values;
+                }
+            }
+            $this->sendBorderOutEmail($d, $message, $this->params['notification']['global_email']);
+            unset($d);
+        }
+
+        if (isset($this->params['notification']['list'])) {
+            foreach ($this->params['notification']['list'] as $item) {
+                $d = array();
+                foreach ($data as $server => $values) {
+                    if ($this->isNotIgnore($server) && preg_match('/' . $item['hosts'] . '/', $server)) {
+                        $d[$server] = $values;
+                    }
+                }
+                $this->sendBorderOutEmail($d, $message, $item['email']);
+                unset($d);
+            }
+        }
+
+        unset($message);
     }
 }
