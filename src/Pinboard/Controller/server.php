@@ -4,6 +4,7 @@ use Pinboard\Utils\Utils;
 use Pinboard\Utils\SqlUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Pinboard\Command\AggregateCommand;
 
 $ROW_PER_PAGE = 50;
 $rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params']['pagination']['row_per_page'] : $ROW_PER_PAGE;
@@ -52,6 +53,7 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function(Request $req
         $result['period'] = $period;
         $result['periods'] = $allowedPeriods;
         $result['title'] = $serverName;
+        $result['req_time_border'] = number_format(getReqTimeBorder($app, $serverName) * 1000, 0, '.', '');
 
         return $app['twig']->render(
             'server.html.twig',
@@ -106,6 +108,18 @@ $server->get('/{serverName}/{hostName}/overview.{format}', function(Request $req
 ->value('format', 'html')
 ->assert('format', 'json|html')
 ->bind('server');
+
+function getReqTimeBorder($app, $serverName) {
+    if (isset($app['params']['notification']['border']['req_time'][$serverName])) {
+        return $app['params']['notification']['border']['req_time'][$serverName];
+    }
+
+    if (isset($app['params']['notification']['border']['req_time']['global'])) {
+        return $app['params']['notification']['border']['req_time']['global'];
+    }
+
+    return AggregateCommand::DEFAULT_REQ_TIME_BORDER;
+}
 
 function getHosts($conn, $serverName) {
     $sql = '

@@ -14,6 +14,11 @@ class AggregateCommand extends Command
     protected $params;
     protected $app;
 
+    const DEFAULT_REQ_TIME_BORDER = 1.5;
+    const DEFAULT_SLOW_REQ_TIME = 1.5;
+    const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
+    const DEFAULT_HEAVY_PAGE_CPU = 1;
+
     protected function configure()
     {
         $this
@@ -338,7 +343,7 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
-            $maxReqTime = 1;
+            $maxReqTime = static::DEFAULT_SLOW_REQ_TIME;
             if (isset($this->params['logging']['long_request_time']['global'])) {
                 $maxReqTime = $this->params['logging']['long_request_time']['global'];
             }
@@ -367,7 +372,7 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
-            $maxMemoryUsage = 30000;
+            $maxMemoryUsage = static::DEFAULT_HEAVY_PAGE_MEMORY;
             if (isset($this->params['logging']['heavy_request']['global'])) {
                 $maxMemoryUsage = $this->params['logging']['heavy_request']['global'];
             }
@@ -397,7 +402,7 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach($servers as $server) {
-            $maxCPUUsage = 1;
+            $maxCPUUsage = static::DEFAULT_HEAVY_PAGE_CPU;
             if (isset($this->params['logging']['heavy_cpu_request']['global'])) {
                $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
             }
@@ -488,7 +493,7 @@ class AggregateCommand extends Command
 
             $defaultBorder =
                 isset($this->params['notification']['border']['req_time']['global']) ?
-                $this->params['notification']['border']['req_time']['global'] : 1.5;
+                $this->params['notification']['border']['req_time']['global'] : static::DEFAULT_REQ_TIME_BORDER;
 
             foreach ($finalData as $server => $hosts) {
                 $border =

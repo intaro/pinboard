@@ -19,7 +19,8 @@
                 req_time_90: {{ item.req_time_90 }},
                 req_time_95: {{ item.req_time_95 }},
                 req_time_99: {{ item.req_time_99 }},
-                req_time_100: {{ item.req_time_100 }}
+                req_time_100: {{ item.req_time_100 }},
+                req_time_border: {{ req_time_border }}
             });
             {% endfor %}
 
@@ -52,13 +53,13 @@
                 graph.valueField = "req_time_100";
                 graph.lineAlpha = 1;
                 graph.lineColor = "#729462";
-                graph.fillAlphas = 0.9;
+                graph.fillAlphas = 1;
                 graph.fillColor = "#729462";
                 rtChart.addGraph(graph);
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Max time of 99% requests";
+                graph.title = "99th percentile of request time";
                 graph.balloonText = "[[value]] ms";
                 graph.valueField = "req_time_99";
                 graph.lineAlpha = 1;
@@ -69,7 +70,7 @@
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Max time of 95% requests";
+                graph.title = "95th percentile of request time";
                 graph.balloonText = "[[value]] ms";
                 graph.valueField = "req_time_95";
                 graph.lineAlpha = 1;
@@ -80,12 +81,23 @@
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Max time of 90% requests";
+                graph.title = "90th percentile of request time";
                 graph.balloonText = "[[value]] ms";
                 graph.valueField = "req_time_90";
                 graph.lineAlpha = 1;
                 graph.lineColor = "#39A3B9";
                 graph.fillAlphas = 0.9;
+                rtChart.addGraph(graph);
+
+                graph = new AmCharts.AmGraph();
+                graph.type = "line"; // try to change it to "column"
+                graph.title = "Border request time";
+                graph.balloonText = "[[value]] ms";
+                graph.valueField = "req_time_border";
+                graph.lineAlpha = 0.4;
+                graph.dashLength = 2;
+                graph.lineColor = "#e24a14";
+                graph.fillAlphas = 0;
                 rtChart.addGraph(graph);
 
                 // CURSOR
@@ -229,7 +241,7 @@
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Memory peak usage of 99% requests";
+                graph.title = "99th percentile of memory peak usage";
                 graph.balloonText = "[[value]] kB";
                 graph.valueField = "mem_peak_usage_99";
                 graph.lineAlpha = 1;
@@ -240,7 +252,7 @@
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Memory peak usage of 95% requests";
+                graph.title = "95th percentile of memory peak usage";
                 graph.balloonText = "[[value]] kb";
                 graph.valueField = "mem_peak_usage_95";
                 graph.lineAlpha = 1;
@@ -251,7 +263,7 @@
 
                 graph = new AmCharts.AmGraph();
                 graph.type = "line"; // try to change it to "column"
-                graph.title = "Memory peak usage of 90% requests";
+                graph.title = "90th percentile of memory peak usage";
                 graph.balloonText = "[[value]] kB";
                 graph.valueField = "mem_peak_usage_90";
                 graph.lineAlpha = 1;
@@ -330,7 +342,7 @@
 
                         graph = new AmCharts.AmGraph();
                         graph.type = "line"; // try to change it to "column"
-                        graph.title = "CPU peak usage of 99% requests";
+                        graph.title = "99th percentile of CPU peak usage";
                         graph.balloonText = "[[value]]";
                         graph.valueField = "cpu_peak_usage_99";
                         graph.lineAlpha = 1;
@@ -341,7 +353,7 @@
 
                         graph = new AmCharts.AmGraph();
                         graph.type = "line"; // try to change it to "column"
-                        graph.title = "CPU usage of 95% requests";
+                        graph.title = "95th percentile of CPU peak usage";
                         graph.balloonText = "[[value]]";
                         graph.valueField = "cpu_peak_usage_95";
                         graph.lineAlpha = 1;
@@ -352,7 +364,7 @@
 
                         graph = new AmCharts.AmGraph();
                         graph.type = "line"; // try to change it to "column"
-                        graph.title = "CPU peak usage of 90% requests";
+                        graph.title = "90th percentile of CPU peak usage";
                         graph.balloonText = "[[value]]";
                         graph.valueField = "cpu_peak_usage_90";
                         graph.lineAlpha = 1;
