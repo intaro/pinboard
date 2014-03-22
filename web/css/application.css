@@ -50,3 +50,6 @@ table.table th.date {
     margin-top: -10px;
     margin-left: 10px;
 }
+h1 .dropdown-menu {
+    font-size: 16px;
+}

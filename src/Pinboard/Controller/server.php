@@ -389,7 +389,7 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', 
 function getErrorPagesCount($conn, $serverName, $hostName) {
     $params = array(
         'server_name' => $serverName,
-        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 week')),
     );
     $hostCondition = '';
 
@@ -417,7 +417,7 @@ function getErrorPagesCount($conn, $serverName, $hostName) {
 function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
     $params = array(
         'server_name' => $serverName,
-        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 week')),
     );
     $hostCondition = '';
 

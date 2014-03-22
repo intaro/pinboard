@@ -5,7 +5,7 @@
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <div class="row">
       <div class="span12">
-        <p class="lead">Error pages for a last day</p>
+        <p class="lead">Error pages for a last week</p>
         {% if statuses|length > 0 %}
           <table class="table table-bordered table-hover table-striped">
             <tr>
@@ -48,7 +48,7 @@
             </div>
           {% endif %}
         {% else %}
-        <p>No error pages for a last day.</p>
+        <p>No error pages for a last week.</p>
         {% endif %}
       </div>
     </div>
