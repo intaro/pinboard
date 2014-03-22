@@ -1,7 +1,7 @@
 Intaro Pinboard
 =============================
 
-[Intaro Pinboard][1] (Pinba Board) is a simple web monitoring system which aggregates and displays [Pinba][2] data.
+[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [Pinba][2] data.
 
 ![Intaro Pinboard](http://intaro.github.io/pinboard/img/main-img.png)
 
