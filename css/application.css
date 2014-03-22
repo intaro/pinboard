@@ -32,8 +32,16 @@ h1 i {
 
 .social-widgets {
     text-align: center;
+    margin-top: 30px;
 }
 
 #vk_like {
     display: inline-block;
+}
+.fb_iframe_widget {
+    top: -4px;
+}
+
+.thumbnail {
+    margin-bottom: 15px;
 }
