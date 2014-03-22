@@ -11,7 +11,7 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
-        $ git checkout v1.1
+        $ git checkout v1.2
 
 2. Download [composer](http://getcomposer.org):
 
@@ -64,6 +64,8 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
                 deny  all;
             }
         }
+
+More details in section [Installation](http://github.com/intaro/pinboard/wiki/Installation) of the documentation.
 
 ## Update
 
