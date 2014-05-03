@@ -179,6 +179,11 @@
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}
+                {% if page.timers_cnt %}
+                    <div>
+                        <a href="{{ path('timers_show', { type: 'live', requestId: page.id }) }}"><small><i class="icon-time"></i> timers details</small></a>
+                    </div>
+                {% endif %}
               </td>
               <td><div class="text-right">{{ page.req_time_format }}</div></td>
               <td><div class="text-right">{{ page.status }}</div></td>
@@ -201,6 +206,11 @@
             <% for (k in pages[i].tags) { %>
                 <div class="muted"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
             <% } %>
+            <% if (pages[i].timers_cnt > 0) { %>
+                <div>
+                    <a href="<%=timersPath.replace('00000', pages[i].id)%>"><small><i class="icon-time"></i> timers details</small></a>
+                </div>
+            <% } %>
           </td>
           <td><div class="text-right"><%=pages[i].req_time_format%></div></td>
           <td><div class="text-right"><%=pages[i].status%></div></td>
@@ -213,6 +223,7 @@
         var liveStatus = true,
             lastId = {{ last_id }}, limit = {{ limit }},
             frequency = {{ frequency * 1000 }},
+            timersPath = '{{ path('timers_show', { type: 'live', requestId: '00000' }) }}',
             updating = false,
             timerHandler;
 
@@ -234,7 +245,7 @@
                 data: { last_id: lastId },
                 success: function(data){
                     if (typeof data.pages !== undefined && data.pages.length > 0) {
-                        var resHtml = tmpl("row_tpl", { pages: data.pages });
+                        var resHtml = tmpl("row_tpl", { pages: data.pages, timersPath: timersPath });
                         $('#table-header').after(resHtml);
                         $('#table-data tr:hidden').fadeIn();
 

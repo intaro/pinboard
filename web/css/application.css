@@ -64,3 +64,32 @@ h1 .dropdown-menu {
 .live-controls a.disabled {
     opacity: 0.2;
 }
+
+h4.timer-head {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #fff;
+}
+h4.timer-head.expanded {
+    border-bottom-color: #eee;
+}
+
+h4.timer-head .expand {
+    position: relative;
+    top: 5px;
+}
+
+.lead.timer {
+    margin-bottom: 0;
+}
+
+.timers .row {
+}
+.timers .row:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+.timers .row .cell {
+    padding: 5px 0;
+}
+.timers .row .cell.last {
+    padding-right: 10px;
+}

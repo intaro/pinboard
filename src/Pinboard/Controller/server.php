@@ -825,7 +825,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     $sql = '
         SELECT
-            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime, tags, tags_cnt
+            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime, tags, tags_cnt, timers_cnt
         FROM
             request
         WHERE

@@ -1,0 +1,172 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    <h1>
+        Request timers
+        {% if grouping %}
+        <small style="display: inline-block;">grouped by </small> <small style="display: inline-block;" class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                {{ grouping }} <b class="caret"></b>
+            </a>
+        <ul class="dropdown-menu">
+          {% for t in grouping_tags %}
+          <li class="{{ t == grouping ? 'active' : '' }}"><a href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-' ~ t }) }}">{{ t }}</a></li>
+          {% endfor %}
+        </ul></small>
+        {% endif %}
+    </h1>
+    <hr />
+    <div class="row">
+      <div class="span10">
+        <p class="lead timer">
+            <a href="{{ request.server_name ~ request.script_name }}" title="">{{ request.server_name ~ request.script_name }}</a><br />
+            {% for k, v in request.tags %}
+                <span class="muted"><small>{{ k }} = {{ v }}{{ not loop.last ? ',' : '' }}</small></span>
+            {% endfor %}
+        </p>
+      </div>
+      <div class="span2">
+        <p class="lead timer text-right">
+            {{ request.req_time_format }} ms<br />
+            {{ request.mem_peak_usage_format }} kB<br />
+        </p>
+      </div>
+    </div>
+    <div class="row">
+        <div class="span12">
+        {% if grouping %}
+            <div id="req-chart" style="height: 150px;"></div>
+            <script type="text/javascript">
+                rtChart = null;
+                rtChartData = [{
+                    {% for k, v in request.timers %}
+                    {{ k }}: "{{ v.value }}",
+                    {% endfor %}
+                    other: "{{ request.req_time_other }}"
+                }];
+
+                AmCharts.ready(function () {
+                    // SERIAL CHART
+                    rtChart = new AmCharts.AmSerialChart();
+                    rtChart.pathToImages = "/js/amcharts/images/";
+                    rtChart.dataProvider = rtChartData;
+                    rtChart.rotate = true;
+
+                    var categoryAxis = rtChart.categoryAxis;
+                    categoryAxis.gridAlpha = 0.02;
+                    //categoryAxis.axisColor = "#DADADA";
+                    categoryAxis.labelsEnabled = false;
+
+                    // Value
+                    var valueAxis = new AmCharts.ValueAxis();
+                    valueAxis.gridAlpha = 0.02;
+                    valueAxis.stackType = '100%';
+                    rtChart.addValueAxis(valueAxis);
+
+                    // GRAPH
+                    {% for k, v in request.timers %}
+                    var graph = new AmCharts.AmGraph();
+                    graph.type = "column";
+                    graph.balloonText = "[[title]]: {{ v.value_percent }}%";
+                    graph.valueText = "[[value]] ms";
+                    graph.labelText = "[[value]] ms",
+                    graph.valueField = "{{ k }}";
+                    graph.title = "{{ k }}";
+                    graph.lineAlpha = 0.5;
+                    graph.fillAlphas = 0.3;
+                    rtChart.addGraph(graph);
+                    {% endfor %}
+
+                    var graph = new AmCharts.AmGraph();
+                    graph.type = "column";
+                    graph.balloonText = "[[title]]: {{ request.req_time_other_percent }}%";
+                    graph.valueText = "[[value]] ms";
+                    graph.labelText = "[[value]] ms",
+                    graph.valueField = "other";
+                    graph.title = "other";
+                    graph.lineAlpha = 0.5;
+                    graph.fillAlphas = 0.3;
+                    rtChart.addGraph(graph);
+
+                    // WRITE
+                    rtChart.write("req-chart");
+                });
+            </script>
+        {% else %}
+
+        {% endif %}
+        </div>
+    </div>
+    {% if grouping %}
+      {% for k, v in request.timers %}
+      <div class="row">
+          <div class="span7">
+              <h4 class="timer-head expanded">
+                <a href="#" class="expand"><i class="icon-minus-sign"></i></a> {{ k }}
+              </h4>
+          </div>
+          <div class="span1 text-right">
+                <h4 class="timer-head expanded">&nbsp;<small>{{ v.hit_count }}</small></h4>
+          </div>
+          <div class="span2 text-right">
+                <h4 class="timer-head expanded">&nbsp;<small>{{ v.value_percent }}%</small></h4>
+          </div>
+          <div class="span2 text-right">
+                <h4 class="timer-head expanded">&nbsp;<small>{{ v.value_format }} ms</small></h4>
+          </div>
+      </div>
+      <div class="timers">
+          {% for timer in v.timers %}
+          <div class="row">
+            <div class="span7">
+                <div class="cell">
+                <small>
+                    {% for tag, tag_value in timer.tags %}
+                        {{ tag ~ ' = ' ~ tag_value }}<br />
+                    {% else %}
+                        —
+                    {% endfor %}
+                </small>
+                </div>
+            </div>
+            <div class="span1 text-right">
+                <div class="cell">
+                    <small>{{ timer.hit_count }}</small>
+                </div>
+            </div>
+            <div class="span2 text-right">
+                <div class="cell">
+                    <small>{{ timer.value_percent }}%</small>
+                </div>
+            </div>
+            <div class="span2 text-right">
+                <div class="cell last">
+                    <small>{{ timer.value_format }} ms</small>
+                </div>
+            </div>
+          </div>
+          {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+
+    {% endif %}
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        $('.row h4 a.expand').click(function() {
+            if ($(this).parent().hasClass('expanded')) {
+                $(this).parent().parent().parent().find('h4').removeClass('expanded');
+                $(this).parent().parent().parent().next().hide();
+                $(this).find('i').removeClass('icon-minus-sign').addClass('icon-plus-sign');
+            }
+            else {
+                $(this).parent().parent().parent().find('h4').addClass('expanded');
+                $(this).parent().parent().parent().next().show();
+                $(this).find('i').addClass('icon-minus-sign').removeClass('icon-plus-sign');
+            }
+        });
+    </script>
+{% endblock %}
