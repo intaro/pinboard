@@ -174,7 +174,12 @@
             {% for page in pages %}
             <tr>
               <td class="host">{{ page.hostname }}</a></td>
-              <td class="script-name"><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
+              <td class="script-name">
+                <a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
+                {% for k, v in page.tags %}
+                    <div class="muted"><small>{{ k }} = {{ v }}</small></div>
+                {% endfor %}
+              </td>
               <td><div class="text-right">{{ page.req_time_format }}</div></td>
               <td><div class="text-right">{{ page.status }}</div></td>
               <td><div class="text-right">{{ page.mem_peak_usage_format }}</div></td>
@@ -191,7 +196,12 @@
         <% for (var i = 0; i < pages.length; i++) { %>
         <tr style="display: none;">
           <td class="host"><%=pages[i].hostname%></a></td>
-          <td class="script-name"><a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a></td>
+          <td class="script-name">
+            <a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a>
+            <% for (k in pages[i].tags) { %>
+                <div class="muted"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
+            <% } %>
+          </td>
           <td><div class="text-right"><%=pages[i].req_time_format%></div></td>
           <td><div class="text-right"><%=pages[i].status%></div></td>
           <td><div class="text-right"><%=pages[i].mem_peak_usage_format%></div></td>

@@ -327,9 +327,9 @@ class AggregateCommand extends Command
 
         $sql = '
             INSERT INTO
-                ipm_status_details (server_name, hostname, script_name, status)
+                ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt)
             SELECT
-                server_name, hostname, script_name, status
+                server_name, hostname, script_name, status, tags, tags_cnt
             FROM
                 request
             WHERE
@@ -352,9 +352,9 @@ class AggregateCommand extends Command
             }
             $sql .= '
                 INSERT INTO ipm_req_time_details
-                    (server_name, hostname, script_name, req_time)
+                    (server_name, hostname, script_name, req_time, tags, tags_cnt)
                 SELECT
-                    server_name, hostname, script_name, max(req_time)
+                    server_name, hostname, script_name, max(req_time), max(tags), max(tags_cnt)
                 FROM
                     request
                 WHERE
@@ -382,9 +382,9 @@ class AggregateCommand extends Command
 
             $sql .= '
                 INSERT INTO ipm_mem_peak_usage_details
-                    (server_name, hostname, script_name, mem_peak_usage)
+                    (server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt)
                 SELECT
-                    server_name, hostname, script_name, max(mem_peak_usage)
+                    server_name, hostname, script_name, max(mem_peak_usage), max(tags), max(tags_cnt)
                 FROM
                     request
                 WHERE
@@ -412,9 +412,9 @@ class AggregateCommand extends Command
 
             $sql .= '
                   INSERT INTO ipm_cpu_usage_details
-                      (server_name, hostname, script_name, cpu_peak_usage)
+                      (server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt)
                   SELECT
-                      server_name, hostname, script_name, max(ru_utime)
+                      server_name, hostname, script_name, max(ru_utime), max(tags), max(tags_cnt)
                   FROM
                       request
                   WHERE

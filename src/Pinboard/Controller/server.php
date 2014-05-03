@@ -14,27 +14,8 @@ $server = $app['controllers_factory'];
 
 $allowedPeriods = array('1 day', '3 days', '1 week', '1 month');
 
-function checkUserAccess($app, $serverName) {
-    $hostsRegExp = ".*";
-    if (isset($app['params']['secure']['enable'])) {
-        if ($app['params']['secure']['enable'] == "true") {
-            $user = $app['security']->getToken()->getUser();
-            $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
-                        : ".*";
-            if (trim($hostsRegExp) == "") {
-                $hosts = ".*";
-            }
-        }
-    }
-
-    if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
-        $app->abort(403, "Access denied");
-    }
-}
-
 $server->get('/{serverName}/{hostName}/overview.{format}', function(Request $request, $serverName, $hostName, $format) use ($app, $allowedPeriods) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $period = $request->get('period', '1 day');
     if (!in_array($period, $allowedPeriods)) {
@@ -343,7 +324,7 @@ function getRequestReview($conn, $serverName, $hostName, $period) {
 
 
 $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -433,7 +414,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, status, created_at
+            DISTINCT server_name, hostname, script_name, status, tags, tags_cnt, created_at
         FROM
             ipm_status_details
         WHERE
@@ -448,11 +429,15 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $data = $conn->fetchAll($sql, $params);
 
+    foreach($data as &$item) {
+        $item = Utils::parseRequestTags($item);
+    }
+
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/req-time/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -541,7 +526,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, req_time, created_at
+            DISTINCT server_name, hostname, script_name, req_time, tags, tags_cnt, created_at
         FROM
             ipm_req_time_details
         WHERE
@@ -558,13 +543,14 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
 
     foreach($data as &$item) {
         $item['req_time']  = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -620,7 +606,7 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
 
     $sql = '
         SELECT
-            COUNT(DISTINCT server_name, hostname, script_name, mem_peak_usage, created_at) as cnt
+            COUNT(DISTINCT server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at) as cnt
         FROM
             ipm_mem_peak_usage_details
         WHERE
@@ -648,7 +634,7 @@ function getCPUPagesCount($conn, $serverName, $hostName){
 
    $sql = '
         SELECT
-            COUNT(DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at) as cnt
+            COUNT(DISTINCT server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at) as cnt
         FROM
             ipm_cpu_usage_details
         WHERE
@@ -681,7 +667,7 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
 
    $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at
+            DISTINCT server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at
         FROM
             ipm_cpu_usage_details
         WHERE
@@ -698,6 +684,7 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
 
    foreach($data as &$item) {
       $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 3, '.', ',');
+      $item = Utils::parseRequestTags($item);
    }
 
    return $data;
@@ -722,7 +709,7 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, mem_peak_usage, created_at
+            DISTINCT server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at
         FROM
             ipm_mem_peak_usage_details
         WHERE
@@ -739,13 +726,14 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     foreach($data as &$item) {
         $item['mem_peak_usage']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -789,7 +777,7 @@ $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}',
 
 
 $server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     if ($request->isXmlHttpRequest()) {
         $result = array(
@@ -837,7 +825,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     $sql = '
         SELECT
-            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime
+            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime, tags, tags_cnt
         FROM
             request
         WHERE
@@ -857,6 +845,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
         $item['mem_peak_usage']  = $item['mem_peak_usage'];
         $item['req_time_format']        = number_format($item['req_time'], 0, '.', ',');
         $item['mem_peak_usage_format']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
