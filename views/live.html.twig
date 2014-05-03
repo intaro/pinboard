@@ -283,7 +283,7 @@
 
         $('.live-controls .icon-play').click(function() {
             if (liveStatus)
-                return;
+                return false;
 
             liveStatus = true;
             if (!updating) {
