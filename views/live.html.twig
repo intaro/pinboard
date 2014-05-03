@@ -4,6 +4,10 @@
 {% set frequency = 5 %}
 {% block content %}
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    <div class="pull-right live-controls">
+        <a href="#" title="Play" class="icon-play disabled"></a>
+        <a href="#" title="Pause" class="icon-pause"></a>
+    </div>
     <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
     <div class="row">
         <div class="span4">
@@ -169,8 +173,8 @@
             </tr>
             {% for page in pages %}
             <tr>
-              <td>{{ page.hostname }}</a></td>
-              <td><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
+              <td class="host">{{ page.hostname }}</a></td>
+              <td class="script-name"><a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a></td>
               <td><div class="text-right">{{ page.req_time_format }}</div></td>
               <td><div class="text-right">{{ page.status }}</div></td>
               <td><div class="text-right">{{ page.mem_peak_usage_format }}</div></td>
@@ -186,8 +190,8 @@
     <script type="text/html" id="row_tpl">
         <% for (var i = 0; i < pages.length; i++) { %>
         <tr style="display: none;">
-          <td><%=pages[i].hostname%></a></td>
-          <td><a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a></td>
+          <td class="host"><%=pages[i].hostname%></a></td>
+          <td class="script-name"><a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a></td>
           <td><div class="text-right"><%=pages[i].req_time_format%></div></td>
           <td><div class="text-right"><%=pages[i].status%></div></td>
           <td><div class="text-right"><%=pages[i].mem_peak_usage_format%></div></td>
@@ -196,59 +200,99 @@
         <% } %>
     </script>
     <script type="text/javascript">
+        var liveStatus = true,
+            lastId = {{ last_id }}, limit = {{ limit }},
+            frequency = {{ frequency * 1000 }},
+            updating = false,
+            timerHandler;
+
         $(function() {
-            var lastId = {{ last_id }}, limit = {{ limit }};
+            if (liveStatus) {
+                timerHandler = setTimeout(updateLiveList, frequency);
+            }
+        });
 
-            (function poll(){
-                setTimeout(function(){
-                    $.ajax({
-                        url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}",
-                        data: { last_id: lastId },
-                        success: function(data){
-                            if (typeof data.pages !== undefined && data.pages.length > 0) {
-                                var resHtml = tmpl("row_tpl", { pages: data.pages });
-                                $('#table-header').after(resHtml);
-                                $('#table-data tr:hidden').fadeIn();
+        updateLiveList = function() {
+            if (updating) {
+                return;
+            }
 
-                                $('#table-data tr').each(function(index) {
-                                    if (index >= limit) {
-                                        $(this).remove();
-                                    }
-                                });
+            updating = true;
 
-                                for (var i = data.pages.length - 1; i >= 0; i--) {
-                                    if (rtChartData.length >= limit)
-                                        rtChartData.shift();
-                                    rtChartData.push({
-                                        page: data.pages[i].script_name,
-                                        value: data.pages[i].req_time
-                                    });
-                                    if (muChartData.length >= limit)
-                                        muChartData.shift();
-                                    muChartData.push({
-                                        page: data.pages[i].script_name,
-                                        value: data.pages[i].mem_peak_usage
-                                    });
-                                    if (cpuChartData.length >= limit)
-                                        cpuChartData.shift();
-                                    cpuChartData.push({
-                                        page: data.pages[i].script_name,
-                                        value: data.pages[i].ru_utime
-                                    });
-                                }
-                                rtChart.validateData();
-                                muChart.validateData();
-                                cpuChart.validateData();
+            $.ajax({
+                url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}",
+                data: { last_id: lastId },
+                success: function(data){
+                    if (typeof data.pages !== undefined && data.pages.length > 0) {
+                        var resHtml = tmpl("row_tpl", { pages: data.pages });
+                        $('#table-header').after(resHtml);
+                        $('#table-data tr:hidden').fadeIn();
 
-                                lastId = data.pages[0].id;
+                        $('#table-data tr').each(function(index) {
+                            if (index >= limit) {
+                                $(this).remove();
                             }
+                        });
 
-                            poll();
-                        },
-                        dataType: "json"
-                    });
-              }, {{ frequency * 1000 }});
-            })();
+                        for (var i = data.pages.length - 1; i >= 0; i--) {
+                            if (rtChartData.length >= limit)
+                                rtChartData.shift();
+                            rtChartData.push({
+                                page: data.pages[i].script_name,
+                                value: data.pages[i].req_time
+                            });
+                            if (muChartData.length >= limit)
+                                muChartData.shift();
+                            muChartData.push({
+                                page: data.pages[i].script_name,
+                                value: data.pages[i].mem_peak_usage
+                            });
+                            if (cpuChartData.length >= limit)
+                                cpuChartData.shift();
+                            cpuChartData.push({
+                                page: data.pages[i].script_name,
+                                value: data.pages[i].ru_utime
+                            });
+                        }
+                        rtChart.validateData();
+                        muChart.validateData();
+                        cpuChart.validateData();
+
+                        lastId = data.pages[0].id;
+                    }
+
+                    updating = false;
+
+                    if (liveStatus) {
+                        timerHandler = setTimeout(updateLiveList, frequency);
+                    }
+                },
+                dataType: "json"
+            });
+        };
+
+        $('.live-controls .icon-pause').click(function() {
+            liveStatus = false;
+            clearTimeout(timerHandler);
+
+            $('.live-controls .icon-pause').addClass('disabled');
+            $('.live-controls .icon-play').removeClass('disabled');
+
+            return false;
+        });
+
+        $('.live-controls .icon-play').click(function() {
+            if (liveStatus)
+                return false;
+
+            liveStatus = true;
+            if (!updating) {
+                updateLiveList();
+            }
+            $('.live-controls .icon-pause').removeClass('disabled');
+            $('.live-controls .icon-play').addClass('disabled');
+
+            return false;
         });
     </script>
 {% endblock %}
