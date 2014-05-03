@@ -36,6 +36,13 @@ table.table th.mem-peak-usage {
 table.table th.date {
     min-width: 170px;
 }
+table.table td.host {
+    min-width: 85px;
+}
+table.table td.script-name {
+    word-wrap: break-word;
+    -webkit-hyphens: auto;
+}
 
 .nav-pills.small>li>a {
     padding-top: 5px;
@@ -52,4 +59,8 @@ table.table th.date {
 }
 h1 .dropdown-menu {
     font-size: 16px;
+}
+
+.live-controls a.disabled {
+    opacity: 0.2;
 }
