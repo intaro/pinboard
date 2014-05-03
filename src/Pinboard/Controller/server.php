@@ -803,7 +803,7 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'server_name' => $serverName,
         'hostname'    => $hostName,
         'title'       => 'Live / ' . $serverName,
-        'limit'       => 75,
+        'limit'       => 100,
     );
 
     $result['hosts'] = getHosts($app['db'], $serverName);
