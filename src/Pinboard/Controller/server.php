@@ -4,6 +4,7 @@ use Pinboard\Utils\Utils;
 use Pinboard\Utils\SqlUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Pinboard\Command\AggregateCommand;
 
 $ROW_PER_PAGE = 50;
@@ -784,6 +785,23 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
             'pages' => getLivePages($app['db'], $serverName, $hostName, $request->get('last_id')),
         );
 
+        $ids = array();
+        foreach ($result['pages'] as $item) {
+            $ids[] = $item['id'];
+        }
+        $addData = getTagsTimersForIds($app['db'], $ids);
+
+        foreach ($addData as $addItem) {
+            foreach ($result['pages'] as &$item) {
+                if ($addItem['id'] == $item['id']) {
+                    foreach ($addItem as $key => $value) {
+                        $item[$key] = $value;
+                    }
+                    $item = Utils::parseRequestTags($item);
+                }
+            }
+        }
+
         return $app->json($result);
     }
 
@@ -794,17 +812,59 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'limit'       => 100,
     );
 
-    $result['hosts'] = getHosts($app['db'], $serverName);
     $result['pages'] = getLivePages($app['db'], $serverName, $hostName, null, $result['limit']);
+    $ids = array();
+    foreach ($result['pages'] as $item) {
+        $ids[] = $item['id'];
+    }
+    $addData = getTagsTimersForIds($app['db'], $ids);
+
+    foreach ($addData as $addItem) {
+        foreach ($result['pages'] as &$item) {
+            if ($addItem['id'] == $item['id']) {
+                foreach ($addItem as $key => $value) {
+                    $item[$key] = $value;
+                }
+                $item = Utils::parseRequestTags($item);
+            }
+        }
+    }
+
+    $result['hosts'] = getHosts($app['db'], $serverName);
     $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
 
-    return $app['twig']->render(
+    $response = new Response();
+    $response->setContent($app['twig']->render(
         'live.html.twig',
         $result
-    );
+    ));
+    $response->headers->addCacheControlDirective('no-cache', true);
+    $response->headers->addCacheControlDirective('no-store', true);
+    $response->headers->addCacheControlDirective('must-revalidate', true);
+    $response->headers->set('Pragma', 'no-cache');
+    $response->headers->set('Expires', '0');
+
+    return $response;
 })
 ->value('hostName', 'all')
 ->bind('server_live');
+
+function getTagsTimersForIds($conn, $ids) {
+    if (!sizeof($ids)) {
+        return array();
+    }
+
+    $sql = sprintf("
+        SELECT
+            id, tags, tags_cnt, timers_cnt
+        FROM
+            request
+        WHERE
+            id IN (%s)
+    ", implode(', ', $ids));
+
+    return $conn->fetchAll($sql);
+}
 
 
 function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50) {
@@ -825,7 +885,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     $sql = '
         SELECT
-            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime, tags, tags_cnt, timers_cnt
+            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime
         FROM
             request
         WHERE
@@ -845,7 +905,6 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
         $item['mem_peak_usage']  = $item['mem_peak_usage'];
         $item['req_time_format']        = number_format($item['req_time'], 0, '.', ',');
         $item['mem_peak_usage_format']  = number_format($item['mem_peak_usage'], 0, '.', ',');
-        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
