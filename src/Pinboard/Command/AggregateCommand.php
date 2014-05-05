@@ -193,7 +193,7 @@ class AggregateCommand extends Command
         if (isset($this->params['notification']['enable']) && $this->params['notification']['enable']) {
             $sql = '
                 SELECT
-                    server_name, script_name, status, count(*) AS count
+                    server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
                 FROM
                     request
                 WHERE

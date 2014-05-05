@@ -8,12 +8,16 @@
                 {% for page in info %}
                     <li>
                         HTTP status {{ page.status }}: {{ page.server_name ~ page.script_name }}
-                        {% if page.count > 1 %} ({{ page.count }}) {% endif %}
+                        {% if page.count > 1 %}
+                            ({{ page.count }})
+                        {% else %}
+                            (on server "{{ page.hostname }}")
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>
         {% endfor %}
-        
-        {% include '_mail_footer.html.twig' %}  
+
+        {% include '_mail_footer.html.twig' %}
     </body>
 </html>
