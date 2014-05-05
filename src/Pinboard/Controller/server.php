@@ -431,6 +431,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
+        $item['script_name'] = urldecode($item['script_name']);
         $item = Utils::parseRequestTags($item);
     }
 
@@ -543,7 +544,8 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
-        $item['req_time']  = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item['script_name'] = urldecode($item['script_name']);
+        $item['req_time'] = number_format($item['req_time'] * 1000, 0, '.', ',');
         $item = Utils::parseRequestTags($item);
     }
 
@@ -684,8 +686,9 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
    $data = $conn->fetchAll($sql, $params);
 
    foreach($data as &$item) {
-      $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 3, '.', ',');
-      $item = Utils::parseRequestTags($item);
+       $item['script_name'] = urldecode($item['script_name']);
+       $item['cpu_peak_usage'] = number_format($item['cpu_peak_usage'], 3, '.', ',');
+       $item = Utils::parseRequestTags($item);
    }
 
    return $data;
@@ -726,6 +729,7 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
+        $item['script_name'] = urldecode($item['script_name']);
         $item['mem_peak_usage']  = number_format($item['mem_peak_usage'], 0, '.', ',');
         $item = Utils::parseRequestTags($item);
     }
@@ -901,6 +905,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
+        $item['script_name']     = urldecode($item['script_name']);
         $item['req_time']        = $item['req_time'] * 1000;
         $item['mem_peak_usage']  = $item['mem_peak_usage'];
         $item['req_time_format']        = number_format($item['req_time'], 0, '.', ',');

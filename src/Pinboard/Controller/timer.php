@@ -18,9 +18,10 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
         $app->abort(404, "Request #$requestId not found in table {$requestTypes[$type]}.");
     }
 
-    $request = Utils::parseRequestTags($request);
-
     Utils::checkUserAccess($app, $request['server_name']);
+
+    $request['script_name'] = urldecode($request['script_name']);
+    $request = Utils::parseRequestTags($request);
 
     if ($type == 'live') {
         $request['timers'] = getTimers($app['db'], $requestId);
