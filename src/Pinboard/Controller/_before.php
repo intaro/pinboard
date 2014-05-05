@@ -55,13 +55,14 @@ $app->before(function() use ($app) {
 
     $idn = new IDNaConvert(array('idn_version' => 2008));
 
+    $ips = array();
     foreach($list as $data) {
         if (stripos($data['server_name'], 'xn--') !== false) {
             $data['server_name'] = $idn->decode($data['server_name']);
         }
 
         if (preg_match('/\d+\.\d+\.\d+\.\d+/', $data['server_name'])) {
-            $result['servers']['IPs'][$data['server_name']] = $data;
+            $ips[$data['server_name']] = $data;
         }
         else {
             $domainParts = explode('.', $data['server_name']);
@@ -75,8 +76,9 @@ $app->before(function() use ($app) {
         }
     }
 
-    if (!sizeof($result['servers']['IPs'])) {
-        unset($result['servers']['IPs']);
+    ksort($result['servers']);
+    if (sizeof($ips)) {
+        $result['servers']['IPs'] = $ips;
     }
 
     $app['menu'] = $result;
