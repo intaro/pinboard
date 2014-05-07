@@ -20,7 +20,7 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
 
     Utils::checkUserAccess($app, $request['server_name']);
 
-    $request['script_name'] = urldecode($request['script_name']);
+    $request['script_name'] = Utils::urlDecode($request['script_name']);
     $request = Utils::parseRequestTags($request);
 
     if ($type == 'live') {
