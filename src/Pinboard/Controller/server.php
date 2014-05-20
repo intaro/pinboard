@@ -528,7 +528,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, req_time, tags, tags_cnt, created_at
+            DISTINCT request_id, server_name, hostname, script_name, req_time, tags, tags_cnt, timers_cnt, created_at
         FROM
             ipm_req_time_details
         WHERE

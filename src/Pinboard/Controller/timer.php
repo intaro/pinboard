@@ -4,18 +4,21 @@ use Pinboard\Utils\Utils;
 use Symfony\Component\HttpFoundation\Request;
 
 $server = $app['controllers_factory'];
-$requestTypes = array(
-    'live' => 'request',
-);
+$requestTypes = array('live', 'req_time');
 
 $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grouping) use ($app, $requestTypes) {
-    if (!isset($requestTypes[$type])) {
+    if (!in_array($type, $requestTypes)) {
         $app->abort(404, "Type $type not allowed. Allowed types: " . implode(', ', $requestTypes));
     }
 
-    $request = getRequestById($app['db'], $requestTypes[$type], $requestId);
+    $date = null;
+    if (stripos($requestId, '::') !== false) {
+        list($requestId, $date) = explode('::', $requestId);
+    }
+
+    $request = getRequestById($app['db'], $type, $requestId, $date);
     if (!$request) {
-        $app->abort(404, "Request #$requestId not found in table {$requestTypes[$type]}.");
+        $app->abort(404, "Request #$requestId not found.");
     }
 
     Utils::checkUserAccess($app, $request['server_name']);
@@ -23,17 +26,17 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
     $request['script_name'] = Utils::urlDecode($request['script_name']);
     $request = Utils::parseRequestTags($request);
 
-    if ($type == 'live') {
-        $request['timers'] = getTimers($app['db'], $requestId);
-    }
+    $request['timers'] = getTimers($app['db'], $type, $requestId, $date);
 
     $groupingTags = findGroupingTags($request['timers']);
 
-    $grouping = preg_replace('/^grouping\-/', '', $grouping);
-    if ($grouping == 'none' || empty($grouping)) {
+    if (strlen($grouping)) {
+        $grouping = preg_replace('/^grouping\-/', '', $grouping);
+    }
+    if (empty($grouping)) {
         if (sizeof($groupingTags)) {
-            if (in_array('category', $groupingTags)) {
-                $grouping = 'category';
+            if (in_array('group', $groupingTags)) {
+                $grouping = 'group';
             }
             else {
                 $grouping = $groupingTags[0];
@@ -43,11 +46,13 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
             $grouping = null;
         }
     }
+    //grouping turning off
+    if ($grouping == 'none') {
+        $grouping = null;
+    }
 
     if ($grouping) {
         $request['timers'] = groupTimers($request['timers'], $grouping);
-    }
-    else {
     }
 
     $request = formatRequestTimes($request);
@@ -67,23 +72,40 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
     );
 })
 ->value('type', 'live')
-->value('grouping', 'grouping-none')
-->assert('requestId', '\d+')
+->value('grouping', null)
+//->assert('requestId', '\d+')
 ->bind('timers_show');
 
-function getRequestById($conn, $table, $id) {
-    $params = array(
-        'id' => $id,
-    );
+function getRequestById($conn, $type, $id, $date = null) {
+    if ($type == 'live') {
+        $params = array(
+            'id' => $id,
+        );
 
-    $sql = "
-        SELECT
-            *
-        FROM
-            $table
-        WHERE
-            id = :id
-    ";
+        $sql = "
+            SELECT
+                *
+            FROM
+                request
+            WHERE
+                id = :id
+        ";
+    }
+    else {
+        $params = array(
+            'id' => $id,
+            'date' => $date,
+        );
+
+        $sql = "
+            SELECT
+                *
+            FROM
+                ipm_req_time_details
+            WHERE
+                request_id = :id AND created_at = :date
+        ";
+    }
 
     $data = $conn->fetchAll($sql, $params);
 
@@ -94,19 +116,40 @@ function getRequestById($conn, $table, $id) {
     return null;
 }
 
-function getTimers($conn, $id) {
-    $params = array(
-        'id' => $id,
-    );
+function getTimers($conn, $type, $id, $date = null) {
+    if ($type == 'live') {
+        $params = array(
+            'id' => $id,
+        );
 
-    $sql = "
-        SELECT
-            id, request_id, hit_count, value
-        FROM
-            timer
-        WHERE
-            request_id = :id
-    ";
+        $sql = "
+            SELECT
+                t.id, t.hit_count, t.value, tag.name as tag_name, tt.value as tag_value
+            FROM
+                timer t
+            JOIN
+                timertag tt ON tt.timer_id = t.id
+            JOIN
+                tag ON tt.tag_id = tag.id
+            WHERE
+                t.request_id = :id
+        ";
+    }
+    else {
+        $params = array(
+            'id' => $id,
+            'date' => $date,
+        );
+
+        $sql = "
+            SELECT
+                t.timer_id as id, t.hit_count, t.value, t.tag_name, t.tag_value
+            FROM
+                ipm_timer t
+            WHERE
+                request_id = :id AND created_at = :date
+        ";
+    }
 
     $data = $conn->fetchAll($sql, $params);
 
@@ -115,30 +158,18 @@ function getTimers($conn, $id) {
     }
 
     $timers = array();
-    $ids = array();
     foreach ($data as $timer) {
-        $timer['tags'] = array();
-        $ids[] = $timer['id'];
-        $timers[$timer['id']] = $timer;
+        if (!isset($timers[$timer['id']])) {
+            $timers[$timer['id']] = array(
+                'id' => $timer['id'],
+                'hit_count' => $timer['hit_count'],
+                'value' => $timer['value'],
+                'tags' => array(),
+            );
+        }
+        $timers[$timer['id']]['tags'][$timer['tag_name']] = $timer['tag_value'];
     }
     unset($data);
-
-    $sql = "
-        SELECT
-            tag.name as name, timertag.value as value, timertag.timer_id as timer_id
-        FROM
-            timertag
-        JOIN
-            tag ON timertag.tag_id = tag.id
-        WHERE
-            timertag.timer_id IN (?)
-    ";
-
-    $tags = $conn->executeQuery($sql, array($ids), array(\Doctrine\DBAL\Connection::PARAM_INT_ARRAY));
-
-    foreach ($tags as $t) {
-        $timers[$t['timer_id']]['tags'][$t['name']] = $t['value'];
-    }
 
     return $timers;
 }
@@ -167,11 +198,19 @@ function groupTimers($timers, $groupingTag) {
     $data = array();
     foreach ($timers as $timer) {
         $v = $timer['tags'][$groupingTag];
+        $isComposite = false;
+        if (preg_match('/(.+)\:\:(.*)/', $v, $matches)) {
+            $v = $matches[1];
+            $isComposite = true;
+        }
         if (!isset($data[$v])) {
             $data[$v] = array(
                 'value' => 0,
                 'hit_count' => 0,
             );
+        }
+        if ($isComposite) {
+            $timer['tags']['operation'] = $matches[2];
         }
         unset($timer['tags'][$groupingTag]);
         $data[$v]['value'] += $timer['value'];
@@ -185,7 +224,9 @@ function groupTimers($timers, $groupingTag) {
 function formatRequestTimes($r) {
     $r['req_time'] = intval($r['req_time'] * 1000);
     $r['req_time_format'] = number_format($r['req_time'], 0, '.', ',');
-    $r['mem_peak_usage_format']  = number_format($r['mem_peak_usage'], 0, '.', ',');
+    if (isset($r['mem_peak_usage'])) {
+        $r['mem_peak_usage_format']  = number_format($r['mem_peak_usage'], 0, '.', ',');
+    }
 
     $v = 0;
     foreach ($r['timers'] as &$group) {
@@ -194,10 +235,12 @@ function formatRequestTimes($r) {
         $group['value_format'] = number_format($group['value'], 0, '.', ',');
         $group['value_percent'] = number_format($group['value'] / $r['req_time'] * 100, 2, '.', ',');
 
-        foreach ($group['timers'] as &$timer) {
-            $timer['value'] = intval($timer['value'] * 1000);
-            $timer['value_format'] = number_format($timer['value'], 0, '.', ',');
-            $timer['value_percent'] = number_format($timer['value'] / $r['req_time'] * 100, 2, '.', ',');
+        if (isset($group['timers'])) {
+            foreach ($group['timers'] as &$timer) {
+                $timer['value'] = intval($timer['value'] * 1000);
+                $timer['value_format'] = number_format($timer['value'], 0, '.', ',');
+                $timer['value_percent'] = number_format($timer['value'] / $r['req_time'] * 100, 2, '.', ',');
+            }
         }
     }
 

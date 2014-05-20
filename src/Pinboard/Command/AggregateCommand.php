@@ -157,6 +157,9 @@ class AggregateCommand extends Command
             $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
         }
 
+        $now = new \DateTime();
+        $now = $now->format('Y-m-d H:i:s');
+
         $delta = new \DateInterval(isset($this->params['records_lifetime']) ? $this->params['records_lifetime'] : 'P1M');
         $date = new \DateTime();
         $date->sub($delta);
@@ -174,6 +177,7 @@ class AggregateCommand extends Command
             "ipm_mem_peak_usage_details",
             "ipm_status_details",
             "ipm_cpu_usage_details",
+            "ipm_timer",
         );
 
         $sql = '';
@@ -249,7 +253,7 @@ class AggregateCommand extends Command
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
                      mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
                      cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100,
-                     doc_size_90, doc_size_95, doc_size_99, doc_size_100)
+                     doc_size_90, doc_size_95, doc_size_99, doc_size_100, created_at)
                 SELECT
                     r2.server_name,
                     r2.hostname,
@@ -268,7 +272,8 @@ class AggregateCommand extends Command
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.90), 'doc_size_90') . ',
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.95), 'doc_size_95') . ',
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.99), 'doc_size_99') . ',
-                    max(doc_size) as doc_size_100
+                    max(doc_size) as doc_size_100,
+                    \'' . $now . '\'
                 FROM
                     request r2
                 WHERE
@@ -352,9 +357,9 @@ class AggregateCommand extends Command
             }
             $sql .= '
                 INSERT INTO ipm_req_time_details
-                    (server_name, hostname, script_name, req_time, tags, tags_cnt)
+                    (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
-                    server_name, hostname, script_name, max(req_time), max(tags), max(tags_cnt)
+                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), \'' . $now . '\'
                 FROM
                     request
                 WHERE
@@ -367,8 +372,45 @@ class AggregateCommand extends Command
                     10
             ;';
         }
-        if ($sql != '')
+        if ($sql != '') {
             $db->query($sql);
+
+            $sql = '
+                SELECT
+                    request_id
+                FROM
+                    ipm_req_time_details
+                WHERE
+                    created_at = :now
+            ';
+
+            $data = $db->fetchAll($sql, array('now' => $now));
+
+            $ids = array();
+            foreach ($data as $item) {
+                $ids[] = $item['request_id'];
+            }
+            unset($data);
+
+            if (sizeof($ids)) {
+                $sql = '
+                    INSERT INTO ipm_timer
+                        (timer_id, request_id, hit_count, value, tag_name, tag_value, created_at)
+                    SELECT
+                        t.id, t.request_id, t.hit_count, t.value, tag.name as tag_name, tt.value as tag_value, \'' . $now . '\'
+                    FROM
+                        timer t
+                    JOIN
+                        timertag tt ON tt.timer_id = t.id
+                    JOIN
+                        tag ON tt.tag_id = tag.id
+                    WHERE
+                        t.request_id IN (' . implode(', ', $ids) . ')
+                ';
+
+                $db->query($sql);
+            }
+        }
 
         $sql = '';
         foreach($servers as $server) {

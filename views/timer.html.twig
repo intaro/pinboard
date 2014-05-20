@@ -4,7 +4,7 @@
 {% block content %}
     <h1>
         Request timers
-        {% if grouping %}
+        {% if grouping_tags|length %}
         <small style="display: inline-block;">grouped by </small> <small style="display: inline-block;" class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                 {{ grouping }} <b class="caret"></b>
@@ -13,6 +13,7 @@
           {% for t in grouping_tags %}
           <li class="{{ t == grouping ? 'active' : '' }}"><a href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-' ~ t }) }}">{{ t }}</a></li>
           {% endfor %}
+          <li class="{{ not grouping ? 'active' : '' }}"><a href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-none' }) }}">none</a></li>
         </ul></small>
         {% endif %}
     </h1>
@@ -29,7 +30,9 @@
       <div class="span2">
         <p class="lead timer text-right">
             {{ request.req_time_format }} ms<br />
-            {{ request.mem_peak_usage_format }} kB<br />
+            {% if request.mem_peak_usage_format is defined %}
+                {{ request.mem_peak_usage_format }} kB<br />
+            {% endif %}
         </p>
       </div>
     </div>
@@ -150,7 +153,39 @@
       </div>
       {% endfor %}
     {% else %}
-
+      <hr />
+      <div class="timers">
+          {% for timer in request.timers %}
+          <div class="row">
+            <div class="span7">
+                <div class="cell">
+                <small>
+                    {% for tag, tag_value in timer.tags %}
+                        {{ tag ~ ' = ' ~ tag_value }}<br />
+                    {% else %}
+                        —
+                    {% endfor %}
+                </small>
+                </div>
+            </div>
+            <div class="span1 text-right">
+                <div class="cell">
+                    <small>{{ timer.hit_count }}</small>
+                </div>
+            </div>
+            <div class="span2 text-right">
+                <div class="cell">
+                    <small>{{ timer.value_percent }}%</small>
+                </div>
+            </div>
+            <div class="span2 text-right">
+                <div class="cell last">
+                    <small>{{ timer.value_format }} ms</small>
+                </div>
+            </div>
+          </div>
+          {% endfor %}
+      </div>
     {% endif %}
 {% endblock %}
 {% block javascripts %}
