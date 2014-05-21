@@ -167,7 +167,9 @@ function getTimers($conn, $type, $id, $date = null) {
                 'tags' => array(),
             );
         }
-        $timers[$timer['id']]['tags'][$timer['tag_name']] = $timer['tag_value'];
+        if (!in_array($timer['tag_name'], array('__hostname', '__server_name'))) {
+            $timers[$timer['id']]['tags'][$timer['tag_name']] = $timer['tag_value'];
+        }
     }
     unset($data);
 
@@ -186,6 +188,15 @@ function findGroupingTags($timers) {
     foreach ($timers as $timer) {
         foreach ($tags as $index => $tag) {
             if (!isset($timer['tags'][$tag])) {
+                unset($tags[$index]);
+            }
+        }
+    }
+
+    //if group is defined then remove category
+    if (in_array('group', $tags)) {
+        foreach ($tags as $index => $tag) {
+            if ($tag == 'category') {
                 unset($tags[$index]);
             }
         }
@@ -213,6 +224,9 @@ function groupTimers($timers, $groupingTag) {
             $timer['tags']['operation'] = $matches[2];
         }
         unset($timer['tags'][$groupingTag]);
+        if ($groupingTag == 'group' && isset($timer['tags']['category'])) {
+            unset($timer['tags']['category']);
+        }
         $data[$v]['value'] += $timer['value'];
         $data[$v]['hit_count'] += $timer['hit_count'];
         $data[$v]['timers'][] = $timer;

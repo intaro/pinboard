@@ -292,13 +292,13 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname
+                    hostname, req_time_median, p90, p95, p99
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname FROM report_by_hostname;
+                    hostname, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_hostname_90_95_99;
 
             INSERT INTO ipm_report_by_hostname_and_server
                 (
@@ -306,13 +306,13 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name
+                    hostname, server_name, req_time_median, p90, p95, p99
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name FROM report_by_hostname_and_server;
+                    hostname, server_name, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
 
             INSERT INTO ipm_report_by_server_name
                 (
@@ -320,13 +320,105 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name
+                    server_name, req_time_median, p90, p95, p99
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name FROM report_by_server_name;
+                    server_name, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_server_90_95_99;
+        ';
+        $db->query($sql);
+
+        //insert timers reports
+        $sql = '
+            INSERT INTO ipm_tag_info
+                (
+                    `group`, server_name, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_group_server_name;
+
+            INSERT INTO ipm_tag_info
+                (
+                    `group`, server, server_name, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_group_server_server_name;
+
+            INSERT INTO ipm_tag_info
+                (
+                    `group`, server_name, hostname, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_group_server_name_hostname;
+
+            INSERT INTO ipm_tag_info
+                (
+                    `group`, server, server_name, hostname, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_group_server_server_name_hostname;
+
+            INSERT INTO ipm_tag_info
+                (
+                    category, server_name, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_category_server_name;
+
+            INSERT INTO ipm_tag_info
+                (
+                    category, server, server_name, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_category_server_server_name;
+
+            INSERT INTO ipm_tag_info
+                (
+                    category, server_name, hostname, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_category_server_name_hostname;
+
+            INSERT INTO ipm_tag_info
+                (
+                    category, server, server_name, hostname, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
+                )
+            SELECT
+                    tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+            FROM
+                ipm_pinba_tag_info_category_server_server_name_hostname;
         ';
         $db->query($sql);
 

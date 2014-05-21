@@ -323,6 +323,214 @@ function getRequestReview($conn, $serverName, $hostName, $period) {
     return $data;
 }
 
+$server->get('/{serverName}/{hostName}/timers', function(Request $request, $serverName, $hostName) use ($app, $allowedPeriods) {
+    Utils::checkUserAccess($app, $serverName);
+
+    $period = $request->get('period', '1 day');
+    if (!in_array($period, $allowedPeriods)) {
+        $period = '1 day';
+    }
+
+    $serverFilter = $request->get('server', 'off');
+    if (!in_array($serverFilter, array('on', 'off'))) {
+        $serverFilter = 'off';
+    }
+    $serverFilter = $serverFilter == 'on';
+
+    $result = array(
+        'hosts' => getHosts($app['db'], $serverName),
+        'title' => $serverName,
+        'periods' => $allowedPeriods,
+        'period' => $period,
+        'server_filter' => $serverFilter,
+        'server_name' => $serverName,
+        'hostname' => $hostName,
+        'charts' => array(
+            'timer_median' => array(
+                'title' => 'Request time',
+                'subtitle' => 'median',
+                'field' => 'timer_median',
+                'unit' => ' ms',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_median', $period, $serverFilter),
+            ),
+            'timer_p95' => array(
+                'title' => 'Request time',
+                'subtitle' => '95th percentile',
+                'field' => 'p95',
+                'unit' => ' ms',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_p95', $period, $serverFilter),
+            ),
+            'hit_count' => array(
+                'title' => 'Hit count',
+                'field' => 'hit_count',
+                'unit' => '',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'hit_count', $period, $serverFilter),
+            ),
+            'timer_value' => array(
+                'title' => 'Timer value',
+                'subtitle' => 'total',
+                'field' => 'timer_value',
+                'unit' => ' s',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_value', $period, $serverFilter),
+            ),
+        ),
+        'request_graphs' => array(
+            'req_time_median' => array(
+                'title' => 'Request time (median)',
+            ),
+            'req_time_p95' => array(
+                'title' => 'Request time (95th percentile)',
+            ),
+            'req_time_total' => array(
+                'title' => 'Total request time',
+            ),
+        ),
+    );
+
+    return $app['twig']->render(
+        'timers.html.twig',
+        $result
+    );
+})
+->value('hostName', 'all')
+->bind('server_timers');
+
+function getTimersList($conn, $serverName, $hostName, $valueField, $period, $serverFilter) {
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-' . $period)),
+    );
+    $timeGroupBy = SqlUtils::getDateGroupExpression($period);
+
+    $aggregation = array(
+        'hit_count' => array(
+            'agg' => 'sum(hit_count)',
+        ),
+        'timer_value' => array(
+            'agg' => 'sum(timer_value)',
+            'req_field' => 'req_time_total',
+            'req_agg' => 'sum(req_time_total)',
+        ),
+        'timer_median' => array(
+            'agg' => 'max(timer_median)',
+            'req_field' => 'req_time_median',
+            'req_agg' => 'max(req_time_median)',
+        ),
+        'timer_p95' => array(
+            'agg' => 'max(p95)',
+            'req_field' => 'req_time_p95',
+            'req_agg' => 'max(p95)',
+        ),
+    );
+
+    $hostCondition = '';
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+    else {
+        $hostCondition = 'AND hostname IS NULL';
+    }
+
+    $serverCondition = '';
+    if ($serverFilter) {
+        $serverCondition = 'AND server IS NOT NULL';
+    }
+    else {
+        $serverCondition = 'AND server IS NULL';
+    }
+
+    $timers = array();
+    $result = array();
+
+    if (isset($aggregation[$valueField]['req_field'])) {
+        $sql = '
+            SELECT
+                ' . $aggregation[$valueField]['req_agg'] . ' as ' . $aggregation[$valueField]['req_field'] . ', created_at
+            FROM
+                ' . ($hostName != 'all' ? 'ipm_report_by_hostname_and_server' : 'ipm_report_by_server_name') . '
+            WHERE
+                server_name = :server_name
+                ' . ($hostName != 'all' ? $hostCondition : '') . '
+                AND created_at > :created_at
+            GROUP BY
+                ' . $timeGroupBy . '
+            ORDER BY
+                created_at ASC
+        ';
+
+        $data = $conn->fetchAll($sql, $params);
+
+        foreach ($data as $item) {
+            $t = strtotime($item['created_at']);
+            $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+            if (isset($item['req_time_median']))
+                $item['req_time_median'] = number_format($item['req_time_median'] * 1000, 3, '.', '');
+            if (isset($item['req_time_p95']))
+                $item['req_time_p95'] = number_format($item['req_time_p95'] * 1000, 3, '.', '');
+            if (isset($item['req_time_total']))
+                $item['req_time_total'] = number_format($item['req_time_total'], 3, '.', '');
+
+
+            if (!isset($result[$item['date']])) {
+                $result[$item['date']] = array();
+            }
+            $result[$item['date']][$aggregation[$valueField]['req_field']] = $item[$aggregation[$valueField]['req_field']];
+        }
+
+        $timers[] = $aggregation[$valueField]['req_field'];
+    }
+
+    $sql = '
+        SELECT
+            category, ' . ($serverFilter ? 'server, ' : '') . 'created_at, ' . $aggregation[$valueField]['agg'] . ' as ' . $valueField . '
+        FROM
+            ipm_tag_info
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            ' . $serverCondition . '
+            AND `category` IS NOT NULL
+            AND created_at > :created_at
+        GROUP BY
+            category, ' . ($serverFilter ? 'server, ' : '') . $timeGroupBy . '
+        ORDER BY
+            created_at ASC, ' . $valueField . ' DESC
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+
+    foreach($data as &$item) {
+        $t = strtotime($item['created_at']);
+        $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        if (isset($item['timer_median']))
+            $item['timer_median'] = number_format($item['timer_median'] * 1000, 3, '.', '');
+        if (isset($item['timer_p95']))
+            $item['timer_p95'] = number_format($item['timer_p95'] * 1000, 3, '.', '');
+        if (isset($item['timer_value']))
+            $item['timer_value'] = number_format($item['timer_value'], 3, '.', '');
+        if (isset($item['hit_count']))
+            $item['hit_count'] = number_format($item['hit_count'], 0, '.', '');
+
+        $key = $item['category'];
+        if ($serverFilter && strlen($item['server'])) {
+            $key .= ' (' . $item['server'] . ')';
+        }
+
+        if (!in_array($key, $timers)) {
+            $timers[] = $key;
+        }
+        if (!isset($result[$item['date']])) {
+            $result[$item['date']] = array();
+        }
+        $result[$item['date']][$key] = $item[$valueField];
+    }
+
+    return array(
+        'timers' => $timers,
+        'values' => $result,
+    );
+}
 
 $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
     Utils::checkUserAccess($app, $serverName);
