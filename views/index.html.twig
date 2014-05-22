@@ -13,6 +13,12 @@
         </tr>
         </thead>
         <tbody>
+        <tr class="{{ total.error_count > 0 ? 'error' : '' }}">
+          <td><b><i>Total</i></b></td>
+          <td><b><i>{{ total.req_count }}</i></b></td>
+          <td><b><i>–</i></b></td>
+          <td><b><i>{{ total.error_count }}</i></b></td>
+        </tr>
         {% for server in servers if server.server_name is not empty %}
         <tr class="{{ server.error_count > 0 ? 'error' : '' }}">
           <td><a href="{{ path('server', { serverName: server.server_name }) }}" title="">{{ server.server_name }}</a></td>
@@ -30,8 +36,8 @@
 {{ parent() }}
 <script src="/js/jquery.tablesorter.min.js" type="text/javascript"></script>
 <script type="text/javascript">
-  $(function() {    
+  $(function() {
     $("#sortedTable").tablesorter();
-  }); 
+  });
 </script>
 {% endblock %}
