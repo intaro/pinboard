@@ -292,13 +292,13 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, req_time_median, p90, p95, p99
+                    hostname, req_time_median, p90, p95, p99, created_at
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_hostname_90_95_99;
+                    hostname, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
 
             INSERT INTO ipm_report_by_hostname_and_server
                 (
@@ -306,13 +306,13 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name, req_time_median, p90, p95, p99
+                    hostname, server_name, req_time_median, p90, p95, p99, created_at
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
+                    hostname, server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
 
             INSERT INTO ipm_report_by_server_name
                 (
@@ -320,13 +320,13 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name, req_time_median, p90, p95, p99
+                    server_name, req_time_median, p90, p95, p99, created_at
                 )
             SELECT req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name, req_time_median, p90, p95, p99 FROM ipm_pinba_report_by_server_90_95_99;
+                    server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
         ';
         $db->query($sql);
 
