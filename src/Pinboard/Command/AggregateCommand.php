@@ -54,6 +54,20 @@ class AggregateCommand extends Command
         $this->mailer = \Swift_Mailer::newInstance($transport);
     }
 
+    protected function sendEmail($message)
+    {
+        if ($this->mailer) {
+            try {
+                $this->mailer->send($message);
+            }
+            catch(\Exception $e) {
+                $output->writeln('<error>Failed to send email message. Error output:</error>');
+                $output->writeln('<error></error>');
+                $output->writeln('<error>' . $e->getMessage() . '</error>');
+            }
+        }
+    }
+
     private function isNotIgnore($host) {
         $notIgnore = true;
         if (isset($this->params['notification']['ignore'])) {
@@ -74,9 +88,7 @@ class AggregateCommand extends Command
             $message->setBody($body);
             $message->setTo($address);
 
-            if ($this->mailer) {
-                $this->mailer->send($message);
-            }
+            $this->sendEmail($message);
 
             unset($body);
         }
@@ -122,7 +134,14 @@ class AggregateCommand extends Command
 
         $db = $this->app['db'];
 
-        $this->initMailer();
+        try {
+            $this->initMailer();
+        }
+        catch(\Exception $e) {
+            $output->writeln('<error>Can\'t init mailer</error>');
+
+            return;
+        }
 
         try {
             $db->connect();
@@ -147,7 +166,7 @@ class AggregateCommand extends Command
                     ->setBody($body);
                     ;
 
-                $this->mailer->send($message);
+                $this->sendEmail($message);
             }
 
             return;
@@ -546,9 +565,7 @@ class AggregateCommand extends Command
             $message->setBody($body);
             $message->setTo($address);
 
-            if ($this->mailer) {
-                $this->mailer->send($message);
-            }
+            $this->sendEmail($message);
 
             unset($body);
         }
