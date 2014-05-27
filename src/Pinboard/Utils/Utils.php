@@ -20,15 +20,30 @@ class Utils
                 $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
                             ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
                             : ".*";
-                if (trim($hostsRegExp) == "") {
-                    $hosts = ".*";
+                if (!is_array($hostsRegExp)) {
+                    $hostsRegExp = array($hostsRegExp);
+                }
+                foreach ($hostsRegExp as &$rgx) {
+                    if (trim($rgx) == "") {
+                        $rgx = ".*";
+                    }
                 }
             }
         }
 
-        if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
+        $hasAccess = false;
+        foreach ($hostsRegExp as $regexp) {
+            if (preg_match("/" . $regexp . "/", $serverName)) {
+                $hasAccess = true;
+                break;
+            }
+        }
+
+        if (!$hasAccess) {
             $app->abort(403, "Access denied");
         }
+
+        return $hasAccess;
     }
 
     public static function parseRequestTags($request)
