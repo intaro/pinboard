@@ -13,6 +13,7 @@ class AggregateCommand extends Command
     protected $mailer;
     protected $params;
     protected $app;
+    protected $output;
 
     const DEFAULT_REQ_TIME_BORDER = 1.5;
     const DEFAULT_SLOW_REQ_TIME = 1.5;
@@ -61,9 +62,10 @@ class AggregateCommand extends Command
                 $this->mailer->send($message);
             }
             catch(\Exception $e) {
-                $output->writeln('<error>Failed to send email message. Error output:</error>');
-                $output->writeln('<error></error>');
-                $output->writeln('<error>' . $e->getMessage() . '</error>');
+                $this->output->writeln('<error>Failed to send email message. Error output:</error>');
+                $this->output->writeln('<error></error>');
+                $this->output->writeln('<error>' . $e->getMessage() . '</error>');
+                $this->output->writeln('<error></error>');
             }
         }
     }
@@ -131,6 +133,7 @@ class AggregateCommand extends Command
         $this->app = $this->getApplication()->getSilex();
         $this->app->boot();
         $this->params = $this->app['params'];
+        $this->output = $output;
 
         $db = $this->app['db'];
 
