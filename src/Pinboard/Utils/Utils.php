@@ -32,6 +32,7 @@ class Utils
         }
 
         $hasAccess = false;
+        $hostsRegExp = is_array($hostsRegExp) ? $hostsRegExp : array($hostsRegExp);
         foreach ($hostsRegExp as $regexp) {
             if (preg_match("/" . $regexp . "/", $serverName)) {
                 $hasAccess = true;
