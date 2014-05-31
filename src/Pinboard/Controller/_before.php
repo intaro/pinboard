@@ -49,7 +49,7 @@ $app->before(function() use ($app) {
             server_name
     ';
 
-    $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
+    $stmt = $app['db']->executeCacheQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
     $list = $stmt->fetchAll();
     $stmt->closeCursor();
 

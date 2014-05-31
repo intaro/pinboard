@@ -8,6 +8,9 @@ $index = $app['controllers_factory'];
 $index->get('/', function() use ($app) {
 
     $result = array();
+    $params = array(
+        'created_at' => date('Y-m-d H:00:00', strtotime('-1 day')),
+    );
 
     $hosts = ".*";
 
@@ -23,10 +26,11 @@ $index->get('/', function() use ($app) {
         }
     }
 
-    $params = array(
-        'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
-        'hosts' => $hosts,
-    );
+    $hostQueryPart = '';
+    if ($hosts != '.*') {
+        $hostQueryPart = ' AND a.server_name REGEXP :hosts';
+        $params['hosts'] = $hosts;
+    }
 
     $sql = '
         SELECT
@@ -45,12 +49,12 @@ $index->get('/', function() use ($app) {
         FROM
             ipm_report_by_hostname_and_server a
         WHERE
-            a.created_at > :created_at AND a.server_name REGEXP :hosts
+            a.created_at > :created_at' . $hostQueryPart . '
         GROUP BY
             a.server_name
     ';
 
-    $stmt = $app['db']->executeQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
+    $stmt = $app['db']->executeCacheQuery($sql, $params, array(), new QueryCacheProfile(60 * 60));
     $result['servers'] = $stmt->fetchAll();
     $stmt->closeCursor();
 
