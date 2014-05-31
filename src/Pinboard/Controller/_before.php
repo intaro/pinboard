@@ -2,44 +2,33 @@
 
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Pinboard\Utils\IDNaConvert;
+use Pinboard\Utils\Utils;
 
 $app->before(function() use ($app) {
     $result = array(
-        'servers' => array(
-            'IPs' => array(),
-        ),
+        'servers' => array(),
     );
 
-    $hosts = ".*";
-
-    if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
-        $user = $app['security']->getToken()->getUser();
-        $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                    ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
-                    : ".*";
-        if (trim($hosts) == "") {
-            $hosts = ".*";
-        }
-    }
-
-    $hostsWhere = '';
     $params = array(
-        'created_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+        'created_at' => date('Y-m-d H:00:00', strtotime('-1 day')),
     );
 
-    if ($hosts != '.*') {
-        $params['hosts'] = $hosts;
-        $hostsWhere = 'AND server_name REGEXP :hosts';
+    $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
+    $hostsWhere = '';
+
+    if ($hostsRegexp != '.*') {
+        $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : array($hostsRegexp);
+        $hostsWhere = " AND (server_name REGEXP '" . implode("' OR server_name REGEXP '", $hostsRegexp) . "')";
     }
 
     $sql = '
         SELECT
-            server_name, req_count, count(created_at) cnt
+            server_name, count(created_at) cnt
         FROM
             ipm_report_by_server_name
         WHERE
             created_at >= :created_at AND
-            server_name IS NOT NULL AND server_name != ""
+            server_name IS NOT NULL AND server_name != \'\'
             ' . $hostsWhere . '
         GROUP BY
             server_name
@@ -49,7 +38,7 @@ $app->before(function() use ($app) {
             server_name
     ';
 
-    $stmt = $app['db']->executeCacheQuery($sql, $params, array(), new QueryCacheProfile(5 * 60));
+    $stmt = $app['db']->executeCacheQuery($sql, $params, array(), new QueryCacheProfile(60 * 60));
     $list = $stmt->fetchAll();
     $stmt->closeCursor();
 

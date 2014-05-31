@@ -12,24 +12,42 @@ class Utils
         return dechex(rand(0,10000000));
     }
 
-    public static function checkUserAccess($app, $serverName) {
+    /**
+     * Return string or array with hosts regexp for access
+     *
+     * @access public
+     * @param mixed $app
+     * @return string|array
+     */
+    public function getUserAccessHostsRegexp($app)
+    {
         $hostsRegExp = ".*";
-        if (isset($app['params']['secure']['enable'])) {
-            if ($app['params']['secure']['enable'] == "true") {
-                $user = $app['security']->getToken()->getUser();
-                $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                            ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
-                            : ".*";
-                if (!is_array($hostsRegExp)) {
-                    $hostsRegExp = array($hostsRegExp);
-                }
-                foreach ($hostsRegExp as &$rgx) {
-                    if (trim($rgx) == "") {
-                        $rgx = ".*";
-                    }
+
+        if (isset($app['params']['secure']['enable']) && $app['params']['secure']['enable']) {
+            $user = $app['security']->getToken()->getUser();
+            $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
+                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
+                        : ".*";
+
+            $hostsRegExp = is_array($hostsRegExp) ? $hostsRegExp : array($hostsRegExp);
+            //ignore empty rules
+            foreach ($hostsRegExp as &$rgx) {
+                if (trim($rgx) == ".*") {
+                    unset($rgx);
                 }
             }
+
+            if (!sizeof($hostsRegExp)) {
+                return '.*';
+            }
         }
+
+        return $hostsRegExp;
+    }
+
+    public static function checkUserAccess($app, $serverName)
+    {
+        $hostsRegExp = self::getUserAccessHostsRegexp($app);
 
         $hasAccess = false;
         $hostsRegExp = is_array($hostsRegExp) ? $hostsRegExp : array($hostsRegExp);
