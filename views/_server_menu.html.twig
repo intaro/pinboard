@@ -16,9 +16,6 @@
   <li class="{{ app.request.get('_route') == 'server' ? 'active' : '' }}">
     <a href="{{ path('server', { serverName: server_name, hostName: hostname }) }}">Overview</a>
   </li>
-  <li class="{{ app.request.get('_route') == 'server_timers' ? 'active' : '' }}">
-    <a href="{{ path('server_timers', { serverName: server_name, hostName: hostname }) }}">Timers <i class="icon-time"></i></a>
-  </li>
   <li class="{{ (app.request.get('_route') == 'server_req_time') ? 'active' : '' }}">
     <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname }) }}">Request time</a>
   </li>
@@ -30,6 +27,9 @@
   </li>
   <li class="{{ (app.request.get('_route') == 'server_statuses') ? 'active' : '' }}">
     <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname }) }}">Statuses</a>
+  </li>
+  <li class="{{ app.request.get('_route') == 'server_timers' ? 'active' : '' }}">
+    <a href="{{ path('server_timers', { serverName: server_name, hostName: hostname }) }}">Timers <i class="icon-time"></i></a>
   </li>
   <li class="{{ app.request.get('_route') == 'server_live' ? 'active' : '' }}">
     <a href="{{ path('server_live', { serverName: server_name, hostName: hostname }) }}">Live <i class="icon-facetime-video"></i></a>

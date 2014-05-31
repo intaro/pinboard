@@ -527,8 +527,8 @@ function getTimersList($conn, $serverName, $hostName, $valueField, $period, $ser
     }
 
     return array(
-        'timers' => $timers,
-        'values' => $result,
+        'timers' => sizeof($data) ? $timers : array(),
+        'values' => sizeof($data) ? $result : array(),
     );
 }
 

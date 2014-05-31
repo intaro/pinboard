@@ -23,6 +23,7 @@
       {% for chart_key, chart in charts %}
       <div class="span12">
         <h2>{{ chart.title }} {{ chart.subtitle is defined ? ('<small>(' ~ chart.subtitle ~ ')</small>')|raw : '' }}</h2>
+        {% if chart.data.timers|length > 0 %}
         <div id="{{ chart.field }}-chart" style="height: 350px;"></div>
         <script type="text/javascript">
             var {{ chart.field }}Chart;
@@ -94,6 +95,9 @@
                 {{ chart.field }}Chart.write("{{ chart.field }}-chart");
             });
         </script>
+        {% else %}
+        <p>No data for chart.</p>
+        {% endif %}
       </div>
       {% endfor %}
     {% else %}
