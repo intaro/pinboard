@@ -63,7 +63,7 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
         'grouping_tags' => $groupingTags,
         'grouping' => $grouping,
         'type' => $type,
-        'request_id' => $requestId,
+        'request_id' => $requestId.'::'.$date,
     );
 
     return $app['twig']->render(
