@@ -215,7 +215,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName, $period) {
     foreach($data as &$item) {
         $t = strtotime($item['created_at']);
         $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
-        $parsedHostname = '_' . str_replace('.', '_', str_replace('-', '_', $item['hostname']));
+        $parsedHostname = '_' . preg_replace('/\W/', '_', $item['hostname']);
         $rpqData['data'][$date][] = array(
             'created_at' => $item['created_at'],
             // 'date' => $date,
