@@ -19,8 +19,8 @@
               </th>
               <th>Status</th>
               <th class="date">Registered around
-                  <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
-                  <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
+                  <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
+                  <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
             </tr>
             {% for status in statuses %}
