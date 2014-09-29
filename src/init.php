@@ -11,7 +11,21 @@ $app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/paramete
 $app->register(new Silex\Provider\TwigServiceProvider(), array(
     'twig.path' => __DIR__.'/../views',
 ));
+$app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
+
+    // add
+    if (!isset($app['params']['base_url']) || empty($app['params']['base_url'])) {
+        $app['params']['base_url'] = '/';
+    } elseif (stubstr($app['params']['base_url'], 0, -1) != '/') {
+        $app['params']['base_url'] .= '/';
+    }
+    $twig->addGlobal('base_url', $app['params']['base_url']);
+
+    return $twig;
+}));
+
 $app->register(new Silex\Provider\UrlGeneratorServiceProvider());
+
 
 $dbOptions = array(
     'driver'   => 'pdo_mysql',
