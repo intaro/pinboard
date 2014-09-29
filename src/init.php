@@ -16,7 +16,7 @@ $app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
     // add
     if (!isset($app['params']['base_url']) || empty($app['params']['base_url'])) {
         $app['params']['base_url'] = '/';
-    } elseif (stubstr($app['params']['base_url'], 0, -1) != '/') {
+    } elseif (substr($app['params']['base_url'], 0, -1) != '/') {
         $app['params']['base_url'] .= '/';
     }
     $twig->addGlobal('base_url', $app['params']['base_url']);
