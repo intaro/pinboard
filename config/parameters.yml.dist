@@ -5,9 +5,9 @@ db:
     user: user
     pass: password
 
-base_url: http://your-host.com/pinboard
+base_url: /
 #base_url: /pinboard/
-#base_url: /
+#base_url: http://your-host.com/pinboard
 logging:
     # in seconds
     long_request_time:
