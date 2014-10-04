@@ -4,6 +4,8 @@ require_once __DIR__.'/../vendor/autoload.php';
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Pinboard\Logger\DbalLogger;
+use Pinboard\Stopwatch\Stopwatch;
 
 $app = new Silex\Application();
 $app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/parameters.yml');
@@ -11,7 +13,23 @@ $app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/paramete
 $app->register(new Silex\Provider\TwigServiceProvider(), array(
     'twig.path' => __DIR__.'/../views',
 ));
+$app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
+    if (!isset($app['params']['base_url']) || empty($app['params']['base_url'])) {
+        $baseUrl = '/';
+    } else {
+        $baseUrl = $app['params']['base_url'];
+    }
+
+    if (substr($baseUrl, -1) != '/') {
+        $baseUrl .= '/';
+    }
+    $twig->addGlobal('base_url', $baseUrl);
+
+    return $twig;
+}));
+
 $app->register(new Silex\Provider\UrlGeneratorServiceProvider());
+
 
 $dbOptions = array(
     'driver'   => 'pdo_mysql',
@@ -25,6 +43,7 @@ if (isset($app['params']['db']['port'])) {
 }
 
 $app->register(new Silex\Provider\DoctrineServiceProvider(), array('db.options' => $dbOptions));
+$app['dbs.config']['default']->setSQLLogger(new DbalLogger(new Stopwatch(), $app['params']['db']['host']));
 
 //query caching
 $cacheClassName =
