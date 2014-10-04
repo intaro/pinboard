@@ -14,7 +14,7 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
-        $ git checkout v1.2
+        $ git checkout v1.3
 
 2. Download [composer](http://getcomposer.org):
 
@@ -103,6 +103,8 @@ Update vendors
 Apply changes to database
 
     $ ./console migrations:migrate
+
+Add to `parameters.yml` new options from `parameters.yml.dist`.
 
 ## More Information
 
