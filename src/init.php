@@ -12,14 +12,16 @@ $app->register(new Silex\Provider\TwigServiceProvider(), array(
     'twig.path' => __DIR__.'/../views',
 ));
 $app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
-
-    // add
     if (!isset($app['params']['base_url']) || empty($app['params']['base_url'])) {
-        $app['params']['base_url'] = '/';
-    } elseif (substr($app['params']['base_url'], 0, -1) != '/') {
-        $app['params']['base_url'] .= '/';
+        $baseUrl = '/';
+    } else {
+        $baseUrl = $app['params']['base_url'];
     }
-    $twig->addGlobal('base_url', $app['params']['base_url']);
+
+    if (substr($baseUrl, -1) != '/') {
+        $baseUrl .= '/';
+    }
+    $twig->addGlobal('base_url', $baseUrl);
 
     return $twig;
 }));
