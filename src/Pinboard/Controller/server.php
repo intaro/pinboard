@@ -235,7 +235,7 @@ function getRequestPerSecReview($conn, $serverName, $hostName, $period) {
             SELECT
                 created_at, avg(req_per_sec) as req_per_sec
             FROM
-                ipm_report_by_server_name
+                ipm_report_by_server_name USE INDEX (irsn_ca)
             WHERE
                 server_name = :server_name
                 AND created_at > :created_at

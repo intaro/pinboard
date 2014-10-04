@@ -23,7 +23,7 @@
                 AmCharts.ready(function () {
                     // SERIAL CHART
                     rtChart = new AmCharts.AmSerialChart();
-                    rtChart.pathToImages = "/js/amcharts/images/";
+                    rtChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                     rtChart.dataProvider = rtChartData;
                     rtChart.categoryField = "page";
 
@@ -73,7 +73,7 @@
                 AmCharts.ready(function () {
                     // SERIAL CHART
                     muChart = new AmCharts.AmSerialChart();
-                    muChart.pathToImages = "/js/amcharts/images/";
+                    muChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                     muChart.dataProvider = muChartData;
                     muChart.categoryField = "page";
 
@@ -122,7 +122,7 @@
                 AmCharts.ready(function () {
                     // SERIAL CHART
                     cpuChart = new AmCharts.AmSerialChart();
-                    cpuChart.pathToImages = "/js/amcharts/images/";
+                    cpuChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                     cpuChart.dataProvider = cpuChartData;
                     cpuChart.categoryField = "page";
 

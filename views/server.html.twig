@@ -27,7 +27,7 @@
             AmCharts.ready(function () {
                 // SERIAL CHART
                 rtChart = new AmCharts.AmSerialChart();
-                rtChart.pathToImages = "/js/amcharts/images/";
+                rtChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                 rtChart.dataProvider = rtChartData;
                 rtChart.categoryField = "date";
 
@@ -138,7 +138,7 @@
             AmCharts.ready(function () {
                 // SERIAL CHART
                 rpsChart = new AmCharts.AmSerialChart();
-                rpsChart.pathToImages = "/js/amcharts/images/";
+                rpsChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                 rpsChart.dataProvider = rpsChartData;
                 rpsChart.categoryField = "date";
 
@@ -210,7 +210,7 @@
             AmCharts.ready(function () {
                 // SERIAL CHART
                 muChart = new AmCharts.AmSerialChart();
-                muChart.pathToImages = "/js/amcharts/images/";
+                muChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                 muChart.dataProvider = muChartData;
                 muChart.categoryField = "date";
 
@@ -312,7 +312,7 @@
                     AmCharts.ready(function () {
                         // SERIAL CHART
                         cpuChart = new AmCharts.AmSerialChart();
-                        cpuChart.pathToImages = "/js/amcharts/images/";
+                        cpuChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                         cpuChart.dataProvider = cpuChartData;
                         cpuChart.categoryField = "date";
 
@@ -412,7 +412,7 @@
             AmCharts.ready(function () {
                 // SERIAL CHART
                 statusChart = new AmCharts.AmSerialChart();
-                statusChart.pathToImages = "/js/amcharts/images/";
+                statusChart.pathToImages = "{{ base_url }}js/amcharts/images/";
                 statusChart.dataProvider = statusChartData;
                 statusChart.categoryField = "date";
 
