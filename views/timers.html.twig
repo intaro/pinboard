@@ -24,7 +24,8 @@
       <div class="span12">
         <h2>{{ chart.title }} {{ chart.subtitle is defined ? ('<small>(' ~ chart.subtitle ~ ')</small>')|raw : '' }}</h2>
         {% if chart.data.timers|length > 0 %}
-        <div id="{{ chart.field }}-chart" style="height: 350px;"></div>
+        <div id="{{ chart.field }}-chart" style="height: 250px;"></div>
+        <div id="{{ chart.field }}-legend" style="height: 100px;"></div>
         <script type="text/javascript">
             var {{ chart.field }}Chart;
 
@@ -89,7 +90,7 @@
 
                 // LEGEND
                 var legend = new AmCharts.AmLegend();
-                {{ chart.field }}Chart.addLegend(legend);
+                {{ chart.field }}Chart.addLegend(legend, "{{ chart.field }}-legend");
 
                 // WRITE
                 {{ chart.field }}Chart.write("{{ chart.field }}-chart");
