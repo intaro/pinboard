@@ -1,6 +1,31 @@
 CHANGELOG / Intaro Pinboard
 ===========================
 
+* 1.3 (2014-10-04)
+
+* bug #88 Slow query on Overview tab of the server
+* feature Add base_url for static urls
+* bug #81 Diagram Req/sec is broken when hostname contains non-word symbols
+* bug #80 Fix order link on statuses page
+* bug #77 Slow query on main page
+* bug #72 Wrong aggregate locking after smtp exception
+* feature #73 Total values on the homepage
+* feature #71 Display hostname next to error pages in email notifications
+* feature #70 Sort domains in top menu alphabetically
+* feature #68 Add play/pause in Live tab
+* Increased limits in Live tab
+
+* 1.2 (2014-03-2)
+
+* feature #64 Add notification about increasing of 90th and 95th percentiles of request time higher than a border value
+* feature #63 Settings for MySQL non-standart port connecting
+* feature #47 Display the data for a 1 day, 3 days, 1 week and 1 month
+* bug #58 Fix condition to order cpu column in grid
+* bug #60 Don't show in menu the servers with empty server name
+* bug #61 Fix aggregating stopping because wrong .lock-file creating
+* bug #65 Duplicate records in "CPU peak usage" tab
+* bug #66 Wrong chart rendering in "Overview" tab for servers with several hosts
+
 * 1.1 (2013-12-16)
 
  * bug #55 ./console aggregate return PDOException
