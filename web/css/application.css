@@ -93,3 +93,12 @@ h4.timer-head .expand {
 .timers .row .cell.last {
     padding-right: 10px;
 }
+
+.b-status-selector {
+    float: right;
+    font-size: 18px;
+}
+
+p.lead {
+    float: left;
+}
