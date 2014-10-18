@@ -47,8 +47,7 @@ class AggregateCommand extends Command
             if (isset($this->params['smtp']['auth_mode'])) {
                 $transport->setAuthMode($this->params['smtp']['auth_mode']);
             }
-        }
-        else {
+        } else {
             $transport = \Swift_MailTransport::newInstance();
         }
 
@@ -60,8 +59,7 @@ class AggregateCommand extends Command
         if ($this->mailer) {
             try {
                 $this->mailer->send($message);
-            }
-            catch(\Exception $e) {
+            } catch (\Exception $e) {
                 $this->output->writeln('<error>Failed to send email message. Error output:</error>');
                 $this->output->writeln('<error></error>');
                 $this->output->writeln('<error>' . $e->getMessage() . '</error>');
@@ -70,11 +68,12 @@ class AggregateCommand extends Command
         }
     }
 
-    private function isNotIgnore($host) {
+    private function isNotIgnore($host)
+    {
         $notIgnore = true;
         if (isset($this->params['notification']['ignore'])) {
-            foreach($this->params['notification']['ignore'] as $hostToIgnore) {
-                if(preg_match('#' . $hostToIgnore . '#', $host)) {
+            foreach ($this->params['notification']['ignore'] as $hostToIgnore) {
+                if (preg_match('#' . $hostToIgnore . '#', $host)) {
                     $notIgnore = false;
                     break;
                 }
@@ -84,7 +83,8 @@ class AggregateCommand extends Command
         return $notIgnore;
     }
 
-    private function sendErrorPages($pages, $message, $address) {
+    private function sendErrorPages($pages, $message, $address)
+    {
         if (count($pages) > 0) {
             $body = $this->app['twig']->render('error_notification.html.twig', array('pages' => $pages));
             $message->setBody($body);
@@ -106,7 +106,7 @@ class AggregateCommand extends Command
         if (isset($this->params['notification']['global_email'])) {
             $pages = array();
             foreach ($errorPages as $page) {
-                if($this->isNotIgnore($page['server_name'])) {
+                if ($this->isNotIgnore($page['server_name'])) {
                     $pages[$page['server_name']][] = $page;
                 }
             }
@@ -139,8 +139,7 @@ class AggregateCommand extends Command
 
         try {
             $this->initMailer();
-        }
-        catch(\Exception $e) {
+        } catch (\Exception $e) {
             $output->writeln('<error>Can\'t init mailer</error>');
 
             return;
@@ -148,14 +147,13 @@ class AggregateCommand extends Command
 
         try {
             $db->connect();
-        }
-        catch(\PDOException $e) {
+        } catch (\PDOException $e) {
             $output->writeln('<error>Can\'t connect to MySQL server</error>');
 
             return;
         }
 
-        if(file_exists( __FILE__ . '.lock')) {
+        if (file_exists(__FILE__ . '.lock')) {
             $output->writeln('<error>Cannot run data aggregation: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
 
             if ($this->mailer && isset($this->params['notification']['global_email'])) {
@@ -175,7 +173,7 @@ class AggregateCommand extends Command
             return;
         }
 
-        if(!touch( __FILE__ . '.lock')) {
+        if (!touch(__FILE__ . '.lock')) {
             $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
         }
 
@@ -213,8 +211,10 @@ class AggregateCommand extends Command
                 created_at < :created_at
             ;';
         }
-        if ($sql != '')
+
+        if ($sql != '') {
             $db->executeQuery($sql, $params);
+        }
 
         if (isset($this->params['notification']['enable']) && $this->params['notification']['enable']) {
             $sql = '
@@ -269,7 +269,7 @@ class AggregateCommand extends Command
         ';
 
         $sql = '';
-        foreach($servers as $server) {
+        foreach ($servers as $server) {
             $sql .= '
                 INSERT INTO ipm_report_2_by_hostname_and_server
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
@@ -302,8 +302,10 @@ class AggregateCommand extends Command
                     r2.server_name = "' . $server['server_name'] . '" and r2.hostname = "' . $server['hostname'] . '"
             ;';
         }
-        if ($sql != '')
+
+        if ($sql != '') {
             $db->query($sql);
+        }
 
         $db->executeQuery('COMMIT');
 
@@ -461,7 +463,7 @@ class AggregateCommand extends Command
         $db->query($sql);
 
         $sql = '';
-        foreach($servers as $server) {
+        foreach ($servers as $server) {
             $maxReqTime = static::DEFAULT_SLOW_REQ_TIME;
             if (isset($this->params['logging']['long_request_time']['global'])) {
                 $maxReqTime = $this->params['logging']['long_request_time']['global'];
@@ -527,7 +529,7 @@ class AggregateCommand extends Command
         }
 
         $sql = '';
-        foreach($servers as $server) {
+        foreach ($servers as $server) {
             $maxMemoryUsage = static::DEFAULT_HEAVY_PAGE_MEMORY;
             if (isset($this->params['logging']['heavy_request']['global'])) {
                 $maxMemoryUsage = $this->params['logging']['heavy_request']['global'];
@@ -553,17 +555,19 @@ class AggregateCommand extends Command
                     10
             ;';
         }
-        if ($sql != '')
+
+        if ($sql != '') {
             $db->query($sql);
+        }
 
         $sql = '';
-        foreach($servers as $server) {
+        foreach ($servers as $server) {
             $maxCPUUsage = static::DEFAULT_HEAVY_PAGE_CPU;
             if (isset($this->params['logging']['heavy_cpu_request']['global'])) {
-               $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
+                $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
             }
             if (isset($this->params['logging']['heavy_cpu_request'][$server['server_name']])) {
-               $maxCPUUsage = $this->params['logging']['heavy_cpu_request'][$server['server_name']];
+                $maxCPUUsage = $this->params['logging']['heavy_cpu_request'][$server['server_name']];
             }
 
             $sql .= '
@@ -583,8 +587,10 @@ class AggregateCommand extends Command
                       10
             ;';
         }
-        if ($sql != '')
-           $db->query($sql);
+
+        if ($sql != '') {
+            $db->query($sql);
+        }
 
         // notification about abrupt drawdown of indicators
         $values = $this->getBorderOutValues($db, $servers);
@@ -592,7 +598,7 @@ class AggregateCommand extends Command
 
         $output->writeln('<info>Data are aggregated successfully</info>');
 
-        if (!unlink( __FILE__ . '.lock')) {
+        if (!unlink(__FILE__ . '.lock')) {
             $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
         }
     }
@@ -610,10 +616,11 @@ class AggregateCommand extends Command
 
         $result = array();
         foreach ($servers as $server) {
-            if (!isset($result[$server['server_name']]))
+            if (!isset($result[$server['server_name']])) {
                 $result[$server['server_name']] = array(
                     'req_per_sec' => $server['cnt'] / ($di->format('%i') ?: 15) / 60,
                 );
+            }
         }
 
         //req_time
@@ -637,7 +644,7 @@ class AggregateCommand extends Command
             ));
 
             $finalData = array();
-            foreach($data as $row) {
+            foreach ($data as $row) {
                 if (isset($result[$row['server_name']])) {
                     $finalData[$row['server_name']][$row['hostname']][] = array(
                         'value' => $row['req_time_' . $perc],
@@ -687,8 +694,7 @@ class AggregateCommand extends Command
         foreach ($result as $server => $values) {
             if (sizeof($values) < 2) {
                 unset($result[$server]);
-            }
-            else {
+            } else {
                 unset($result[$server]['req_per_sec']);
             }
         }
@@ -696,7 +702,8 @@ class AggregateCommand extends Command
         return $result;
     }
 
-    private function sendBorderOutEmail($data, $message, $address) {
+    private function sendBorderOutEmail($data, $message, $address)
+    {
         if (count($data) > 0) {
             $body = $this->app['twig']->render('drawdown_notification.html.twig', array('data' => $data));
             $message->setBody($body);
@@ -720,7 +727,7 @@ class AggregateCommand extends Command
             $status = array();
             $d = array();
             foreach ($data as $server => $values) {
-                if($this->isNotIgnore($server)) {
+                if ($this->isNotIgnore($server)) {
                     $d[$server] = $values;
                     foreach ($values as $indicator) {
                         foreach ($indicator as $host) {
