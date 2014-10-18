@@ -2,8 +2,6 @@
 
 require_once __DIR__.'/../vendor/autoload.php';
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Pinboard\Logger\DbalLogger;
 use Pinboard\Stopwatch\Stopwatch;
 
@@ -13,7 +11,8 @@ $app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/paramete
 $app->register(new Silex\Provider\TwigServiceProvider(), array(
     'twig.path' => __DIR__.'/../views',
 ));
-$app['twig'] = $app->share($app->extend('twig', function($twig, $app) {
+
+$app['twig'] = $app->share($app->extend('twig', function ($twig, $app) {
     if (!isset($app['params']['base_url']) || empty($app['params']['base_url'])) {
         $baseUrl = '/';
     } else {
@@ -38,6 +37,7 @@ $dbOptions = array(
     'user'     => $app['params']['db']['user'],
     'password' => $app['params']['db']['pass'],
 );
+
 if (isset($app['params']['db']['port'])) {
     $dbOptions['port'] = $app['params']['db']['port'];
 }

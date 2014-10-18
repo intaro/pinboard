@@ -536,6 +536,7 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', 
     Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
+    $status = (int) $app['request']->get('status');
 
     $result = array(
         'server_name' => $serverName,
@@ -562,7 +563,8 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', 
 
     $startPos = ($pageNum - 1) * $rowPerPage;
     $result['hosts']    = getHosts($app['db'], $serverName);
-    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir);
+    $result['statuses'] = getErrorPages($app['db'], $serverName, $hostName, $startPos, $rowPerPage, $colOrder, $colDir, $status);
+    $result['statuses_list'] = getStatuses($app['db'], $serverName, $hostName);
 
     return $app['twig']->render(
         'statuses.html.twig',
@@ -575,6 +577,43 @@ $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', 
 ->value('colDir', null)
 ->assert('pageNum', 'page\d+')
 ->bind('server_statuses');
+
+function getStatuses($conn, $serverName, $hostName)
+{
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-1 week'))
+    );
+
+    $condition = '';
+
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $condition = ' AND hostname = :hostname';
+    }
+
+    $sql = '
+        SELECT
+            DISTINCT status
+        FROM
+            ipm_status_details
+        WHERE
+            server_name = :server_name
+            ' . $condition . '
+            AND created_at > :created_at
+        ORDER BY
+            status
+    ';
+
+    $statuses = array();
+    $data = $conn->fetchAll($sql, $params);
+
+    foreach ($data as $item) {
+        $statuses[] = $item['status'];
+    }
+
+    return $statuses;
+}
 
 function getErrorPagesCount($conn, $serverName, $hostName) {
     $params = array(
@@ -604,16 +643,23 @@ function getErrorPagesCount($conn, $serverName, $hostName) {
     return (int)$data[0]['COUNT(*)'];
 }
 
-function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir) {
+function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir, $status = 0)
+{
     $params = array(
         'server_name' => $serverName,
         'created_at'  => date('Y-m-d H:i:s', strtotime('-1 week')),
     );
-    $hostCondition = '';
+
+    $condition = '';
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
-        $hostCondition = 'AND hostname = :hostname';
+        $condition = ' AND hostname = :hostname';
+    }
+
+    if ($status) {
+        $params['status'] = $status;
+        $condition .= ' AND status = :status';
     }
 
     $orderBy = 'created_at DESC';
@@ -628,7 +674,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
             ipm_status_details
         WHERE
             server_name = :server_name
-            ' . $hostCondition . '
+            ' . $condition . '
             AND created_at > :created_at
         ORDER BY
             ' . $orderBy. '
@@ -638,7 +684,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $data = $conn->fetchAll($sql, $params);
 
-    foreach($data as &$item) {
+    foreach ($data as &$item) {
         $item['script_name'] = Utils::urlDecode($item['script_name']);
         $item = Utils::parseRequestTags($item);
     }

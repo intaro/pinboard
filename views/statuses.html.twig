@@ -5,7 +5,23 @@
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <div class="row">
       <div class="span12">
-        <p class="lead">Error pages for a last week</p>
+        <p class="lead b-epages-title">Error pages for a last week</p>
+        {% if statuses_list %}
+            <div class="b-status-selector">
+                <small class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        Status: {{app.request.get('status')|default('All')}} <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ path('server_statuses', { serverName: app.request.get('serverName'), hostName: app.request.get('hostName'), pageNum: app.request.get('pageNum'), colOrder: app.request.get('colOrder'), colDir: app.request.get('colDir') })}}">All</a></li>
+                        {% for status in statuses_list  %}
+                            <li><a href="{{ path('server_statuses', { serverName: app.request.get('serverName'), hostName: app.request.get('hostName'), pageNum: app.request.get('pageNum'), colOrder: app.request.get('colOrder'), colDir: app.request.get('colDir'), status: status })}}">{{status}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </small>
+            </div>
+        {% endif %}
+        <div class="clearfix"></div>
         {% if statuses|length > 0 %}
           <table class="table table-bordered table-hover table-striped">
             <tr>
