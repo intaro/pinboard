@@ -445,6 +445,12 @@ class AggregateCommand extends Command
         ';
         $db->query($sql);
 
+        $minHttpStatus = isset($this->params['aggregation']['min_http_status'])
+            ? $this->params['aggregation']['min_http_status'] : 500;
+
+        $limitRows = isset($this->params['aggregation']['limit_rows_per_operation'])
+            ? $this->params['aggregation']['limit_rows_per_operation'] : 25;
+
         $sql = '
             INSERT INTO
                 ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt)
@@ -453,12 +459,15 @@ class AggregateCommand extends Command
             FROM
                 request
             WHERE
-                status >= 500
+                status >= ' . $minHttpStatus . '
             GROUP BY
                 server_name, hostname, script_name
-            LIMIT
-                25
         ';
+
+        if ($limitRows) {
+            $sql = sprintf('%s LIMIT %s', $sql, $limitRows);
+        }
+
         $db->query($sql);
 
         $sql = '';
