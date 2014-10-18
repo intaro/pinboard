@@ -165,7 +165,6 @@ class AggregateCommand extends Command
                     ->setFrom(isset($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard')
                     ->setTo($this->params['notification']['global_email'])
                     ->setBody($body);
-                    ;
 
                 $this->sendEmail($message);
             }
