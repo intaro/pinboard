@@ -20,7 +20,7 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ curl -sS https://getcomposer.org/installer | php
 
-3. Install dependency libraries throw composer:
+3. Install dependency libraries through composer:
 
         $ php composer.phar install
 
