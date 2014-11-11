@@ -35,5 +35,13 @@
         "psr-0": {
             "Pinboard": "src/"
         }
+    },
+	"scripts": {
+        "post-install-cmd": [
+            "./console migrations:migrate"
+        ],
+        "post-update-cmd": [
+            "./console migrations:migrate"
+        ]
     }
 }

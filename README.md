@@ -24,17 +24,11 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ php composer.phar install
 
-4. Create config file and enter parameters of connection to Pinba database:
+4. Initialize app (command will define crontab task):
 
-        $ cp config/parameters.yml.dist config/parameters.yml
-        $ nano config/parameters.yml
-
-5. Initialize app (command will create additional tables and define crontab task):
-
-        $ ./console migrations:migrate
         $ ./console register-crontab
 
-6. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
+5. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
 
         server {
             listen 80;
