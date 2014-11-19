@@ -1012,12 +1012,9 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
         $result['limit'] = 50;
 
         // save filter in session
-        if ($request->get('req_time')) {
-            $liveFilter[$serverName]['req_time'] = $request->get('req_time');
-        }
-        if ($request->get('tags')) {
-            $liveFilter[$serverName]['tags'] = $request->get('tags');
-        }
+        $liveFilter[$serverName]['req_time'] = $request->get('req_time');
+        $liveFilter[$serverName]['tags'] = $request->get('tags');
+
         $app['session']->set('filter_params', $liveFilter);
 
         $liveFilter[$serverName]['last_id'] = $request->get('last_id');
