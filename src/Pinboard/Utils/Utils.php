@@ -65,18 +65,31 @@ class Utils
         return $hasAccess;
     }
 
-    public static function parseRequestTags($request)
+    public static function parseRequestTags($request, $tagsFilter = null)
     {
+        //request tags matches the tags' filter
+        if (sizeof($tagsFilter)) {
+            if (!$request['tags_cnt']) {
+                return false;
+            }
+
+            foreach ($tagsFilter as $tagName => $tagValue) {
+                if (false === stripos($request['tags'], $tagName.'='.$tagValue)) {
+                    return false;
+                }
+            }
+        }
+
         if ($request['tags_cnt']) {
             $r = explode(',', $request['tags']);
             $request['tags'] = array();
             foreach ($r as $k) {
                 $k = explode('=', $k);
                 if (sizeof($k) > 1) {
-                    $request['tags'][$k[0]] = $k[1];
+                    $request['tags'][trim($k[0])] = trim($k[1]);
                 }
                 elseif (sizeof($k) == 1) {
-                    $request['tags'][$k[0]] = null;
+                    $request['tags'][trim($k[0])] = null;
                 }
             }
         }

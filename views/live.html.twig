@@ -7,8 +7,28 @@
     <div class="pull-right live-controls">
         <a href="#" title="Play" class="icon-play disabled"></a>
         <a href="#" title="Pause" class="icon-pause"></a>
+        <button class="btn btn-mini filter" type="button">Filter</button>
     </div>
-    <p class="lead">The page is refreshed every {{ frequency }} seconds</p>
+    <p class="lead" style="display: {{ show_filter ? 'none' : 'block' }};">
+        <span>
+            The page is refreshed every {{ frequency }} seconds
+        </span>
+    </p>
+    <div class="filter-form" style="display: {{ show_filter ? 'block' : 'none' }};">
+        <form id="filter-form">
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="add-on"><i class="icon-tag"></i></span>
+                    <input name="tags" class="span4" type="text" value="{{ filter.tags is defined ? filter.tags : '' }}" placeholder="Tag filter (tag_name=tag_value)">
+                </div>
+                <div class="input-prepend">
+                    <span class="add-on"><i class="icon-time"></i></span>
+                    <input name="req_time" class="span4" type="text" value="{{ filter.req_time is defined ? filter.req_time : '' }}" placeholder="Min request time filter, ms">
+                </div>
+            </div>
+            <input type="hidden" name="last_id" />
+        </form>
+    </div>
     <div class="row">
         <div class="span4">
             <h3>Request time</h3>
@@ -221,11 +241,13 @@
     </script>
     <script type="text/javascript">
         var liveStatus = true,
-            lastId = {{ last_id }}, limit = {{ limit }},
+            limit = {{ limit }},
             frequency = {{ frequency * 1000 }},
             timersPath = '{{ path('timers_show', { type: 'live', requestId: '00000' }) }}',
             updating = false,
             timerHandler;
+
+        $('#filter-form input[name=last_id]').val({{ last_id }});
 
         $(function() {
             if (liveStatus) {
@@ -242,7 +264,8 @@
 
             $.ajax({
                 url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}",
-                data: { last_id: lastId },
+                method: 'post',
+                data: $('#filter-form').serialize(),
                 success: function(data){
                     if (typeof data.pages !== undefined && data.pages.length > 0) {
                         var resHtml = tmpl("row_tpl", { pages: data.pages, timersPath: timersPath });
@@ -279,7 +302,7 @@
                         muChart.validateData();
                         cpuChart.validateData();
 
-                        lastId = data.pages[0].id;
+                        $('#filter-form input[name=last_id]').val(data.pages[0].id);
                     }
 
                     updating = false;
@@ -314,6 +337,17 @@
             $('.live-controls .icon-play').addClass('disabled');
 
             return false;
+        });
+
+        $('.live-controls button.filter').click(function() {
+            if ($('.lead').is(':visible')) {
+                $('.filter-form').show();
+                $('.lead').hide();
+            }
+            else {
+                $('.filter-form').hide();
+                $('.lead').show();
+            }
         });
     </script>
 {% endblock %}

@@ -989,32 +989,16 @@ $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}',
 ->bind('server_cpu_usage');
 
 
-$server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
+$server->match('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
     Utils::checkUserAccess($app, $serverName);
 
-    if ($request->isXmlHttpRequest()) {
-        $result = array(
-            'pages' => getLivePages($app['db'], $serverName, $hostName, $request->get('last_id')),
-        );
-
-        $ids = array();
-        foreach ($result['pages'] as $item) {
-            $ids[] = $item['id'];
-        }
-        $addData = getTagsTimersForIds($app['db'], $ids);
-
-        foreach ($addData as $addItem) {
-            foreach ($result['pages'] as &$item) {
-                if ($addItem['id'] == $item['id']) {
-                    foreach ($addItem as $key => $value) {
-                        $item[$key] = $value;
-                    }
-                    $item = Utils::parseRequestTags($item);
-                }
-            }
-        }
-
-        return $app->json($result);
+    // filter from session
+    $liveFilter = $app['session']->get('filter_params');
+    if (!$liveFilter) {
+        $liveFilter = array();
+    }
+    if (!isset($liveFilter[$serverName])) {
+        $liveFilter[$serverName] = array();
     }
 
     $result = array(
@@ -1024,40 +1008,91 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'limit'       => 100,
     );
 
-    $result['pages'] = getLivePages($app['db'], $serverName, $hostName, null, $result['limit']);
+    if ($request->isXmlHttpRequest()) {
+        $result['limit'] = 50;
+
+        // save filter in session
+        if ($request->get('req_time')) {
+            $liveFilter[$serverName]['req_time'] = $request->get('req_time');
+        }
+        if ($request->get('tags')) {
+            $liveFilter[$serverName]['tags'] = $request->get('tags');
+        }
+        $app['session']->set('filter_params', $liveFilter);
+
+        $liveFilter[$serverName]['last_id'] = $request->get('last_id');
+    } else {
+        $result['filter'] = $liveFilter[$serverName];
+        $result['show_filter'] = false;
+        if (sizeof($result['filter'])) {
+            foreach ($result['filter'] as $item) {
+                if ($item) {
+                    $result['show_filter'] = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    $result['pages'] = getLivePages($app['db'], $serverName, $hostName, $result['limit'], $liveFilter[$serverName]);
+
     $ids = array();
     foreach ($result['pages'] as $item) {
         $ids[] = $item['id'];
     }
     $addData = getTagsTimersForIds($app['db'], $ids);
 
-    foreach ($addData as $addItem) {
-        foreach ($result['pages'] as &$item) {
-            if ($addItem['id'] == $item['id']) {
-                foreach ($addItem as $key => $value) {
-                    $item[$key] = $value;
-                }
-                $item = Utils::parseRequestTags($item);
+    $tagsFilter = array();
+    if (isset($liveFilter[$serverName]['tags'])) {
+        if (preg_match_all(
+            '/([\w\:-_]+)\s*?\=\s*?([\w\:-_]+)/',
+            $liveFilter[$serverName]['tags'],
+            $matches,
+            PREG_SET_ORDER
+        )) {
+            foreach ($matches as $match) {
+                $tagsFilter[$match[1]] = $match[2];
             }
         }
     }
+    foreach ($addData as $addItem) {
+        foreach ($result['pages'] as $k => $item) {
+            if ($addItem['id'] == $item['id']) {
+                foreach ($addItem as $key => $value) {
+                    $result['pages'][$k][$key] = $value;
+                }
+                $item = Utils::parseRequestTags($result['pages'][$k], $tagsFilter);
+                if (!$item) {
+                    unset($result['pages'][$k]);
+                } else {
+                    $result['pages'][$k] = $item;
+                }
+            }
+        }
+    }
+    $result['pages'] = array_values($result['pages']);
 
-    $result['hosts'] = getHosts($app['db'], $serverName);
-    $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
+    if ($request->isXmlHttpRequest()) {
+        return $app->json($result);
+    } else {
+        $result['hosts'] = getHosts($app['db'], $serverName);
+        $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
 
-    $response = new Response();
-    $response->setContent($app['twig']->render(
-        'live.html.twig',
-        $result
-    ));
-    $response->headers->addCacheControlDirective('no-cache', true);
-    $response->headers->addCacheControlDirective('no-store', true);
-    $response->headers->addCacheControlDirective('must-revalidate', true);
-    $response->headers->set('Pragma', 'no-cache');
-    $response->headers->set('Expires', '0');
+        $response = new Response();
+        $response->setContent($app['twig']->render(
+            'live.html.twig',
+            $result
+        ));
+        $response->headers->addCacheControlDirective('no-cache', true);
+        $response->headers->addCacheControlDirective('no-store', true);
+        $response->headers->addCacheControlDirective('must-revalidate', true);
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
 
-    return $response;
+        return $response;
+    }
 })
+->method('GET|POST')
 ->value('hostName', 'all')
 ->bind('server_live');
 
@@ -1079,7 +1114,7 @@ function getTagsTimersForIds($conn, $ids) {
 }
 
 
-function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50) {
+function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter) {
     $params = array(
         'server_name' => $serverName,
     );
@@ -1088,11 +1123,15 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
-        $hostCondition = 'AND hostname = :hostname';
+        $hostCondition .= ' AND hostname = :hostname';
     }
-    if ($lastId > 0) {
-        $params['last_id'] = $lastId;
-        $idCondition = 'AND id > :last_id';
+    if (isset($filter['last_id']) && $filter['last_id'] > 0) {
+        $params['last_id'] = $filter['last_id'];
+        $idCondition .= ' AND id > :last_id';
+    }
+    if (isset($filter['req_time']) && $filter['req_time']) {
+        $params['req_time'] = $filter['req_time'] / 1000;
+        $idCondition .= ' AND req_time >= :req_time';
     }
 
     $sql = '
