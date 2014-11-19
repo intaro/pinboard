@@ -19,11 +19,11 @@
             <div class="controls">
                 <div class="input-prepend">
                     <span class="add-on"><i class="icon-tag"></i></span>
-                    <input name="tags" class="span4" type="text" value="{{ filter.tags is defined ? filter.tags : '' }}" placeholder="Tag filter (tag_name=tag_value)">
+                    <input name="tags" class="span4" type="text" value="{{ filter.tags is defined ? filter.tags : '' }}" placeholder="Tag value (tag_name=tag_value)">
                 </div>
                 <div class="input-prepend">
                     <span class="add-on"><i class="icon-time"></i></span>
-                    <input name="req_time" class="span4" type="text" value="{{ filter.req_time is defined ? filter.req_time : '' }}" placeholder="Min request time filter, ms">
+                    <input name="req_time" class="span4" type="text" value="{{ filter.req_time is defined ? filter.req_time : '' }}" placeholder="Min request time, ms">
                 </div>
             </div>
             <input type="hidden" name="last_id" />
