@@ -61,8 +61,18 @@ h1 .dropdown-menu {
     font-size: 16px;
 }
 
+.live-controls a {
+    position: relative;
+    top: 2px;
+}
 .live-controls a.disabled {
     opacity: 0.2;
+}
+.live-controls button {
+    margin-left: 5px;
+}
+.filter-form > form {
+    margin-bottom: 10px;
 }
 
 h4.timer-head {
