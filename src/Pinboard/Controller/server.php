@@ -346,7 +346,7 @@ $server->get('/{serverName}/{hostName}/timers', function(Request $request, $serv
         'server_name' => $serverName,
         'hostname' => $hostName,
         'charts' => array(
-            'timer_median' => array(
+            /*'timer_median' => array(
                 'title' => 'Request time',
                 'subtitle' => 'median',
                 'field' => 'timer_median',
@@ -359,7 +359,7 @@ $server->get('/{serverName}/{hostName}/timers', function(Request $request, $serv
                 'field' => 'p95',
                 'unit' => ' ms',
                 'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_p95', $period, $serverFilter),
-            ),
+            ),*/
             'hit_count' => array(
                 'title' => 'Hit count',
                 'field' => 'hit_count',
