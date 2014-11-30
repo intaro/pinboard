@@ -1,7 +1,7 @@
 Intaro Pinboard
 =============================
 
-[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [Pinba][2] data.
+[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [pinba][2] data.
 
 ![Intaro Pinboard](http://intaro.github.io/pinboard/img/main-img.png)
 
@@ -9,6 +9,8 @@ Intaro Pinboard
 Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
 ## Installation
+
+Before Pinboard installation you should already be installed [pinba][2]. Pinba's creators recommend to install `devel` branch of pinba because it's more stable and actual.
 
 1. Download application:
 
@@ -20,21 +22,16 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
         $ curl -sS https://getcomposer.org/installer | php
 
-3. Install dependency libraries throw composer:
+3. Install dependency libraries through composer (and enter the parameters of connection to Pinba database):
 
         $ php composer.phar install
 
-4. Create config file and enter parameters of connection to Pinba database:
-
-        $ cp config/parameters.yml.dist config/parameters.yml
-        $ nano config/parameters.yml
-
-5. Initialize app (command will create additional tables and define crontab task):
+4. Initialize app (command will create additional tables and define crontab task):
 
         $ ./console migrations:migrate
         $ ./console register-crontab
 
-6. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
+5. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
 
         server {
             listen 80;
