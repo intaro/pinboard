@@ -258,9 +258,11 @@ function formatRequestTimes($r) {
         }
     }
 
-    $r['req_time_other'] = $r['req_time'] - $v;
-    $r['req_time_other_format'] = number_format($r['req_time_other'], 0, '.', ',');
-    $r['req_time_other_percent'] = number_format($r['req_time_other'] / $r['req_time'] * 100, 2, '.', ',');
+    if ($r['req_time'] - $v > 0) {
+        $r['req_time_other'] = $r['req_time'] - $v;
+        $r['req_time_other_format'] = number_format($r['req_time_other'], 0, '.', ',');
+        $r['req_time_other_percent'] = number_format($r['req_time_other'] / $r['req_time'] * 100, 2, '.', ',');
+    }
 
     return $r;
 }
