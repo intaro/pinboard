@@ -1,6 +1,11 @@
 CHANGELOG / Intaro Pinboard
 ===========================
 
+* 1.4 (2014-11-30)
+
+* feature #5 Add tag support
+* feature #96 Add "request time" and "tag" filter on Live page
+
 * 1.3 (2014-10-04)
 
 * bug #88 Slow query on Overview tab of the server

@@ -16,7 +16,7 @@ Before Pinboard installation you should already be installed [pinba][2]. Pinba's
 
         $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
-        $ git checkout v1.3
+        $ git checkout v1.4
 
 2. Download [composer](http://getcomposer.org):
 
