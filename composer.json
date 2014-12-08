@@ -12,9 +12,10 @@
         "symfony/twig-bridge": "~2.1",
         "symfony/console": "dev-master",
         "symfony/process": "dev-master",
-        "symfony/yaml": "dev-master",
+        "symfony/yaml": "2.*",
         "symfony/security": "2.3.*",
-        "swiftmailer/swiftmailer": ">=4.1.2,<4.2-dev"
+        "swiftmailer/swiftmailer": ">=4.1.2,<4.2-dev",
+        "incenteev/composer-parameter-handler": "~2.0"
     },
     "suggest": {
         "ext-apc": "Opcode cache. Improves Application performance."
@@ -36,12 +37,20 @@
             "Pinboard": "src/"
         }
     },
-	"scripts": {
+    "scripts": {
         "post-install-cmd": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
             "./console migrations:migrate"
         ],
         "post-update-cmd": [
+            "Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
             "./console migrations:migrate"
         ]
+    },
+    "extra": {
+        "incenteev-parameters": {
+            "file": "config/parameters.yml",
+            "parameter-key": "db"
+        }
     }
 }

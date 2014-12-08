@@ -2,6 +2,7 @@
 
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Pinboard\Utils\IDNaConvert;
+use Pinboard\Utils\Utils;
 
 $index = $app['controllers_factory'];
 
@@ -12,24 +13,12 @@ $index->get('/', function() use ($app) {
         'created_at' => date('Y-m-d H:00:00', strtotime('-1 day')),
     );
 
-    $hosts = ".*";
+    $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
+    $hostsWhere = '';
 
-    if (isset($app['params']['secure']['enable'])) {
-        if ($app['params']['secure']['enable'] == "true") {
-            $user = $app['security']->getToken()->getUser();
-            $hosts = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
-                        : ".*";
-            if (trim($hosts) == "") {
-                $hosts = ".*";
-            }
-        }
-    }
-
-    $hostQueryPart = '';
-    if ($hosts != '.*') {
-        $hostQueryPart = ' AND a.server_name REGEXP :hosts';
-        $params['hosts'] = $hosts;
+    if ($hostsRegexp != '.*') {
+        $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : array($hostsRegexp);
+        $hostsWhere = " AND (a.server_name REGEXP '" . implode("' OR a.server_name REGEXP '", $hostsRegexp) . "')";
     }
 
     $sql = '
@@ -49,7 +38,7 @@ $index->get('/', function() use ($app) {
         FROM
             ipm_report_by_hostname_and_server a
         WHERE
-            a.created_at > :created_at' . $hostQueryPart . '
+            a.created_at > :created_at' . $hostsWhere . '
         GROUP BY
             a.server_name
     ';

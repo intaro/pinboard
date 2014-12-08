@@ -4,6 +4,7 @@ use Pinboard\Utils\Utils;
 use Pinboard\Utils\SqlUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Pinboard\Command\AggregateCommand;
 
 $ROW_PER_PAGE = 50;
@@ -14,27 +15,8 @@ $server = $app['controllers_factory'];
 
 $allowedPeriods = array('1 day', '3 days', '1 week', '1 month');
 
-function checkUserAccess($app, $serverName) {
-    $hostsRegExp = ".*";
-    if (isset($app['params']['secure']['enable'])) {
-        if ($app['params']['secure']['enable'] == "true") {
-            $user = $app['security']->getToken()->getUser();
-            $hostsRegExp = isset($app['params']['secure']['users'][$user->getUsername()]['hosts'])
-                        ? $app['params']['secure']['users'][$user->getUsername()]['hosts']
-                        : ".*";
-            if (trim($hostsRegExp) == "") {
-                $hosts = ".*";
-            }
-        }
-    }
-
-    if (!preg_match("/" . $hostsRegExp . "/", $serverName)) {
-        $app->abort(403, "Access denied");
-    }
-}
-
 $server->get('/{serverName}/{hostName}/overview.{format}', function(Request $request, $serverName, $hostName, $format) use ($app, $allowedPeriods) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $period = $request->get('period', '1 day');
     if (!in_array($period, $allowedPeriods)) {
@@ -341,9 +323,217 @@ function getRequestReview($conn, $serverName, $hostName, $period) {
     return $data;
 }
 
+$server->get('/{serverName}/{hostName}/timers', function(Request $request, $serverName, $hostName) use ($app, $allowedPeriods) {
+    Utils::checkUserAccess($app, $serverName);
+
+    $period = $request->get('period', '1 day');
+    if (!in_array($period, $allowedPeriods)) {
+        $period = '1 day';
+    }
+
+    $serverFilter = $request->get('server', 'off');
+    if (!in_array($serverFilter, array('on', 'off'))) {
+        $serverFilter = 'off';
+    }
+    $serverFilter = $serverFilter == 'on';
+
+    $result = array(
+        'hosts' => getHosts($app['db'], $serverName),
+        'title' => $serverName,
+        'periods' => $allowedPeriods,
+        'period' => $period,
+        'server_filter' => $serverFilter,
+        'server_name' => $serverName,
+        'hostname' => $hostName,
+        'charts' => array(
+            /*'timer_median' => array(
+                'title' => 'Request time',
+                'subtitle' => 'median',
+                'field' => 'timer_median',
+                'unit' => ' ms',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_median', $period, $serverFilter),
+            ),
+            'timer_p95' => array(
+                'title' => 'Request time',
+                'subtitle' => '95th percentile',
+                'field' => 'p95',
+                'unit' => ' ms',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_p95', $period, $serverFilter),
+            ),*/
+            'hit_count' => array(
+                'title' => 'Hit count',
+                'field' => 'hit_count',
+                'unit' => '',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'hit_count', $period, $serverFilter),
+            ),
+            'timer_value' => array(
+                'title' => 'Timer value',
+                'subtitle' => 'total',
+                'field' => 'timer_value',
+                'unit' => ' s',
+                'data' => getTimersList($app['db'], $serverName, $hostName, 'timer_value', $period, $serverFilter),
+            ),
+        ),
+        'request_graphs' => array(
+            'req_time_median' => array(
+                'title' => 'Request time (median)',
+            ),
+            'req_time_p95' => array(
+                'title' => 'Request time (95th percentile)',
+            ),
+            'req_time_total' => array(
+                'title' => 'Total request time',
+            ),
+        ),
+    );
+
+    return $app['twig']->render(
+        'timers.html.twig',
+        $result
+    );
+})
+->value('hostName', 'all')
+->bind('server_timers');
+
+function getTimersList($conn, $serverName, $hostName, $valueField, $period, $serverFilter) {
+    $params = array(
+        'server_name' => $serverName,
+        'created_at'  => date('Y-m-d H:i:s', strtotime('-' . $period)),
+    );
+    $timeGroupBy = SqlUtils::getDateGroupExpression($period);
+
+    $aggregation = array(
+        'hit_count' => array(
+            'agg' => 'sum(hit_count)',
+        ),
+        'timer_value' => array(
+            'agg' => 'sum(timer_value)',
+            'req_field' => 'req_time_total',
+            'req_agg' => 'sum(req_time_total)',
+        ),
+        'timer_median' => array(
+            'agg' => 'max(timer_median)',
+            'req_field' => 'req_time_median',
+            'req_agg' => 'max(req_time_median)',
+        ),
+        'timer_p95' => array(
+            'agg' => 'max(p95)',
+            'req_field' => 'req_time_p95',
+            'req_agg' => 'max(p95)',
+        ),
+    );
+
+    $hostCondition = '';
+    if ($hostName != 'all') {
+        $params['hostname'] = $hostName;
+        $hostCondition = 'AND hostname = :hostname';
+    }
+    else {
+        $hostCondition = 'AND hostname IS NULL';
+    }
+
+    $serverCondition = '';
+    if ($serverFilter) {
+        $serverCondition = 'AND server IS NOT NULL';
+    }
+    else {
+        $serverCondition = 'AND server IS NULL';
+    }
+
+    $timers = array();
+    $result = array();
+
+    if (isset($aggregation[$valueField]['req_field'])) {
+        $sql = '
+            SELECT
+                ' . $aggregation[$valueField]['req_agg'] . ' as ' . $aggregation[$valueField]['req_field'] . ', created_at
+            FROM
+                ' . ($hostName != 'all' ? 'ipm_report_by_hostname_and_server' : 'ipm_report_by_server_name') . '
+            WHERE
+                server_name = :server_name
+                ' . ($hostName != 'all' ? $hostCondition : '') . '
+                AND created_at > :created_at
+            GROUP BY
+                ' . $timeGroupBy . '
+            ORDER BY
+                created_at ASC
+        ';
+
+        $data = $conn->fetchAll($sql, $params);
+
+        foreach ($data as $item) {
+            $t = strtotime($item['created_at']);
+            $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+            if (isset($item['req_time_median']))
+                $item['req_time_median'] = number_format($item['req_time_median'] * 1000, 3, '.', '');
+            if (isset($item['req_time_p95']))
+                $item['req_time_p95'] = number_format($item['req_time_p95'] * 1000, 3, '.', '');
+            if (isset($item['req_time_total']))
+                $item['req_time_total'] = number_format($item['req_time_total'], 3, '.', '');
+
+
+            if (!isset($result[$item['date']])) {
+                $result[$item['date']] = array();
+            }
+            $result[$item['date']][$aggregation[$valueField]['req_field']] = $item[$aggregation[$valueField]['req_field']];
+        }
+
+        $timers[] = $aggregation[$valueField]['req_field'];
+    }
+
+    $sql = '
+        SELECT
+            category, ' . ($serverFilter ? 'server, ' : '') . 'created_at, ' . $aggregation[$valueField]['agg'] . ' as ' . $valueField . '
+        FROM
+            ipm_tag_info
+        WHERE
+            server_name = :server_name
+            ' . $hostCondition . '
+            ' . $serverCondition . '
+            AND `category` IS NOT NULL
+            AND created_at > :created_at
+        GROUP BY
+            category, ' . ($serverFilter ? 'server, ' : '') . $timeGroupBy . '
+        ORDER BY
+            created_at ASC, ' . $valueField . ' DESC
+    ';
+
+    $data = $conn->fetchAll($sql, $params);
+
+    foreach($data as &$item) {
+        $t = strtotime($item['created_at']);
+        $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        if (isset($item['timer_median']))
+            $item['timer_median'] = number_format($item['timer_median'] * 1000, 3, '.', '');
+        if (isset($item['timer_p95']))
+            $item['timer_p95'] = number_format($item['timer_p95'] * 1000, 3, '.', '');
+        if (isset($item['timer_value']))
+            $item['timer_value'] = number_format($item['timer_value'], 3, '.', '');
+        if (isset($item['hit_count']))
+            $item['hit_count'] = number_format($item['hit_count'], 0, '.', '');
+
+        $key = $item['category'];
+        if ($serverFilter && strlen($item['server'])) {
+            $key .= ' (' . $item['server'] . ')';
+        }
+
+        if (!in_array($key, $timers)) {
+            $timers[] = $key;
+        }
+        if (!isset($result[$item['date']])) {
+            $result[$item['date']] = array();
+        }
+        $result[$item['date']][$key] = $item[$valueField];
+    }
+
+    return array(
+        'timers' => sizeof($data) ? $timers : array(),
+        'values' => sizeof($data) ? $result : array(),
+    );
+}
 
 $server->get('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -433,7 +623,7 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, status, created_at
+            DISTINCT server_name, hostname, script_name, status, tags, tags_cnt, created_at
         FROM
             ipm_status_details
         WHERE
@@ -448,11 +638,16 @@ function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $data = $conn->fetchAll($sql, $params);
 
+    foreach($data as &$item) {
+        $item['script_name'] = Utils::urlDecode($item['script_name']);
+        $item = Utils::parseRequestTags($item);
+    }
+
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/req-time/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -541,7 +736,7 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, req_time, created_at
+            DISTINCT request_id, server_name, hostname, script_name, req_time, tags, tags_cnt, timers_cnt, created_at
         FROM
             ipm_req_time_details
         WHERE
@@ -557,14 +752,16 @@ function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colO
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
-        $item['req_time']  = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item['script_name'] = Utils::urlDecode($item['script_name']);
+        $item['req_time'] = number_format($item['req_time'] * 1000, 0, '.', ',');
+        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/mem-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -620,7 +817,7 @@ function getHeavyPagesCount($conn, $serverName, $hostName){
 
     $sql = '
         SELECT
-            COUNT(DISTINCT server_name, hostname, script_name, mem_peak_usage, created_at) as cnt
+            COUNT(DISTINCT server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at) as cnt
         FROM
             ipm_mem_peak_usage_details
         WHERE
@@ -648,7 +845,7 @@ function getCPUPagesCount($conn, $serverName, $hostName){
 
    $sql = '
         SELECT
-            COUNT(DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at) as cnt
+            COUNT(DISTINCT server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at) as cnt
         FROM
             ipm_cpu_usage_details
         WHERE
@@ -681,7 +878,7 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
 
    $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, cpu_peak_usage, created_at
+            DISTINCT server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at
         FROM
             ipm_cpu_usage_details
         WHERE
@@ -697,7 +894,9 @@ function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOr
    $data = $conn->fetchAll($sql, $params);
 
    foreach($data as &$item) {
-      $item['cpu_peak_usage']  = number_format($item['cpu_peak_usage'], 3, '.', ',');
+       $item['script_name'] = Utils::urlDecode($item['script_name']);
+       $item['cpu_peak_usage'] = number_format($item['cpu_peak_usage'], 3, '.', ',');
+       $item = Utils::parseRequestTags($item);
    }
 
    return $data;
@@ -722,7 +921,7 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
 
     $sql = '
         SELECT
-            DISTINCT server_name, hostname, script_name, mem_peak_usage, created_at
+            DISTINCT server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at
         FROM
             ipm_mem_peak_usage_details
         WHERE
@@ -738,14 +937,16 @@ function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $col
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
+        $item['script_name'] = Utils::urlDecode($item['script_name']);
         $item['mem_peak_usage']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+        $item = Utils::parseRequestTags($item);
     }
 
     return $data;
 }
 
 $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}', function($serverName, $hostName, $pageNum, $colOrder, $colDir) use ($app, $rowPerPage) {
-    checkUserAccess($app, $serverName);
+    Utils::checkUserAccess($app, $serverName);
 
     $pageNum = str_replace('page', '', $pageNum);
 
@@ -788,15 +989,16 @@ $server->get('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}',
 ->bind('server_cpu_usage');
 
 
-$server->get('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
-    checkUserAccess($app, $serverName);
+$server->match('/{serverName}/{hostName}/live', function(Request $request, $serverName, $hostName) use ($app) {
+    Utils::checkUserAccess($app, $serverName);
 
-    if ($request->isXmlHttpRequest()) {
-        $result = array(
-            'pages' => getLivePages($app['db'], $serverName, $hostName, $request->get('last_id')),
-        );
-
-        return $app->json($result);
+    // filter from session
+    $liveFilter = $app['session']->get('filter_params');
+    if (!$liveFilter) {
+        $liveFilter = array();
+    }
+    if (!isset($liveFilter[$serverName])) {
+        $liveFilter[$serverName] = array();
     }
 
     $result = array(
@@ -806,20 +1008,110 @@ $server->get('/{serverName}/{hostName}/live', function(Request $request, $server
         'limit'       => 100,
     );
 
-    $result['hosts'] = getHosts($app['db'], $serverName);
-    $result['pages'] = getLivePages($app['db'], $serverName, $hostName, null, $result['limit']);
-    $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
+    if ($request->isXmlHttpRequest()) {
+        $result['limit'] = 50;
 
-    return $app['twig']->render(
-        'live.html.twig',
-        $result
-    );
+        // save filter in session
+        $liveFilter[$serverName]['req_time'] = $request->get('req_time');
+        $liveFilter[$serverName]['tags'] = $request->get('tags');
+
+        $app['session']->set('filter_params', $liveFilter);
+
+        $liveFilter[$serverName]['last_id'] = $request->get('last_id');
+    } else {
+        $result['filter'] = $liveFilter[$serverName];
+        $result['show_filter'] = false;
+        if (sizeof($result['filter'])) {
+            foreach ($result['filter'] as $item) {
+                if ($item) {
+                    $result['show_filter'] = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    $result['pages'] = getLivePages($app['db'], $serverName, $hostName, $result['limit'], $liveFilter[$serverName]);
+
+    $ids = array();
+    foreach ($result['pages'] as $item) {
+        $ids[] = $item['id'];
+    }
+    $addData = getTagsTimersForIds($app['db'], $ids);
+
+    $tagsFilter = array();
+    if (isset($liveFilter[$serverName]['tags'])) {
+        if (preg_match_all(
+            '/([\w\:-_]+)\s*?\=\s*?([\w\:-_]+)/',
+            $liveFilter[$serverName]['tags'],
+            $matches,
+            PREG_SET_ORDER
+        )) {
+            foreach ($matches as $match) {
+                $tagsFilter[$match[1]] = $match[2];
+            }
+        }
+    }
+    foreach ($addData as $addItem) {
+        foreach ($result['pages'] as $k => $item) {
+            if ($addItem['id'] == $item['id']) {
+                foreach ($addItem as $key => $value) {
+                    $result['pages'][$k][$key] = $value;
+                }
+                $item = Utils::parseRequestTags($result['pages'][$k], $tagsFilter);
+                if (!$item) {
+                    unset($result['pages'][$k]);
+                } else {
+                    $result['pages'][$k] = $item;
+                }
+            }
+        }
+    }
+    $result['pages'] = array_values($result['pages']);
+
+    if ($request->isXmlHttpRequest()) {
+        return $app->json($result);
+    } else {
+        $result['hosts'] = getHosts($app['db'], $serverName);
+        $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
+
+        $response = new Response();
+        $response->setContent($app['twig']->render(
+            'live.html.twig',
+            $result
+        ));
+        $response->headers->addCacheControlDirective('no-cache', true);
+        $response->headers->addCacheControlDirective('no-store', true);
+        $response->headers->addCacheControlDirective('must-revalidate', true);
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
+    }
 })
+->method('GET|POST')
 ->value('hostName', 'all')
 ->bind('server_live');
 
+function getTagsTimersForIds($conn, $ids) {
+    if (!sizeof($ids)) {
+        return array();
+    }
 
-function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50) {
+    $sql = sprintf("
+        SELECT
+            id, tags, tags_cnt, timers_cnt
+        FROM
+            request
+        WHERE
+            id IN (%s)
+    ", implode(', ', $ids));
+
+    return $conn->fetchAll($sql);
+}
+
+
+function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter) {
     $params = array(
         'server_name' => $serverName,
     );
@@ -828,11 +1120,15 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
 
     if ($hostName != 'all') {
         $params['hostname'] = $hostName;
-        $hostCondition = 'AND hostname = :hostname';
+        $hostCondition .= ' AND hostname = :hostname';
     }
-    if ($lastId > 0) {
-        $params['last_id'] = $lastId;
-        $idCondition = 'AND id > :last_id';
+    if (isset($filter['last_id']) && $filter['last_id'] > 0) {
+        $params['last_id'] = $filter['last_id'];
+        $idCondition .= ' AND id > :last_id';
+    }
+    if (isset($filter['req_time']) && $filter['req_time']) {
+        $params['req_time'] = $filter['req_time'] / 1000;
+        $idCondition .= ' AND req_time >= :req_time';
     }
 
     $sql = '
@@ -853,6 +1149,7 @@ function getLivePages($conn, $serverName, $hostName, $lastId = null, $limit = 50
     $data = $conn->fetchAll($sql, $params);
 
     foreach($data as &$item) {
+        $item['script_name']     = Utils::urlDecode($item['script_name']);
         $item['req_time']        = $item['req_time'] * 1000;
         $item['mem_peak_usage']  = $item['mem_peak_usage'];
         $item['req_time_format']        = number_format($item['req_time'], 0, '.', ',');

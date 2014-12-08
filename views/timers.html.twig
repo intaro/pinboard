@@ -1,0 +1,110 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+
+    <ul class="nav nav-pills small period pull-right">
+        <li class="{{ server_filter ? '' :  'active' }}">
+            <a href="{{ path('server_timers', { serverName: server_name, hostName: hostname, period: period, server: 'off' }) }}">
+                w/o server details
+            </a>
+        </li>
+        <li class="{{ server_filter ? 'active' : '' }}">
+            <a href="{{ path('server_timers', { serverName: server_name, hostName: hostname, period: period, server: 'on' }) }}">
+                with server details
+            </a>
+        </li>
+    </ul>
+    {% include '_timers_period_menu.html.twig' with { server_name: server_name, hostname: hostname, period: period, periods: periods, server_filter: server_filter } %}
+
+    <div class="row">
+    {% if charts|length > 0 %}
+      {% for chart_key, chart in charts %}
+      <div class="span12">
+        <h2>{{ chart.title }} {{ chart.subtitle is defined ? ('<small>(' ~ chart.subtitle ~ ')</small>')|raw : '' }}</h2>
+        {% if chart.data.timers|length > 0 %}
+        <div id="{{ chart.field }}-chart" style="height: 250px;"></div>
+        <div id="{{ chart.field }}-legend" style="height: 100px;"></div>
+        <script type="text/javascript">
+            var {{ chart.field }}Chart;
+
+            var {{ chart.field }}ChartData = [];
+            {% for date, item in chart.data.values %}
+            {{ chart.field }}ChartData.push({
+                {% for timer in chart.data.timers %}
+                '{{ timer }}': {{ item[timer] is defined and item[timer] > 0 ? item[timer] : 0 }},
+                {% endfor %}
+                date: new Date({{ date }})
+            });
+            {% endfor %}
+
+            AmCharts.ready(function () {
+                // SERIAL CHART
+                {{ chart.field }}Chart = new AmCharts.AmSerialChart();
+                {{ chart.field }}Chart.pathToImages = "/js/amcharts/images/";
+                {{ chart.field }}Chart.dataProvider = {{ chart.field }}ChartData;
+                {{ chart.field }}Chart.categoryField = "date";
+
+                var categoryAxis = {{ chart.field }}Chart.categoryAxis;
+                categoryAxis.parseDates = true;
+                categoryAxis.equalSpacing = false;
+                categoryAxis.minPeriod = "mm";
+                categoryAxis.gridAlpha = 0.07;
+                categoryAxis.axisColor = "#DADADA";
+
+                // Value
+                var valueAxis = new AmCharts.ValueAxis();
+                valueAxis.gridAlpha = 0.07;
+                valueAxis.stackType = "regular";
+                //valueAxis.logarithmic = true;
+                {{ chart.field }}Chart.addValueAxis(valueAxis);
+
+                // GRAPH
+                var graph;
+
+                {% for timer in chart.data.timers %}
+                graph = new AmCharts.AmGraph();
+                graph.type = "line"; // try to change it to "column"
+                {% if request_graphs[timer] is defined %}
+                graph.title = "{{ request_graphs[timer]['title'] }}";
+                graph.stackable = false;
+                graph.lineAlpha = 0.5;
+                graph.fillAlphas = 0.3;
+                {% else %}
+                graph.title = "{{ timer }}";
+                graph.lineAlpha = 1;
+                graph.fillAlphas = 1;
+                {% endif %}
+                graph.balloonText = "[[value]]{{ chart.unit }}";
+                graph.valueField = "{{ timer }}";
+                graph.type = "smoothedLine";
+                {{ chart.field }}Chart.addGraph(graph);
+                {% endfor %}
+
+                // CURSOR
+                var chartCursor = new AmCharts.ChartCursor();
+                chartCursor.cursorPosition = "mouse";
+                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
+                {{ chart.field }}Chart.addChartCursor(chartCursor);
+
+                // LEGEND
+                var legend = new AmCharts.AmLegend();
+                {{ chart.field }}Chart.addLegend(legend, "{{ chart.field }}-legend");
+
+                // WRITE
+                {{ chart.field }}Chart.write("{{ chart.field }}-chart");
+            });
+        </script>
+        {% else %}
+        <p>No data for chart.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="span12">
+        <p class="text-center lead">No data for timers</p>
+      </div>
+    {% endif %}
+    </div>
+{% endblock %}

@@ -1,7 +1,7 @@
 Intaro Pinboard
 =============================
 
-[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [Pinba][2] data.
+[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [pinba][2] data.
 
 ![Intaro Pinboard](http://intaro.github.io/pinboard/img/main-img.png)
 
@@ -10,17 +10,19 @@ Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
 
 ## Installation
 
+Before Pinboard installation you should already be installed [pinba][2]. Pinba's creators recommend to install `devel` branch of pinba because it's more stable and actual.
+
 1. Download application:
 
         $ git clone git://github.com/intaro/pinboard.git
         $ cd ./pinboard
-        $ git checkout v1.3
+        $ git checkout v1.4
 
 2. Download [composer](http://getcomposer.org):
 
         $ curl -sS https://getcomposer.org/installer | php
 
-3. Install dependency libraries through composer:
+3. Install dependency libraries through composer (and enter the parameters of connection to Pinba database):
 
         $ php composer.phar install
 

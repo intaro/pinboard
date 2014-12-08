@@ -41,6 +41,11 @@ secure:
 #        testuser2:
 #            password: my_password2
 #            hosts: 'example\.com$'
+#        testuser3:
+#            password: my_password3
+#            hosts:
+#               - 'example\.com$'
+#               - 'some\-domain\.net$'
 
 #notification:
 #    enable: true
