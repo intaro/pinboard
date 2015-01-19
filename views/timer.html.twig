@@ -44,10 +44,10 @@
                 rtChart = null;
                 rtChartData = [{
                     {% for k, v in request.timers %}
-                    {{ k }}: "{{ v.value }}"{{ loop.revindex0 > 0 ? ',' : '' }}
+                    "{{ k }}": "{{ v.value }}"{{ loop.revindex0 > 0 ? ',' : '' }}
                     {% endfor %}
                     {% if request.req_time_other is defined %}
-                    , other: "{{ request.req_time_other }}"
+                    , "other": "{{ request.req_time_other }}"
                     {% endif %}
                 }];
 
