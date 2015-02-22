@@ -446,9 +446,9 @@ class AggregateCommand extends Command
 
         $sql = '
             INSERT INTO
-                ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt)
+                ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt, created_at)
             SELECT
-                server_name, hostname, script_name, status, tags, tags_cnt
+                server_name, hostname, script_name, status, tags, tags_cnt, FROM_UNIXTIME(max(timestamp))
             FROM
                 request
             WHERE
@@ -459,6 +459,8 @@ class AggregateCommand extends Command
                 25
         ';
         $db->query($sql);
+
+        $maxReqId = $db->fetchColumn('SELECT max(id) FROM ipm_req_time_details');
 
         $sql = '';
         foreach($servers as $server) {
@@ -473,7 +475,7 @@ class AggregateCommand extends Command
                 INSERT INTO ipm_req_time_details
                     (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
-                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), \'' . $now . '\'
+                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(max(timestamp))
                 FROM
                     request
                 WHERE
@@ -495,10 +497,10 @@ class AggregateCommand extends Command
                 FROM
                     ipm_req_time_details
                 WHERE
-                    created_at = :now
+                    id > :max_id
             ';
 
-            $data = $db->fetchAll($sql, array('now' => $now));
+            $data = $db->fetchAll($sql, array('max_id' => $maxReqId));
 
             $ids = array();
             foreach ($data as $item) {
@@ -511,9 +513,11 @@ class AggregateCommand extends Command
                     INSERT INTO ipm_timer
                         (timer_id, request_id, hit_count, value, tag_name, tag_value, created_at)
                     SELECT
-                        t.id, t.request_id, t.hit_count, t.value, tag.name as tag_name, tt.value as tag_value, \'' . $now . '\'
+                        t.id, t.request_id, t.hit_count, t.value, tag.name as tag_name, tt.value as tag_value, FROM_UNIXTIME(r.timestamp)
                     FROM
                         timer t
+                    JOIN
+                        request r ON t.request_id = r.id
                     JOIN
                         timertag tt ON tt.timer_id = t.id
                     JOIN
@@ -538,9 +542,9 @@ class AggregateCommand extends Command
 
             $sql .= '
                 INSERT INTO ipm_mem_peak_usage_details
-                    (server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt)
+                    (server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at)
                 SELECT
-                    server_name, hostname, script_name, max(mem_peak_usage), max(tags), max(tags_cnt)
+                    server_name, hostname, script_name, max(mem_peak_usage), max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
                 FROM
                     request
                 WHERE
@@ -568,9 +572,9 @@ class AggregateCommand extends Command
 
             $sql .= '
                   INSERT INTO ipm_cpu_usage_details
-                      (server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt)
+                      (server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at)
                   SELECT
-                      server_name, hostname, script_name, max(ru_utime), max(tags), max(tags_cnt)
+                      server_name, hostname, script_name, max(ru_utime), max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
                   FROM
                       request
                   WHERE

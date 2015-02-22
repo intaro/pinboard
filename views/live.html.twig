@@ -27,6 +27,7 @@
                 </div>
             </div>
             <input type="hidden" name="last_id" />
+            <input type="hidden" name="last_timestamp" />
         </form>
     </div>
     <div class="row">
@@ -190,12 +191,13 @@
               <th><div class="text-right">Status</div></th>
               <th><div class="text-right">Memory usage, kB</div></th>
               <th><div class="text-right">CPU usage</div></th>
+              <th><div class="text-right">Time</div></th>
             </tr>
             {% for page in pages %}
             <tr>
               <td class="host">{{ page.hostname }}</a></td>
               <td class="script-name">
-                <a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
+                <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}" title="{{ page.script_name }}">{{ page.script_name }}</a>
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}
@@ -209,6 +211,7 @@
               <td><div class="text-right">{{ page.status }}</div></td>
               <td><div class="text-right">{{ page.mem_peak_usage_format }}</div></td>
               <td><div class="text-right">{{ page.ru_utime }}</div></td>
+              <td><div class="text-right">{{ page.timestamp_format }}</div></td>
             </tr>
             {% endfor %}
           </table>
@@ -222,7 +225,7 @@
         <tr style="display: none;">
           <td class="host"><%=pages[i].hostname%></a></td>
           <td class="script-name">
-            <a href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title=""><%=pages[i].script_name%></a>
+            <a class="script-name" href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title="<%=pages[i].script_name%>"><%=pages[i].script_name%></a>
             <% for (k in pages[i].tags) { %>
                 <div class="muted"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
             <% } %>
@@ -236,6 +239,7 @@
           <td><div class="text-right"><%=pages[i].status%></div></td>
           <td><div class="text-right"><%=pages[i].mem_peak_usage_format%></div></td>
           <td><div class="text-right"><%=pages[i].ru_utime%></div></td>
+          <td><div class="text-right"><%=pages[i].timestamp_format%></div></td>
         </tr>
         <% } %>
     </script>
@@ -248,6 +252,7 @@
             timerHandler;
 
         $('#filter-form input[name=last_id]').val({{ last_id }});
+        $('#filter-form input[name=last_timestamp]').val({{ last_timestamp }});
 
         $(function() {
             if (liveStatus) {
@@ -303,6 +308,7 @@
                         cpuChart.validateData();
 
                         $('#filter-form input[name=last_id]').val(data.pages[0].id);
+                        $('#filter-form input[name=last_timestamp]').val(data.pages[0].timestamp);
                     }
 
                     updating = false;

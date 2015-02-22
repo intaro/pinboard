@@ -1018,6 +1018,7 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
         $app['session']->set('filter_params', $liveFilter);
 
         $liveFilter[$serverName]['last_id'] = $request->get('last_id');
+        $liveFilter[$serverName]['last_timestamp'] = $request->get('last_timestamp');
     } else {
         $result['filter'] = $liveFilter[$serverName];
         $result['show_filter'] = false;
@@ -1074,6 +1075,7 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
     } else {
         $result['hosts'] = getHosts($app['db'], $serverName);
         $result['last_id'] = sizeof($result['pages']) ? $result['pages'][0]['id'] : 0;
+        $result['last_timestamp'] = sizeof($result['pages']) ? $result['pages'][0]['timestamp'] : 0;
 
         $response = new Response();
         $response->setContent($app['twig']->render(
@@ -1124,7 +1126,8 @@ function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter)
     }
     if (isset($filter['last_id']) && $filter['last_id'] > 0) {
         $params['last_id'] = $filter['last_id'];
-        $idCondition .= ' AND id > :last_id';
+        $params['last_timestamp'] = $filter['last_timestamp'];
+        $idCondition .= ' AND id <> :last_id AND timestamp >= :last_timestamp';
     }
     if (isset($filter['req_time']) && $filter['req_time']) {
         $params['req_time'] = $filter['req_time'] / 1000;
@@ -1133,7 +1136,7 @@ function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter)
 
     $sql = '
         SELECT
-            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime
+            id, server_name, hostname, script_name, req_time, status, mem_peak_usage, ru_utime, timestamp
         FROM
             request
         WHERE
@@ -1141,19 +1144,29 @@ function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter)
             ' . $hostCondition . '
             ' . $idCondition . '
         ORDER BY
-            id DESC
+            timestamp DESC, id DESC
         LIMIT
             ' . $limit . '
     ';
 
     $data = $conn->fetchAll($sql, $params);
 
-    foreach($data as &$item) {
+    foreach($data as $k => &$item) {
+        if (isset($filter['last_id']) && $filter['last_id'] > 0) {
+            if (
+                $item['timestamp'] == $filter['last_timestamp'] &&
+                $item['id'] >= $filter['last_id'] - 10000
+            ) {
+                unset($data[$k]);
+                continue;
+            }
+        }
         $item['script_name']     = Utils::urlDecode($item['script_name']);
         $item['req_time']        = $item['req_time'] * 1000;
         $item['mem_peak_usage']  = $item['mem_peak_usage'];
         $item['req_time_format']        = number_format($item['req_time'], 0, '.', ',');
         $item['mem_peak_usage_format']  = number_format($item['mem_peak_usage'], 0, '.', ',');
+        $item['timestamp_format']  = date('H:i:s', $item['timestamp']);
     }
 
     return $data;

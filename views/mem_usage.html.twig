@@ -21,7 +21,7 @@
                   <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
                   <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'mem', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
-              <th class="date">Registered around
+              <th class="date">Date
                   <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}"><i class=" icon-chevron-up"></i></a>
                   <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}"><i class=" icon-chevron-down"></i></a>
               </th>
@@ -30,7 +30,7 @@
             <tr class="{{ page.mem_peak_usage >= 50000 ? 'error' : (page.mem_peak_usage >= 30000 ? 'warning' : '') }}">
               <td>{{ page.hostname }}</a></td>
               <td>
-                <a href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
+                <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}

@@ -33,15 +33,26 @@ table.table th.req-time {
 table.table th.mem-peak-usage {
     min-width: 200px;
 }
+table.table th.cpu-peak-usage {
+    min-width: 130px;
+}
 table.table th.date {
     min-width: 170px;
 }
 table.table td.host {
     min-width: 85px;
 }
-table.table td.script-name {
-    word-wrap: break-word;
-    -webkit-hyphens: auto;
+table.table td a.script-name {
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+    text-overflow: ellipsis;
+    max-width: 460px;
+}
+@media (min-width: 1200px) {
+    table.table td a.script-name {
+        max-width: 660px;
+    }
 }
 
 .nav-pills.small>li>a {
