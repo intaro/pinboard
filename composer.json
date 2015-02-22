@@ -10,7 +10,7 @@
         "doctrine/migrations": "dev-master",
         "twig/twig": ">=1.8,<2.0-dev",
         "symfony/twig-bridge": "~2.1",
-        "symfony/console": "dev-master",
+        "symfony/console": "2.*",
         "symfony/process": "dev-master",
         "symfony/yaml": "2.*",
         "symfony/security": "2.3.*",
