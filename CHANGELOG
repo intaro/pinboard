@@ -1,6 +1,16 @@
 CHANGELOG / Intaro Pinboard
 ===========================
 
+* 1.5 (2014-03-02)
+
+*
+* feature #102 The supporting of timestamp of pinba_engine 1.1 in Pinboard
+* feature #101 Responsive layout of Pinboard
+* feature #100 Downgrade version of symfony/console
+* feature #99 Allow to use timers with special chars in name
+* bug #98 Wrong timer chart for request in some cases
+* bug #74 Sometimes Live tab doesn't load new requests on ajax
+
 * 1.4 (2014-11-30)
 
 * feature #5 Add tag support
