@@ -22,7 +22,7 @@ Before Pinboard installation you should already be installed [pinba][2]. Pinba's
 
         $ curl -sS https://getcomposer.org/installer | php
 
-3. Install dependency libraries through composer (and enter the parameters of connection to Pinba database):
+3. Install dependency libraries through composer (and enter the parameters of connection to Pinba database) and automatically apply migrations to database:
 
         $ php composer.phar install
 
@@ -92,13 +92,9 @@ Switch to branch 1.x
     $ git fetch
     $ git checkout v1.x
 
-Update vendors
+Update vendors and automatically apply migrations to database
 
     $ php composer.phar update
-
-Apply changes to database
-
-    $ ./console migrations:migrate
 
 Add to `parameters.yml` new options from `parameters.yml.dist`.
 
