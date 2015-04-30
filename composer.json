@@ -2,7 +2,7 @@
     "name": "intaro/pinboard",
     "description": "Simple web monitoring system which aggregates and displays Pinba data.",
     "require": {
-        "php": ">=5.3.3",
+        "php": ">=5.3.9",
         "ext-PDO": "*",
         "ext-pdo_mysql": "*",
         "silex/silex": "1.0.*@dev",
@@ -11,7 +11,7 @@
         "twig/twig": ">=1.8,<2.0-dev",
         "symfony/twig-bridge": "~2.1",
         "symfony/console": "2.*",
-        "symfony/process": "dev-master",
+        "symfony/process": "2.*",
         "symfony/yaml": "2.*",
         "symfony/security": "2.3.*",
         "swiftmailer/swiftmailer": ">=4.1.2,<4.2-dev",
