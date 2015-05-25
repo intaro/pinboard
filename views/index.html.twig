@@ -37,7 +37,11 @@
 <script src="{{ base_url }}js/jquery.tablesorter.min.js" type="text/javascript"></script>
 <script type="text/javascript">
   $(function() {
-    $("#sortedTable").tablesorter();
+    $("#sortedTable").tablesorter({
+      headers: {
+        2: { sorter: "digit" }
+      }
+    });
   });
 </script>
 {% endblock %}
