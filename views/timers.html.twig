@@ -42,7 +42,7 @@
             AmCharts.ready(function () {
                 // SERIAL CHART
                 {{ chart.field }}Chart = new AmCharts.AmSerialChart();
-                {{ chart.field }}Chart.pathToImages = "/js/amcharts/images/";
+                {{ chart.field }}Chart.pathToImages = "{{ base_url }}/js/amcharts/images/";
                 {{ chart.field }}Chart.dataProvider = {{ chart.field }}ChartData;
                 {{ chart.field }}Chart.categoryField = "date";
 
