@@ -15,9 +15,7 @@ Since the version `1.5` Intaro Pinboard requires Pinba `1.1` or higher.
 
 1. Download application:
 
-        $ git clone git://github.com/intaro/pinboard.git
-        $ cd ./pinboard
-        $ git checkout v1.5
+        $ git clone git://github.com/intaro/pinboard.git --branch=v1.5.2
 
 2. Download [composer](http://getcomposer.org):
 

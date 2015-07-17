@@ -8,7 +8,7 @@ use Pinboard\Logger\DbalLogger;
 use Pinboard\Stopwatch\Stopwatch;
 
 $app = new Silex\Application();
-$app['params'] = Symfony\Component\Yaml\Yaml::parse(__DIR__.'/../config/parameters.yml');
+$app['params'] = Symfony\Component\Yaml\Yaml::parse(file_get_contents(__DIR__.'/../config/parameters.yml'));
 
 $app->register(new Silex\Provider\SessionServiceProvider());
 $app->register(new Silex\Provider\TwigServiceProvider(), array(
