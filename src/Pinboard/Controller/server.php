@@ -1013,6 +1013,7 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
 
         // save filter in session
         $liveFilter[$serverName]['req_time'] = $request->get('req_time');
+        $liveFilter[$serverName]['script_name'] = $request->get('script_name');
         $liveFilter[$serverName]['tags'] = $request->get('tags');
 
         $app['session']->set('filter_params', $liveFilter);
@@ -1132,6 +1133,11 @@ function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter)
     if (isset($filter['req_time']) && $filter['req_time']) {
         $params['req_time'] = $filter['req_time'] / 1000;
         $idCondition .= ' AND req_time >= :req_time';
+    }
+
+    if (isset($filter['script_name']) && $filter['script_name']) {
+        $params['script_name'] = $filter['script_name'] . '%';
+        $idCondition .= ' AND script_name LIKE :script_name';
     }
 
     $sql = '
