@@ -269,6 +269,21 @@
                 return;
             }
 
+            var filters = ['script_name', 'req_time', 'tags'];
+            var newUrl = document.location.origin + document.location.pathname + '?';
+            for (var i = 0; i < filters.length; i++) {
+                if ($('#filter-form input[name=' + filters[i] + ']').val()) {
+                    newUrl += filters[i] + '=' + $('#filter-form input[name=' + filters[i] + ']').val() + '&';
+                }
+            }
+            if (newUrl[newUrl.length - 1] == '&') {
+                newUrl = newUrl.substring(0, newUrl.length - 1);
+            }
+
+            if (newUrl != document.location) {
+                window.history.pushState(null, null, newUrl);
+            }
+
             updating = true;
 
             $.ajax({

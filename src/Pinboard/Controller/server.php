@@ -1008,13 +1008,13 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
         'limit'       => 100,
     );
 
+    // save filter in session
+    foreach (array('req_time', 'script_name', 'tags') as $item) {
+        $liveFilter[$serverName][$item] = $request->get($item);
+    }
+
     if ($request->isXmlHttpRequest()) {
         $result['limit'] = 50;
-
-        // save filter in session
-        $liveFilter[$serverName]['req_time'] = $request->get('req_time');
-        $liveFilter[$serverName]['script_name'] = $request->get('script_name');
-        $liveFilter[$serverName]['tags'] = $request->get('tags');
 
         $app['session']->set('filter_params', $liveFilter);
 
@@ -1022,6 +1022,7 @@ $server->match('/{serverName}/{hostName}/live', function(Request $request, $serv
         $liveFilter[$serverName]['last_timestamp'] = $request->get('last_timestamp');
     } else {
         $result['filter'] = $liveFilter[$serverName];
+
         $result['show_filter'] = false;
         if (sizeof($result['filter'])) {
             foreach ($result['filter'] as $item) {
