@@ -42,6 +42,9 @@ $dbOptions = array(
 if (isset($app['params']['db']['port'])) {
     $dbOptions['port'] = $app['params']['db']['port'];
 }
+if (isset($app['params']['db']['unix_socket'])) {
+    $dbOptions['unix_socket'] = $app['params']['db']['unix_socket'];
+}
 
 $app->register(new Silex\Provider\DoctrineServiceProvider(), array('db.options' => $dbOptions));
 $app['dbs.config']['default']->setSQLLogger(new DbalLogger(new Stopwatch(), $app['params']['db']['host']));

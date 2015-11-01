@@ -1,6 +1,7 @@
 db:
     host: localhost
 #    port: 3306
+#    unix_socket: /var/lib/mysql/mysql.sock
     name: pinba
     user: user
     pass: password
