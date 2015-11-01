@@ -54,7 +54,7 @@
                 AmCharts.ready(function () {
                     // SERIAL CHART
                     rtChart = new AmCharts.AmSerialChart();
-                    rtChart.pathToImages = "/js/amcharts/images/";
+                    rtChart.pathToImages = "{{ base_url }}/js/amcharts/images/";
                     rtChart.dataProvider = rtChartData;
                     rtChart.rotate = true;
 
