@@ -19,7 +19,7 @@ class Utils
      * @param mixed $app
      * @return string|array
      */
-    public function getUserAccessHostsRegexp($app)
+    public static function getUserAccessHostsRegexp($app)
     {
         $hostsRegExp = ".*";
 
