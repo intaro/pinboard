@@ -39,7 +39,7 @@ $server->get('/{type}/{requestId}/{grouping}', function($type, $requestId, $grou
                 $grouping = 'group';
             }
             else {
-                $grouping = $groupingTags[0];
+                $grouping = current($groupingTags);
             }
         }
         else {
