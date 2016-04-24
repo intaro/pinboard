@@ -282,24 +282,25 @@ class AggregateCommand extends Command
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.90), 'req_time_90') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.95), 'req_time_95') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.99), 'req_time_99') . ',
-                    max(req_time) as req_time_100,
+                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 1.00), 'req_time_100') . ',
                     ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.90), 'mem_peak_usage_90') . ',
                     ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.95), 'mem_peak_usage_95') . ',
                     ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.99), 'mem_peak_usage_99') . ',
-                    max(mem_peak_usage) as mem_peak_usage_100,
+                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 1.00), 'mem_peak_usage_100') . ',
                     ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.90), 'cpu_peak_usage_90') . ',
                     ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.95), 'cpu_peak_usage_95') . ',
                     ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.99), 'cpu_peak_usage_99') . ',
-                    max(ru_utime) as cpu_peak_usage_100,
+                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 1.00), 'cpu_peak_usage_100') . ',
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.90), 'doc_size_90') . ',
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.95), 'doc_size_95') . ',
                     ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.99), 'doc_size_99') . ',
-                    max(doc_size) as doc_size_100,
+                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 1.00), 'doc_size_100') . ',
                     \'' . $now . '\'
                 FROM
                     request r2
                 WHERE
                     r2.server_name = "' . $server['server_name'] . '" and r2.hostname = "' . $server['hostname'] . '"
+                LIMIT 1
             ;';
         }
         if ($sql != '')
