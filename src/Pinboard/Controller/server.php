@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Pinboard\Command\AggregateCommand;
+use Pinboard\Utils\IDNaConvert;
 
 $ROW_PER_PAGE = 50;
 $rowPerPage = isset($app['params']['pagination']['row_per_page']) ? $app['params']['pagination']['row_per_page'] : $ROW_PER_PAGE;
@@ -16,6 +17,9 @@ $server = $app['controllers_factory'];
 $allowedPeriods = array('1 day', '3 days', '1 week', '1 month');
 
 $server->get('/{serverName}/{hostName}/overview.{format}', function(Request $request, $serverName, $hostName, $format) use ($app, $allowedPeriods) {
+    $idn = new IDNaConvert(array('idn_version' => 2008));
+    $serverName = $idn->encode($serverName);
+
     Utils::checkUserAccess($app, $serverName);
 
     $period = $request->get('period', '1 day');
