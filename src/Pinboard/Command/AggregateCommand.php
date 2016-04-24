@@ -475,13 +475,13 @@ class AggregateCommand extends Command
                 INSERT INTO ipm_req_time_details
                     (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
-                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(max(timestamp))
+                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(timestamp)
                 FROM
                     request
                 WHERE
                     server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND req_time > ' . (float)$maxReqTime . '
                 GROUP BY
-                    server_name, hostname, script_name
+                    server_name, hostname, script_name, timestamp
                 ORDER BY
                     req_time DESC
                 LIMIT
