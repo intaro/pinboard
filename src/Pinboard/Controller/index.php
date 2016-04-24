@@ -58,7 +58,7 @@ $index->get('/', function() use ($app) {
             $item['server_name'] = $idn->decode($item['server_name']);
         }
 
-        $item['req_per_sec'] = number_format($item['req_per_sec'], 3, ',', '');
+        $item['req_per_sec'] = number_format($item['req_per_sec'], 3, '.', '');
 
         $total['req_count'] += $item['req_count'];
         $total['error_count'] += $item['error_count'];
