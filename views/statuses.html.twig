@@ -27,7 +27,7 @@
             <tr>
               <td>{{ status.hostname }}</a></td>
               <td>
-                <a class="script-name" href="http://{{ status.server_name ~ status.script_name }}" title="">{{ status.script_name }}</a>
+                <a class="script-name" href="http://{{ status.hostname ~ status.script_name }}" title="">{{ status.script_name }}</a>
                 {% for k, v in status.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}

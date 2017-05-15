@@ -30,7 +30,7 @@
             <tr class="{{ page.cpu_peak_usage >= 10 ? 'error' : (page.cpu_peak_usage >= 1 ? 'warning' : '') }}">
               <td>{{ page.hostname }}</a></td>
               <td>
-                <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
+                <a class="script-name" href="http://{{ page.hostname ~ page.script_name }}" title="">{{ page.script_name }}</a>
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}

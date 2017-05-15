@@ -30,7 +30,7 @@
             <tr class="{{ page.req_time >= 2000 ? 'error' : (page.req_time >= 1000 ? 'warning' : '') }}">
               <td>{{ page.hostname }}</a></td>
               <td>
-                <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}" title="">{{ page.script_name }}</a>
+                <a class="script-name" href="http://{{ page.hostname ~ page.script_name }}" title="">{{ page.script_name }}</a>
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}

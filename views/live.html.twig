@@ -201,7 +201,7 @@
             <tr>
               <td class="host">{{ page.hostname }}</a></td>
               <td class="script-name">
-                <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}" title="{{ page.script_name }}">{{ page.script_name }}</a>
+                <a class="script-name" href="http://{{ page.hostname ~ page.script_name }}" title="{{ page.script_name }}">{{ page.script_name }}</a>
                 {% for k, v in page.tags %}
                     <div class="muted"><small>{{ k }} = {{ v }}</small></div>
                 {% endfor %}
@@ -229,7 +229,7 @@
         <tr style="display: none;">
           <td class="host"><%=pages[i].hostname%></a></td>
           <td class="script-name">
-            <a class="script-name" href="http://<%=pages[i].server_name%><%=pages[i].script_name%>" title="<%=pages[i].script_name%>"><%=pages[i].script_name%></a>
+            <a class="script-name" href="http://<%=pages[i].hostname%><%=pages[i].script_name%>" title="<%=pages[i].script_name%>"><%=pages[i].script_name%></a>
             <% for (k in pages[i].tags) { %>
                 <div class="muted"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
             <% } %>

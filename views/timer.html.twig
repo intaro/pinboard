@@ -21,7 +21,7 @@
     <div class="row">
       <div class="span10">
         <p class="lead timer">
-            <a href="//{{ request.server_name ~ request.script_name }}" title="">{{ request.server_name ~ request.script_name }}</a><br />
+            <a href="//{{ request.hostname ~ request.script_name }}" title="">{{ request.server_name ~ request.script_name }}</a><br />
             {% for k, v in request.tags %}
                 <span class="muted"><small>{{ k }} = {{ v }}{{ not loop.last ? ',' : '' }}</small></span>
             {% endfor %}
