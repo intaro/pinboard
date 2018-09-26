@@ -200,6 +200,7 @@ class AggregateCommand extends Command
             "ipm_status_details",
             "ipm_cpu_usage_details",
             "ipm_timer",
+            "ipm_tag_info",
         );
 
         $sql = '';
