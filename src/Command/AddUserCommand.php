@@ -1,27 +1,35 @@
 <?php
 
-namespace Pinboard\Command;
+namespace App\Command;
 
+use App\Entity\User;
+use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder;
-use Symfony\Component\Yaml\Dumper;
-use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+#[AsCommand(name: 'add-user', description: 'Create or update user in database')]
 class AddUserCommand extends Command
 {
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly UserRepository $userRepository,
+        private readonly UserPasswordHasherInterface $passwordHasher
+    ) {
+        parent::__construct();
+    }
+
     protected function configure()
     {
         $this
-            ->setName('add-user')
-            ->setDescription('Add section for new user in configuration file')
             ->addArgument(
                 'username',
                 InputArgument::REQUIRED,
-                'User name'
+                'User email'
             )
             ->addArgument(
                 'password',
@@ -29,69 +37,39 @@ class AddUserCommand extends Command
                 'User password in plain text'
             )
             ->addArgument(
-                'hosts',
+                'roles',
                 InputArgument::OPTIONAL,
-                'Regexp string - hosts, allowed for this user'
+                'Comma-separated roles, e.g. ROLE_USER,ROLE_ADMIN'
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $username = $input->getArgument('username');
-        $password = $input->getArgument('password');
-        $hosts = $input->getArgument('hosts');
+        $email = (string)$input->getArgument('username');
+        $password = (string)$input->getArgument('password');
+        $rolesRaw = (string)$input->getArgument('roles');
 
-        $passwordGenerator = new MessageDigestPasswordEncoder();
-        $salt = '';
-        $encodePassword = $passwordGenerator->encodePassword($password, $salt);
-
-        $filename = __DIR__ . '/../../../config/parameters.yml';
-        $yaml = Yaml::parse($filename);
-
-        $users = !empty($yaml['secure']['users']) ? $yaml['secure']['users'] : [];
-        if ($hosts) {
-            $hosts = '.*';
-
-            preg_match("/$hosts/", "my test string for regexp");
-            if (preg_last_error() !== PREG_NO_ERROR) {
-                $output->writeln("<error>Wrong regular expression! Code " . preg_last_error() . "</error>");
-                return;
-            }
-
-            $users[$username] = [
-                'password' => $encodePassword,
-                'hosts' => $hosts,
-            ];
-        } else {
-            $users[$username] = [
-                'password' => $encodePassword,
-            ];
+        $roles = array_values(array_filter(array_map('trim', explode(',', $rolesRaw))));
+        if (count($roles) === 0) {
+            $roles = ['ROLE_USER'];
         }
 
-        $newYaml = [];
-        //copy other sections
-        foreach ($yaml as $key => $section) {
-            if ($key !== 'secure') {
-                $newYaml[$key] = $section;
-            }
+        /** @var User|null $user */
+        $user = $this->userRepository->findOneBy(['email' => $email]);
+        $isNew = $user === null;
+        if ($user === null) {
+            $user = new User();
+            $user->setEmail($email);
         }
+        $user->setRoles($roles);
+        $user->setPassword($this->passwordHasher->hashPassword($user, $password));
 
-        $newYaml['secure'] = [
-            'enable' => !empty($yaml['secure']['enable']) ? $yaml['secure']['enable'] : true,
-            'users' => $users,
-        ];
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
-        $dumper = new Dumper();
-        $newFile = $dumper->dump($newYaml, 5);
+        $action = $isNew ? 'created' : 'updated';
+        $output->writeln("<info>User {$email} {$action} successfully</info>");
 
-        $oldFilename = "$filename~" . substr(md5(rand()), 0, 5);
-
-        if (!copy($filename, $oldFilename)) {
-            $output->writeln("<error>Error during the backup configuration file</error>");
-        } else {
-            $output->writeln("<info>Old configuration has been saved to file $oldFilename</info>");
-            file_put_contents($filename, $newFile);
-            $output->writeln("<info>The configuration file is updated successfully</info>");
-        }
+        return Command::SUCCESS;
     }
 }

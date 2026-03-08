@@ -1,42 +1,78 @@
-<h1>Pinboard-new</h1>
+# Pinboard (Symfony 6)
 
-If your docker-compose version is less than 3, change the make file in 5 line `docker compose` to `docker-compose`.
+Проект переведён на конфигурацию через `.env` / `.env.local`.
+Файлы `config/parameters.yml` и `config/parameters.yml.dist` больше не используются.
 
-1. make build
-2. make up
-3. make app_bash
-4. php bin/console doctrine:migrations:execute --up DoctrineMigrations\\Version20231109083314
-5. php bin/console doctrine:fixtures:load
-<br>
-Login: admin@admin.com
-<br>
-Password: admin
-<br>
-http://127.0.0.1:888/
+## Файлы настроек
 
-# Cold-start
+- `.env` — шаблон/дефолты, можно хранить в git (без секретов).
+- `.env.local` — локальные значения (секреты, пароли, хосты), **не коммитится**.
+- `.env.test` — настройки для тестового окружения.
 
-1 - запустить миграцию
-2 - поменять движок бд с pinba на innodb
+## Быстрый локальный запуск (без Docker)
 
---------------
-composer install
-<br>
-npm install
-<br>
-npm i bootstrap-icons
-<br>
-php bin/console doctrine:migrations:execute --up DoctrineMigrations\\Version20231109083314
-<br>
-php bin/console doctrine:migrations:migrate
-<br>
-php bin/console doctrine:fixtures:load
+1. Установить зависимости:
+   - `composer install`
+   - `pnpm install`
+2. Подготовить локальный конфиг:
+   - создать `.env.local` (или использовать уже подготовленный в вашей копии)
+3. Собрать фронт:
+   - `pnpm build`
+4. Подготовить БД:
+   - `php bin/console doctrine:migrations:migrate`
+   - `php bin/console doctrine:fixtures:load`
+5. Создать/обновить пользователя для входа:
+   - `php bin/console add-user admin@admin.com admin ROLE_USER`
+6. Запустить приложение (один из вариантов):
+   - через ваш nginx + php-fpm
+   - или `symfony server:start` (если установлен Symfony CLI)
 
-В конфигах mysql docker надо будет убрать это свойство навсегда.
-```
-docker exec -ti mysql sh
-mysql -u root -p;
-SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-SET PERSIST sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-```
+## Обязательные переменные в `.env.local`
+
+Минимум для старта:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `MAILER_DSN` (для локали можно `null://null`)
+
+Приложенческие параметры (с дефолтами в `.env`, можно переопределять локально):
+
+- `APP_BASE_URL`
+- `APP_PAGINATION_ROW_PER_PAGE`
+- `APP_RECORDS_LIFETIME`
+- `APP_AGGREGATION_PERIOD`
+- `APP_LOGGING_LONG_REQUEST_TIME_GLOBAL`
+- `APP_LOGGING_LONG_REQUEST_TIME_MAP` (JSON)
+- `APP_LOGGING_HEAVY_REQUEST_GLOBAL`
+- `APP_LOGGING_HEAVY_REQUEST_MAP` (JSON)
+- `APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL`
+- `APP_LOGGING_HEAVY_CPU_REQUEST_MAP` (JSON)
+- `APP_NOTIFICATION_ENABLE` (`0`/`1`)
+- `APP_NOTIFICATION_SENDER`
+- `APP_NOTIFICATION_GLOBAL_EMAIL`
+- `APP_NOTIFICATION_IGNORE` (CSV)
+- `APP_NOTIFICATION_LIST_JSON` (JSON)
+- `APP_NOTIFICATION_REQ_TIME_BORDER_GLOBAL`
+- `APP_NOTIFICATION_REQ_TIME_BORDER_MAP` (JSON)
+
+## Полезные команды
+
+- Агрегация: `php bin/console aggregate`
+- Регистрация cron: `php bin/console register-crontab`
+- Создание/обновление пользователя: `php bin/console add-user <email> <password> [roles_csv]`
+
+## Docker
+
+Секция пока оставлена в прежнем виде:
+
+- Если версия docker-compose < 3, в `Makefile` заменить `docker compose` на `docker-compose`.
+- Базовый сценарий:
+  - `make build`
+  - `make up`
+  - `make app_bash`
+  - `php bin/console doctrine:migrations:execute --up DoctrineMigrations\\Version20231109083314`
+  - `php bin/console doctrine:fixtures:load`
+- Локальный URL: `http://127.0.0.1:888/`

@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Pinboard\Utils\Utils;
+use App\Utils\Utils;
 use Algo26\IdnaConvert\ToUnicode;
 
 class MainController extends AbstractController

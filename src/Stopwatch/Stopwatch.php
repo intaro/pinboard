@@ -1,6 +1,6 @@
 <?php
 
-namespace Pinboard\Stopwatch;
+namespace App\Stopwatch;
 
 class Stopwatch
 {

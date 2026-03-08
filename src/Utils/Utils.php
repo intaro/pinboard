@@ -1,6 +1,6 @@
 <?php
 
-namespace Pinboard\Utils;
+namespace App\Utils;
 
 /**
  * Usefull methods

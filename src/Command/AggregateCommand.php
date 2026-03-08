@@ -1,64 +1,151 @@
 <?php
 
-namespace Pinboard\Command;
+namespace App\Command;
 
-use App\Controller\MailerController;
+use Doctrine\DBAL\Connection;
 use Exception;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mailer\Transport;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Yaml\Yaml;
+use Twig\Environment;
 
+#[AsCommand(name: 'aggregate', description: 'Aggregate data from source tables and save to report tables')]
 class AggregateCommand extends Command
 {
-    protected $mailer;
-    protected $params;
-    protected $output;
+    private array $params = [];
+    private OutputInterface $output;
+    private string $projectDir;
 
     const DEFAULT_REQ_TIME_BORDER = 1.5;
     const DEFAULT_SLOW_REQ_TIME = 1.5;
     const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
     const DEFAULT_HEAVY_PAGE_CPU = 1;
 
+    public function __construct(
+        private readonly Connection $db,
+        private readonly Environment $twig,
+        private readonly MailerInterface $mailer,
+        KernelInterface $kernel
+    ) {
+        parent::__construct();
+        $this->projectDir = $kernel->getProjectDir();
+    }
+
     protected function configure()
     {
-        $this->setName('aggregate')
-            ->setDescription('Aggregate data from source tables and save to report tables');
+        $this->setDescription('Aggregate data from source tables and save to report tables');
     }
 
-    protected function initMailer()
+    private function loadParams(): array
     {
-        $dsn = 'smtp://user:pass@smtp.example.com:25';
+        $longReqMap = $this->envJson('APP_LOGGING_LONG_REQUEST_TIME_MAP', []);
+        $heavyReqMap = $this->envJson('APP_LOGGING_HEAVY_REQUEST_MAP', []);
+        $heavyCpuMap = $this->envJson('APP_LOGGING_HEAVY_CPU_REQUEST_MAP', []);
+        $notificationList = $this->envJson('APP_NOTIFICATION_LIST_JSON', []);
+        $notificationBorderMap = $this->envJson('APP_NOTIFICATION_REQ_TIME_BORDER_MAP', []);
+        $notificationIgnore = $this->envCsv('APP_NOTIFICATION_IGNORE');
 
-        $transport = Transport::fromDsn($dsn);
-
-        $this->mailer = new Mailer($transport);
+        return [
+            'records_lifetime' => $this->envString('APP_RECORDS_LIFETIME', 'P1M'),
+            'aggregation_period' => $this->envString('APP_AGGREGATION_PERIOD', 'PT15M'),
+            'logging' => [
+                'long_request_time' => array_merge(
+                    ['global' => (float)$this->envString('APP_LOGGING_LONG_REQUEST_TIME_GLOBAL', (string)static::DEFAULT_SLOW_REQ_TIME)],
+                    is_array($longReqMap) ? $longReqMap : []
+                ),
+                'heavy_request' => array_merge(
+                    ['global' => (float)$this->envString('APP_LOGGING_HEAVY_REQUEST_GLOBAL', (string)static::DEFAULT_HEAVY_PAGE_MEMORY)],
+                    is_array($heavyReqMap) ? $heavyReqMap : []
+                ),
+                'heavy_cpu_request' => array_merge(
+                    ['global' => (float)$this->envString('APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL', (string)static::DEFAULT_HEAVY_PAGE_CPU)],
+                    is_array($heavyCpuMap) ? $heavyCpuMap : []
+                ),
+            ],
+            'notification' => [
+                'enable' => $this->envBool('APP_NOTIFICATION_ENABLE', false),
+                'sender' => $this->envString('APP_NOTIFICATION_SENDER', 'noreply@pinboard'),
+                'global_email' => $this->envString('APP_NOTIFICATION_GLOBAL_EMAIL', ''),
+                'ignore' => $notificationIgnore,
+                'list' => is_array($notificationList) ? $notificationList : [],
+                'border' => [
+                    'req_time' => array_merge(
+                        ['global' => (float)$this->envString('APP_NOTIFICATION_REQ_TIME_BORDER_GLOBAL', (string)static::DEFAULT_REQ_TIME_BORDER)],
+                        is_array($notificationBorderMap) ? $notificationBorderMap : []
+                    ),
+                ],
+            ],
+        ];
     }
 
-    protected function sendEmail($message)
+    private function envString(string $name, string $default = ''): string
     {
-        if ($this->mailer) {
-            try {
-                $email = (new Email())
-                    ->from('support@example.com')
-                    ->subject('Attention!')
-                    ->text($message);
-                $this->mailer->send($email);
-            } catch (Exception $e) {
-                $this->output->writeln('<error>Failed to send email message. Error output:</error>');
-                $this->output->writeln('<error></error>');
-                $this->output->writeln('<error>' . $e->getMessage() . '</error>');
-                $this->output->writeln('<error></error>');
+        $value = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
+        if ($value === false || $value === null || $value === '') {
+            return $default;
+        }
+
+        return (string)$value;
+    }
+
+    private function envBool(string $name, bool $default = false): bool
+    {
+        $raw = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
+        if ($raw === false || $raw === null || $raw === '') {
+            return $default;
+        }
+
+        $value = strtolower((string)$raw);
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function envCsv(string $name): array
+    {
+        $raw = $this->envString($name, '');
+        if ($raw === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $raw))));
+    }
+
+    private function envJson(string $name, mixed $default): mixed
+    {
+        $raw = $this->envString($name, '');
+        if ($raw === '') {
+            return $default;
+        }
+
+        $decoded = json_decode($raw, true);
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $default;
+    }
+
+    private function sender(): string
+    {
+        return $this->params['notification']['sender'] ?? 'noreply@pinboard';
+    }
+
+    private function sendEmail(string|array $to, string $subject, string $html): void
+    {
+        $email = (new Email())
+            ->from($this->sender())
+            ->subject($subject)
+            ->html($html);
+
+        foreach ((array)$to as $recipient) {
+            if (!empty($recipient)) {
+                $email->addTo((string)$recipient);
             }
         }
+
+        $this->mailer->send($email);
     }
 
-    private function isNotIgnore($host)
+    private function isNotIgnore($host): bool
     {
         $notIgnore = true;
         if (!empty($this->params['notification']['ignore'])) {
@@ -73,26 +160,16 @@ class AggregateCommand extends Command
         return $notIgnore;
     }
 
-    private function sendErrorPages($pages, $message, $address)
+    private function sendErrorPages(array $pages, string|array $address): void
     {
         if (count($pages) > 0) {
-            $body = $this->app['twig']->render('error_notification.html.twig', ['pages' => $pages]);
-            $message->setBody($body);
-            $message->setTo($address);
-
-            $this->sendEmail($message);
-
-            unset($body);
+            $body = $this->twig->render('error_notification.html.twig', ['pages' => $pages]);
+            $this->sendEmail($address, 'Intaro Pinboard found error pages', $body);
         }
     }
 
-    private function sendErrorEmails($errorPages)
+    private function sendErrorEmails(array $errorPages): void
     {
-        $message = \Swift_Message::newInstance()
-            ->setSubject('Intaro Pinboard found error pages')
-            ->setContentType('text/html')
-            ->setFrom(!empty($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard');
-
         if (!empty($this->params['notification']['global_email'])) {
             $pages = [];
             foreach ($errorPages as $page) {
@@ -100,7 +177,7 @@ class AggregateCommand extends Command
                     $pages[$page['server_name']][] = $page;
                 }
             }
-            $this->sendErrorPages($pages, $message, $this->params['notification']['global_email']);
+            $this->sendErrorPages($pages, $this->params['notification']['global_email']);
         }
 
         if (!empty($this->params['notification']['list'])) {
@@ -111,58 +188,44 @@ class AggregateCommand extends Command
                         $pages[$page['server_name']][] = $page;
                     }
                 }
-                $this->sendErrorPages($pages, $message, $item['email']);
+                $this->sendErrorPages($pages, $item['email']);
             }
         }
-
-        unset($message);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->app->boot();
-        $this->params = $this->app['params'];
+        $this->params = $this->loadParams();
         $this->output = $output;
 
-        $db = $this->app['db'];
-
-        try {
-            $this->initMailer();
-        } catch (Exception $e) {
-            $output->writeln('<error>Can\'t init mailer</error>');
-
-            return;
-        }
+        $db = $this->db;
 
         try {
             $db->connect();
         } catch (\PDOException $e) {
             $output->writeln('<error>Can\'t connect to MySQL server</error>');
 
-            return;
+            return Command::FAILURE;
         }
 
-        if (file_exists(__FILE__ . '.lock')) {
-            $output->writeln('<error>Cannot run data aggregation: the another instance of this script is already executing. Otherwise, remove ' . __FILE__ . '.lock file</error>');
+        $lockFile = $this->projectDir . '/var/aggregate.lock';
+        if (file_exists($lockFile)) {
+            $output->writeln('<error>Cannot run data aggregation: another instance is already executing. Otherwise, remove ' . $lockFile . '</error>');
 
-            if ($this->mailer && !empty($this->params['notification']['global_email'])) {
-                $body = $this->app['twig']->render('lock_notification.html.twig');
-
-                $message = \Swift_Message::newInstance()
-                    ->setSubject('Intaro Pinboard can\'t run data aggregation')
-                    ->setContentType('text/html')
-                    ->setFrom(!empty($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard')
-                    ->setTo($this->params['notification']['global_email'])
-                    ->setBody($body);;
-
-                $this->sendEmail($message);
+            if (!empty($this->params['notification']['global_email'])) {
+                try {
+                    $body = $this->twig->render('lock_notification.html.twig');
+                    $this->sendEmail($this->params['notification']['global_email'], 'Intaro Pinboard can\'t run data aggregation', $body);
+                } catch (Exception $e) {
+                    $output->writeln('<error>Failed to send lock notification: ' . $e->getMessage() . '</error>');
+                }
             }
 
-            return;
+            return Command::FAILURE;
         }
 
-        if (!touch(__FILE__ . '.lock')) {
-            $output->writeln('<error>Warning: cannot create ' . __FILE__ . '.lock file</error>');
+        if (!touch($lockFile)) {
+            $output->writeln('<error>Warning: cannot create ' . $lockFile . '</error>');
         }
 
         $now = new \DateTime();
@@ -199,8 +262,9 @@ class AggregateCommand extends Command
                 created_at < :created_at
             ;';
         }
-        if ($sql !== '')
-            $db->executeQuery($sql, $params);
+        if ($sql !== '') {
+            $db->executeStatement($sql, $params);
+        }
 
         if (!empty($this->params['notification']['enable']) && $this->params['notification']['enable']) {
             $sql = '
@@ -214,7 +278,7 @@ class AggregateCommand extends Command
                     server_name, script_name, status
             ';
 
-            $errorPages = $db->fetchAll($sql);
+            $errorPages = $db->executeQuery($sql)->fetchAllAssociative();
 
             if (count($errorPages) > 0) {
                 try {
@@ -227,7 +291,7 @@ class AggregateCommand extends Command
             unset($errorPages);
         }
 
-        $db->executeQuery('START TRANSACTION');
+        $db->beginTransaction();
 
         $sql = '
             SELECT
@@ -238,7 +302,7 @@ class AggregateCommand extends Command
                 server_name, hostname
         ';
 
-        $servers = $db->fetchAll($sql);
+        $servers = $db->executeQuery($sql)->fetchAllAssociative();
 
         $subselectTemplate = '
             (
@@ -288,10 +352,11 @@ class AggregateCommand extends Command
                     r2.server_name = "' . $server['server_name'] . '" and r2.hostname = "' . $server['hostname'] . '"
             ;';
         }
-        if ($sql !== '')
-            $db->query($sql);
+        if ($sql !== '') {
+            $db->executeStatement($sql);
+        }
 
-        $db->executeQuery('COMMIT');
+        $db->commit();
 
         $sql = '
             INSERT INTO ipm_report_by_hostname
@@ -336,7 +401,7 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
         ';
-        $db->query($sql);
+        $db->executeStatement($sql);
 
         //insert timers reports
         $sql = '
@@ -428,7 +493,7 @@ class AggregateCommand extends Command
             FROM
                 ipm_pinba_tag_info_category_server_server_name_hostname;
         ';
-        $db->query($sql);
+        $db->executeStatement($sql);
 
         $sql = '
             INSERT INTO
@@ -444,9 +509,9 @@ class AggregateCommand extends Command
             LIMIT
                 25
         ';
-        $db->query($sql);
+        $db->executeStatement($sql);
 
-        $maxReqId = $db->fetchColumn('SELECT max(id) FROM ipm_req_time_details');
+        $maxReqId = $db->fetchOne('SELECT max(id) FROM ipm_req_time_details');
 
         $sql = '';
         foreach ($servers as $server) {
@@ -475,7 +540,7 @@ class AggregateCommand extends Command
             ;';
         }
         if ($sql !== '') {
-            $db->query($sql);
+            $db->executeStatement($sql);
 
             $sql = '
                 SELECT
@@ -486,7 +551,7 @@ class AggregateCommand extends Command
                     id > :max_id
             ';
 
-            $data = $db->fetchAll($sql, ['max_id' => $maxReqId]);
+            $data = $db->executeQuery($sql, ['max_id' => $maxReqId])->fetchAllAssociative();
 
             $ids = [];
             foreach ($data as $item) {
@@ -512,7 +577,7 @@ class AggregateCommand extends Command
                         t.request_id IN (' . implode(', ', $ids) . ')
                 ';
 
-                $db->query($sql);
+                $db->executeStatement($sql);
             }
         }
 
@@ -543,8 +608,9 @@ class AggregateCommand extends Command
                     10
             ;';
         }
-        if ($sql !== '')
-            $db->query($sql);
+        if ($sql !== '') {
+            $db->executeStatement($sql);
+        }
 
         $sql = '';
         foreach ($servers as $server) {
@@ -573,8 +639,9 @@ class AggregateCommand extends Command
                       10
             ;';
         }
-        if ($sql !== '')
-            $db->query($sql);
+        if ($sql !== '') {
+            $db->executeStatement($sql);
+        }
 
         // notification about abrupt drawdown of indicators
         $values = $this->getBorderOutValues($db, $servers);
@@ -585,6 +652,8 @@ class AggregateCommand extends Command
         if (!unlink(__FILE__ . '.lock')) {
             $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
         }
+
+        return Command::SUCCESS;
     }
 
 
@@ -623,9 +692,9 @@ class AggregateCommand extends Command
                   created_at DESC
             ';
 
-            $data = $db->fetchAll($sql, [
+            $data = $db->executeQuery($sql, [
                 'created_at' => $d->format('Y-m-d H:i:s')
-            ]);
+            ])->fetchAllAssociative();
 
             $finalData = [];
             foreach ($data as $row) {
@@ -639,10 +708,14 @@ class AggregateCommand extends Command
 
             unset($data);
 
-            $defaultBorder = !empty($this->params['notification']['border']['req_time']['global']) ?? static::DEFAULT_REQ_TIME_BORDER;
+            $defaultBorder = !empty($this->params['notification']['border']['req_time']['global'])
+                ? (float)$this->params['notification']['border']['req_time']['global']
+                : static::DEFAULT_REQ_TIME_BORDER;
 
             foreach ($finalData as $server => $hosts) {
-                $border = !empty($this->params['notification']['border']['req_time'][$server]) ?? $defaultBorder;
+                $border = !empty($this->params['notification']['border']['req_time'][$server])
+                    ? (float)$this->params['notification']['border']['req_time'][$server]
+                    : $defaultBorder;
 
                 foreach ($hosts as $host => $values) {
                     if (count($values) > 1) {
@@ -683,26 +756,17 @@ class AggregateCommand extends Command
         return $result;
     }
 
-    private function sendBorderOutEmail($data, $message, $address)
+    private function sendBorderOutEmail(array $data, string $subject, string|array $address): void
     {
         if (count($data) > 0) {
-            $body = $this->app['twig']->render('drawdown_notification.html.twig', ['data' => $data]);
-            $message->setBody($body);
-            $message->setTo($address);
-
-            $this->sendEmail($message);
-
-            unset($body);
+            $body = $this->twig->render('drawdown_notification.html.twig', ['data' => $data]);
+            $this->sendEmail($address, $subject, $body);
         }
     }
 
-    private function sendBorderOutEmails($data)
+    private function sendBorderOutEmails(array $data): void
     {
         $subject = 'Intaro Pinboard has detected a drawdown of indicators';
-
-        $message = \Swift_Message::newInstance()
-            ->setContentType('text/html')
-            ->setFrom(!empty($this->params['notification']['sender']) ? $this->params['notification']['sender'] : 'noreply@pinboard');
 
         if (!empty($this->params['notification']['global_email'])) {
             $status = [];
@@ -720,9 +784,9 @@ class AggregateCommand extends Command
             }
 
             $status = array_unique($status);
-            $message->setSubject('[' . implode(', ', $status) . "] $subject");
+            $mailSubject = '[' . implode(', ', $status) . "] $subject";
 
-            $this->sendBorderOutEmail($d, $message, $this->params['notification']['global_email']);
+            $this->sendBorderOutEmail($d, $mailSubject, $this->params['notification']['global_email']);
 
             unset($d);
         }
@@ -745,14 +809,12 @@ class AggregateCommand extends Command
                 }
 
                 $status = array_unique($status);
-                $message->setSubject('[' . implode(', ', $status) . '] ' . $subject);
+                $mailSubject = '[' . implode(', ', $status) . '] ' . $subject;
 
-                $this->sendBorderOutEmail($d, $message, $item['email']);
+                $this->sendBorderOutEmail($d, $mailSubject, $item['email']);
 
                 unset($d);
             }
         }
-
-        unset($message);
     }
 }

@@ -7,7 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Algo26\IdnaConvert\ToUnicode;
-use Pinboard\Utils\Utils;
+use App\Utils\Utils;
 
 class BeforeController extends AbstractController
 {

@@ -7,9 +7,8 @@
 
 // any CSS you import will output into a single css file (app.css in this case)
 import './styles/app.scss';
-import '../web/css/application.scss';
-import '../web/css/tableStyle.css';
-// import * as amCharts from '../web/js/amcharts/amcharts';
+import '../public/css/application.scss';
+import '../public/css/tableStyle.css';
 
 import 'bootstrap';
 import bsCustomFileInput from 'bs-custom-file-input';

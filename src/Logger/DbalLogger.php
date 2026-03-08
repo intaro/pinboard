@@ -1,9 +1,9 @@
 <?php
 
-namespace Pinboard\Logger;
+namespace App\Logger;
 
 use Symfony\Component\HttpKernel\Log\LoggerInterface;
-use Pinboard\Stopwatch\Stopwatch;
+use App\Stopwatch\Stopwatch;
 use Doctrine\DBAL\Logging\SQLLogger;
 
 /**

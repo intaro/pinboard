@@ -3,9 +3,10 @@
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Pinboard\Command\AggregateCommand;
-use Pinboard\Utils\SqlUtils;
-use Pinboard\Utils\Utils;
+use App\Command\AggregateCommand;
+use App\Utils\SqlUtils;
+use App\Utils\Utils;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,16 +17,19 @@ class ServerController extends AbstractController
 {
     private const ROW_PER_PAGE = 50;
 
-    private $rowPerPage;
+    private int $rowPerPage;
 
 //    private $server = $app['controllers_factory'];
     private $allowedPeriods = ['1 day', '3 days', '1 week', '1 month'];
 
     private EntityManagerInterface $entityManager;
-    function __construct(EntityManagerInterface $entityManager)
+    function __construct(
+        EntityManagerInterface $entityManager,
+        #[Autowire('%env(int:APP_PAGINATION_ROW_PER_PAGE)%')] int $rowPerPage
+    )
     {
         $this->entityManager = $entityManager;
-        $this->rowPerPage = $entityManager->params['pagination']['row_per_page'] ?? self::ROW_PER_PAGE;
+        $this->rowPerPage = $rowPerPage > 0 ? $rowPerPage : self::ROW_PER_PAGE;
 
 //        $product = $entityManager->getRepository(Product::class)->find($id);
 //        return new Response('Check out this great product: '.$product->getName());
@@ -375,7 +379,7 @@ class ServerController extends AbstractController
             }
         }
 
-        $result['pages'] = $this->getLivePages($app['db'], $serverName, $hostName, $result['limit'], $liveFilter[$serverName]);
+        $result['pages'] = $this->getLivePages($app['db'], $serverName, $hostName, $liveFilter[$serverName], $result['limit']);
 
         $ids = [];
         foreach ($result['pages'] as $item) {
@@ -1128,7 +1132,7 @@ class ServerController extends AbstractController
     }
 
 
-    function getLivePages($conn, $serverName, $hostName, $limit = 50, array $filter)
+    function getLivePages($conn, $serverName, $hostName, array $filter, $limit = 50)
     {
         $params = [
             'server_name' => $serverName
