@@ -201,8 +201,8 @@ class AggregateCommand extends Command
         $db = $this->db;
 
         try {
-            $db->connect();
-        } catch (\PDOException $e) {
+            $db->executeQuery('SELECT 1');
+        } catch (\Throwable $e) {
             $output->writeln('<error>Can\'t connect to MySQL server</error>');
 
             return Command::FAILURE;
@@ -320,6 +320,8 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
+            $serverName = addslashes((string)$server['server_name']);
+            $hostName = addslashes((string)$server['hostname']);
             $sql .= '
                 INSERT INTO ipm_report_2_by_hostname_and_server
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
@@ -327,8 +329,8 @@ class AggregateCommand extends Command
                      cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100,
                      doc_size_90, doc_size_95, doc_size_99, doc_size_100, created_at)
                 SELECT
-                    r2.server_name,
-                    r2.hostname,
+                    "' . $serverName . '" AS server_name,
+                    "' . $hostName . '" AS hostname,
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.90), 'req_time_90') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.95), 'req_time_95') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.99), 'req_time_99') . ',
@@ -349,7 +351,7 @@ class AggregateCommand extends Command
                 FROM
                     request r2
                 WHERE
-                    r2.server_name = "' . $server['server_name'] . '" and r2.hostname = "' . $server['hostname'] . '"
+                    r2.server_name = "' . $serverName . '" and r2.hostname = "' . $hostName . '"
             ;';
         }
         if ($sql !== '') {
@@ -499,13 +501,13 @@ class AggregateCommand extends Command
             INSERT INTO
                 ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt, created_at)
             SELECT
-                server_name, hostname, script_name, status, tags, tags_cnt, FROM_UNIXTIME(max(timestamp))
+                server_name, hostname, script_name, status, max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
             FROM
                 request
             WHERE
                 status >= 500
             GROUP BY
-                server_name, hostname, script_name
+                server_name, hostname, script_name, status
             LIMIT
                 25
         ';
@@ -515,6 +517,8 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
+            $serverName = addslashes((string)$server['server_name']);
+            $hostName = addslashes((string)$server['hostname']);
             $maxReqTime = static::DEFAULT_SLOW_REQ_TIME;
             if (!empty($this->params['logging']['long_request_time']['global'])) {
                 $maxReqTime = $this->params['logging']['long_request_time']['global'];
@@ -526,15 +530,15 @@ class AggregateCommand extends Command
                 INSERT INTO ipm_req_time_details
                     (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
-                    id, server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(max(timestamp))
+                    max(id), server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(max(timestamp))
                 FROM
                     request
                 WHERE
-                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND req_time > ' . (float)$maxReqTime . '
+                    server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND req_time > ' . (float)$maxReqTime . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
-                    req_time DESC
+                    max(req_time) DESC
                 LIMIT
                     10
             ;';
@@ -583,6 +587,8 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
+            $serverName = addslashes((string)$server['server_name']);
+            $hostName = addslashes((string)$server['hostname']);
             $maxMemoryUsage = static::DEFAULT_HEAVY_PAGE_MEMORY;
             if (!empty($this->params['logging']['heavy_request']['global'])) {
                 $maxMemoryUsage = $this->params['logging']['heavy_request']['global'];
@@ -599,11 +605,11 @@ class AggregateCommand extends Command
                 FROM
                     request
                 WHERE
-                    server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND mem_peak_usage > ' . (int)$maxMemoryUsage . '
+                    server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND mem_peak_usage > ' . (int)$maxMemoryUsage . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
-                    mem_peak_usage DESC
+                    max(mem_peak_usage) DESC
                 LIMIT
                     10
             ;';
@@ -614,6 +620,8 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
+            $serverName = addslashes((string)$server['server_name']);
+            $hostName = addslashes((string)$server['hostname']);
             $maxCPUUsage = static::DEFAULT_HEAVY_PAGE_CPU;
             if (!empty($this->params['logging']['heavy_cpu_request']['global'])) {
                 $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
@@ -630,11 +638,11 @@ class AggregateCommand extends Command
                   FROM
                       request
                   WHERE
-                      server_name = "' . $server['server_name'] . '" AND hostname = "' . $server['hostname'] . '" AND ru_utime > ' . (int)$maxCPUUsage . '
+                      server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND ru_utime > ' . (int)$maxCPUUsage . '
                   GROUP BY
                       server_name, hostname, script_name
                   ORDER BY
-                      ru_utime DESC
+                      max(ru_utime) DESC
                   LIMIT
                       10
             ;';
@@ -649,8 +657,8 @@ class AggregateCommand extends Command
 
         $output->writeln('<info>Data are aggregated successfully</info>');
 
-        if (!unlink(__FILE__ . '.lock')) {
-            $output->writeln('<error>Error: cannot remove ' . __FILE__ . '.lock file, you must remove it manually and check server settings.</error>');
+        if (file_exists($lockFile) && !unlink($lockFile)) {
+            $output->writeln('<error>Error: cannot remove ' . $lockFile . ' file, you must remove it manually and check server settings.</error>');
         }
 
         return Command::SUCCESS;

@@ -56,6 +56,7 @@ class ServerController extends AbstractController
             $result['periods'] = $this->allowedPeriods;
             $result['title'] = $serverName;
             $result['req_time_border'] = number_format($this->getReqTimeBorder($this, $serverName) * 1000, 0, '.', '');
+            $result['menu'] = $this->buildMenu();
 
 //            Для теста
             $result['base_url'] = '/';
@@ -180,6 +181,7 @@ class ServerController extends AbstractController
 
         //            Для теста
         $result['base_url'] = '/';
+        $result['menu'] = $this->buildMenu();
 
         return $this->render('timers.html.twig', $result);
     }
@@ -218,6 +220,7 @@ class ServerController extends AbstractController
 
         //            Для теста
         $result['base_url'] = '/';
+        $result['menu'] = $this->buildMenu();
 
         return $this->render('statuses.html.twig', $result);
     }
@@ -255,6 +258,7 @@ class ServerController extends AbstractController
 
         //            Для теста
         $result['base_url'] = '/';
+        $result['menu'] = $this->buildMenu();
 
         return $this->render('req_time.html.twig', $result);
     }
@@ -292,6 +296,7 @@ class ServerController extends AbstractController
 
         //            Для теста
         $result['base_url'] = '/';
+        $result['menu'] = $this->buildMenu();
 
         return $this->render('mem_usage.html.twig', $result);
     }
@@ -329,16 +334,18 @@ class ServerController extends AbstractController
 
         //            Для теста
         $result['base_url'] = '/';
+        $result['menu'] = $this->buildMenu();
 
         return $this->render('cpu_usage.html.twig', $result);
     }
 
-    // MATCH = GET|POST
-    #[Route('/{serverName}/{hostName}/live', name: 'server_live', methods: ['MATCH'])]
+    #[Route('/{serverName}/{hostName}/live', name: 'server_live', methods: ['GET', 'POST'])]
     public function actionLive(Request $request, $serverName, $hostName)
     {
+        $session = $request->hasSession() ? $request->getSession() : null;
+
         // filter from session
-        $liveFilter = $app['session']->get('filter_params');
+        $liveFilter = $session?->get('filter_params');
         if (!$liveFilter) {
             $liveFilter = [];
         }
@@ -360,7 +367,7 @@ class ServerController extends AbstractController
             $liveFilter[$serverName]['req_time'] = $request->get('req_time');
             $liveFilter[$serverName]['tags'] = $request->get('tags');
 
-            $app['session']->set('filter_params', $liveFilter);
+            $session?->set('filter_params', $liveFilter);
 
             $liveFilter[$serverName]['last_id'] = $request->get('last_id');
             $liveFilter[$serverName]['last_timestamp'] = $request->get('last_timestamp');
@@ -379,13 +386,13 @@ class ServerController extends AbstractController
             }
         }
 
-        $result['pages'] = $this->getLivePages($app['db'], $serverName, $hostName, $liveFilter[$serverName], $result['limit']);
+        $result['pages'] = $this->getLivePages($this->entityManager, $serverName, $hostName, $liveFilter[$serverName], $result['limit']);
 
         $ids = [];
         foreach ($result['pages'] as $item) {
             $ids[] = $item['id'];
         }
-        $addData = $this->getTagsTimersForIds($app['db'], $ids);
+        $addData = $this->getTagsTimersForIds($this->entityManager, $ids);
 
         $tagsFilter = [];
         if (isset($liveFilter[$serverName]['tags'])) {
@@ -421,18 +428,17 @@ class ServerController extends AbstractController
         $result['pages'] = array_values($result['pages']);
 
         if ($request->isXmlHttpRequest()) {
-            return $app->json($result);
+            return new JsonResponse($result);
         } else {
-            $result['hosts'] = getHosts($app['db'], $serverName);
+            $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
             $result['last_id'] = count($result['pages']) ? $result['pages'][0]['id'] : 0;
             $result['last_timestamp'] = count($result['pages']) ? $result['pages'][0]['timestamp'] : 0;
-
-            $response = new Response();
+            $result['menu'] = $this->buildMenu();
 
             //            Для теста
             $result['base_url'] = '/';
 
-            $response->setContent($this->render('live.html.twig', $result));
+            $response = $this->render('live.html.twig', $result);
 
             $response->headers->addCacheControlDirective('no-cache', true);
             $response->headers->addCacheControlDirective('no-store', true);
@@ -444,6 +450,12 @@ class ServerController extends AbstractController
         }
     }
 
+
+    // Нужно переосмыслить метод полносьтю, пока для теста
+    private function buildMenu(): array
+    {
+        return (new BeforeController($this->entityManager))->actionBefore();
+    }
 
     // Нужно переосмыслить метод полносьтю, пока для теста
     function getReqTimeBorder($app, $serverName)
@@ -480,11 +492,12 @@ class ServerController extends AbstractController
 //            $hosts[] = $data['hostname'];
 //        }
 
-        return $hosts;
+        return array_map(static fn (array $row): string => (string) $row['hostname'], $hosts);
     }
 
     function getStatusesReview($conn, $serverName, $hostName, $period)
     {
+        $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
             'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
@@ -498,7 +511,7 @@ class ServerController extends AbstractController
 
         $sql = "
             SELECT
-                created_at, status, count(*) as cnt
+                $dateSelect as created_at, status, count(*) as cnt
             FROM
                 ipm_status_details
             WHERE
@@ -542,6 +555,7 @@ class ServerController extends AbstractController
 
     function getRequestPerSecReview($conn, $serverName, $hostName, $period)
     {
+        $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
             'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
@@ -555,7 +569,7 @@ class ServerController extends AbstractController
 
         $sql = "
             SELECT
-                created_at, avg(req_per_sec) as req_per_sec, hostname
+                $dateSelect as created_at, avg(req_per_sec) as req_per_sec, hostname
             FROM
                 ipm_report_by_hostname_and_server
             WHERE
@@ -600,7 +614,7 @@ class ServerController extends AbstractController
         if ($hostCount > 1) {
             $sql = '
                 SELECT
-                    created_at, avg(req_per_sec) as req_per_sec
+                    ' . $dateSelect . ' as created_at, avg(req_per_sec) as req_per_sec
                 FROM
                     ipm_report_by_server_name USE INDEX (irsn_ca)
                 WHERE
@@ -612,7 +626,7 @@ class ServerController extends AbstractController
                     created_at
             ';
 
-            $data = $conn->fetchAll($sql, $params);
+            $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
             $rpqData['hosts']['_']['color'] = Utils::generateColor();
             $rpqData['hosts']['_']['host'] = '_';
 
@@ -637,6 +651,7 @@ class ServerController extends AbstractController
 
     function getRequestReview($conn, $serverName, $hostName, $period)
     {
+        $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
             'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period)),
@@ -661,7 +676,7 @@ class ServerController extends AbstractController
 
         $sql = "
             SELECT
-                created_at,
+                $dateSelect as created_at,
                 $selectFields
             FROM
                 ipm_report_2_by_hostname_and_server
@@ -701,6 +716,7 @@ class ServerController extends AbstractController
             'server_name' => $serverName,
             'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
         ];
+        $dateSelect = SqlUtils::getDateSelectExpression($period);
         $timeGroupBy = SqlUtils::getDateGroupExpression($period);
 
         $aggregation = [
@@ -737,7 +753,7 @@ class ServerController extends AbstractController
         if (isset($aggregation[$valueField]['req_field'])) {
             $sql = "
                 SELECT
-                    {$aggregation[$valueField]['req_agg']} as {$aggregation[$valueField]['req_field']}, created_at
+                    {$aggregation[$valueField]['req_agg']} as {$aggregation[$valueField]['req_field']}, $dateSelect as created_at
                 FROM
                     " . ($hostName !== 'all' ? 'ipm_report_by_hostname_and_server' : 'ipm_report_by_server_name') . '
                 WHERE
@@ -782,7 +798,7 @@ class ServerController extends AbstractController
 
         $sql = "
             SELECT
-                category, $isServerFilter created_at, $aggregationAgg as $valueField
+                category, $isServerFilter $dateSelect as created_at, $aggregationAgg as $valueField
             FROM
                 ipm_tag_info
             WHERE

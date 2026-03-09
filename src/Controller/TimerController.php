@@ -19,13 +19,10 @@ class TimerController extends AbstractController
         $this->entityManager = $entityManager;
     }
 
-    #[Route('/{type}/{requestId}/{grouping}', name: 'timer', methods: ['GET'])]
+    #[Route('/timers/{type}/{requestId}/{grouping}', name: 'timers_show', methods: ['GET'], defaults: ['grouping' => 'grouping-none'], requirements: ['type' => 'live|req_time'])]
+    #[Route('/{type}/{requestId}/{grouping}', name: 'timer_legacy', methods: ['GET'], defaults: ['grouping' => 'grouping-none'], requirements: ['type' => 'live|req_time'])]
     public function actionTimer($type, $requestId, $grouping): Response
     {
-//        Для теста, потом нужно понять проблему, проблема в составленни url
-        $type = 'req_time';
-        $requestId = 1;
-
         if (!in_array($type, $this->requestTypes)) {
             throw $this->createNotFoundException("Type $type not allowed. Allowed types: " . implode(', ', $this->requestTypes));
         }

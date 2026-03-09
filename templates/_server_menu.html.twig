@@ -15,10 +15,11 @@
                 </a>
             </li>
             {% for host in hosts %}
-                <li class="{{ host == hostname ? 'active' : '' }}">
-                    <a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host, format: 'html',
+                {% set host_name_value = host.hostname is defined ? host.hostname : host %}
+                <li class="{{ host_name_value == hostname ? 'active' : '' }}">
+                    <a href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host_name_value, format: 'html',
                         pageNum: 1, colOrder: 1, colDir: 1}) }}"
-                       title="">{{ host }}</a></li>
+                       title="">{{ host_name_value }}</a></li>
             {% endfor %}
         </ul>
     </small>
