@@ -4,6 +4,8 @@ namespace App\Command;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Security\FileUserStorage;
+use App\Security\LegacyMessageDigestPasswordHasher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,13 +14,16 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-#[AsCommand(name: 'add-user', description: 'Create or update user in database')]
+#[AsCommand(name: 'add-user', description: 'Create or update user in file or database storage')]
 class AddUserCommand extends Command
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
-        private readonly UserPasswordHasherInterface $passwordHasher
+        private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly FileUserStorage $fileUserStorage,
+        private readonly LegacyMessageDigestPasswordHasher $legacyHasher,
+        private readonly string $userSource
     ) {
         parent::__construct();
     }
@@ -29,7 +34,7 @@ class AddUserCommand extends Command
             ->addArgument(
                 'username',
                 InputArgument::REQUIRED,
-                'User email'
+                'User identifier (email or login)'
             )
             ->addArgument(
                 'password',
@@ -40,6 +45,11 @@ class AddUserCommand extends Command
                 'roles',
                 InputArgument::OPTIONAL,
                 'Comma-separated roles, e.g. ROLE_USER,ROLE_ADMIN'
+            )
+            ->addArgument(
+                'hosts',
+                InputArgument::OPTIONAL,
+                'Regexp string - hosts, allowed for this user (file mode only)'
             );
     }
 
@@ -54,6 +64,25 @@ class AddUserCommand extends Command
             $roles = ['ROLE_USER'];
         }
 
+        $hosts = $input->getArgument('hosts');
+        $source = strtolower(trim($this->userSource));
+        if (!in_array($source, ['file', 'db'], true)) {
+            $source = 'file';
+        }
+
+        if ($source === 'file') {
+            $this->fileUserStorage->upsertUser(
+                $email,
+                $this->legacyHasher->hash($password),
+                $roles,
+                is_string($hosts) ? trim($hosts) : null
+            );
+
+            $output->writeln(sprintf('<info>User %s created/updated in file %s</info>', $email, $this->fileUserStorage->getFilePath()));
+
+            return Command::SUCCESS;
+        }
+
         /** @var User|null $user */
         $user = $this->userRepository->findOneBy(['email' => $email]);
         $isNew = $user === null;
@@ -63,12 +92,11 @@ class AddUserCommand extends Command
         }
         $user->setRoles($roles);
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
-
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         $action = $isNew ? 'created' : 'updated';
-        $output->writeln("<info>User {$email} {$action} successfully</info>");
+        $output->writeln("<info>User {$email} {$action} successfully in database</info>");
 
         return Command::SUCCESS;
     }

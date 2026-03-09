@@ -68,6 +68,12 @@ diff: db_diff
 db_drop:
 	docker-compose -f ./docker/docker-compose.yml exec -u www-data php-fpm bin/console doctrine:schema:drop --force
 
+users_file_to_db:
+	${DOCKER_COMPOSE} exec -u www-data php-fpm bin/console users:migrate-file-to-db --no-interaction
+
+users_db_to_file:
+	${DOCKER_COMPOSE} exec -u www-data php-fpm bin/console users:migrate-db-to-file --no-interaction
+
 
 ##################
 # Static code analysis

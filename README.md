@@ -1,7 +1,8 @@
 # Pinboard (Symfony 6)
 
 Проект переведён на конфигурацию через `.env` / `.env.local`.
-Файлы `config/parameters.yml` и `config/parameters.yml.dist` больше не используются.
+Для совместимости со старой версией поддерживается файловое хранилище пользователей
+в формате `config/parameters.yml` (`secure.users`), либо хранение в БД.
 
 ## Файлы настроек
 
@@ -57,12 +58,16 @@
 - `APP_NOTIFICATION_LIST_JSON` (JSON)
 - `APP_NOTIFICATION_REQ_TIME_BORDER_GLOBAL`
 - `APP_NOTIFICATION_REQ_TIME_BORDER_MAP` (JSON)
+- `APP_AUTH_USER_SOURCE` (`file` или `db`, по умолчанию `file`)
+- `APP_AUTH_USERS_FILE` (путь до файла пользователей, по умолчанию `config/parameters.yml`)
 
 ## Полезные команды
 
 - Агрегация: `php bin/console aggregate`
 - Регистрация cron: `php bin/console register-crontab`
-- Создание/обновление пользователя: `php bin/console add-user <email> <password> [roles_csv]`
+- Создание/обновление пользователя: `php bin/console add-user <email> <password> [roles_csv] [hosts_regexp]`
+- Перенос пользователей файл -> БД: `php bin/console users:migrate-file-to-db`
+- Перенос пользователей БД -> файл: `php bin/console users:migrate-db-to-file`
 
 ## Docker
 

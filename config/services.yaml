@@ -4,8 +4,13 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.auth.user_source: '%env(APP_AUTH_USER_SOURCE)%'
+    app.auth.users_file: '%env(APP_AUTH_USERS_FILE)%'
 
 services:
+    legacy_pinba:
+        class: App\Security\LegacyMessageDigestPasswordHasher
+
     app.tokens.action_listener:
         class: App\EventListener\RedirectUserListener
         arguments:
@@ -32,3 +37,15 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    App\Security\FileUserStorage:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $filePath: '%app.auth.users_file%'
+
+    App\Security\SwitchableUserProvider:
+        arguments:
+            $source: '%app.auth.user_source%'
+
+    App\Command\AddUserCommand:
+        arguments:
+            $userSource: '%app.auth.user_source%'
