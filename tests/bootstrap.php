@@ -15,3 +15,7 @@ if (file_exists(dirname(__DIR__).'/config/bootstrap.php')) {
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);
 }
+
+if (!function_exists('pinba_timer_start') && file_exists(dirname(__DIR__).'/stubs/pinba.php')) {
+    require dirname(__DIR__).'/stubs/pinba.php';
+}

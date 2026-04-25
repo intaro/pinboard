@@ -23,6 +23,7 @@
 ## Testing
 
 - Backend sanity checks: `php -l` for touched PHP files and `php bin/console lint:twig` for touched Twig files.
+- PHP quality checks: `vendor/bin/phpunit`, `vendor/bin/phpstan analyse -c phpstan.neon`, `vendor/bin/php-cs-fixer fix --dry-run --diff --sequential --using-cache=no`.
 - Frontend rebuild: `pnpm build`.
 - Prefer focused verification over broad test runs unless the change spans multiple layers.
 
