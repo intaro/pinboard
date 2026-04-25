@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -11,34 +13,27 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class ServerController extends AbstractController
 {
     private const ROW_PER_PAGE = 50;
 
-    private int $rowPerPage;
+    private readonly int $rowPerPage;
 
-//    private $server = $app['controllers_factory'];
-    private $allowedPeriods = ['1 day', '3 days', '1 week', '1 month'];
+    private array $allowedPeriods = ['1 day', '3 days', '1 week', '1 month'];
 
-    private EntityManagerInterface $entityManager;
-    function __construct(
-        EntityManagerInterface $entityManager,
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
         #[Autowire('%env(int:APP_PAGINATION_ROW_PER_PAGE)%')] int $rowPerPage
-    )
-    {
-        $this->entityManager = $entityManager;
+    ) {
         $this->rowPerPage = $rowPerPage > 0 ? $rowPerPage : self::ROW_PER_PAGE;
-
-//        $product = $entityManager->getRepository(Product::class)->find($id);
-//        return new Response('Check out this great product: '.$product->getName());
     }
 
     #[Route('/{serverName}/{hostName}/overview.{format}', name: 'server', methods: ['GET'])]
     public function actionOverview(Request $request, $serverName, $hostName, $format): Response
     {
-        $period = $request->get('period', '1 day');
+        $period = $request->query->get('period', '1 day');
         if (!in_array($period, $this->allowedPeriods)) {
             $period = '1 day';
         }
@@ -118,12 +113,12 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/timers', name: 'server_timers',  methods: ['GET'])]
     public function actionTimers(Request $request, $serverName, $hostName)
     {
-        $period = $request->get('period', '1 day');
+        $period = $request->query->get('period', '1 day');
         if (!in_array($period, $this->allowedPeriods)) {
             $period = '1 day';
         }
 
-        $serverFilter = $request->get('server', 'off');
+        $serverFilter = $request->query->get('server', 'off');
         if (!in_array($serverFilter, ['on', 'off'])) {
             $serverFilter = 'off';
         }
@@ -362,7 +357,7 @@ class ServerController extends AbstractController
 
         // save filter in session
         foreach (['req_time', 'script_name', 'tags'] as $item) {
-            $liveFilter[$serverName][$item] = $request->get($item);
+            $liveFilter[$serverName][$item] = $request->request->get($item);
         }
 
         if ($request->isXmlHttpRequest()) {
@@ -370,8 +365,8 @@ class ServerController extends AbstractController
 
             $session?->set('filter_params', $liveFilter);
 
-            $liveFilter[$serverName]['last_id'] = $request->get('last_id');
-            $liveFilter[$serverName]['last_timestamp'] = $request->get('last_timestamp');
+            $liveFilter[$serverName]['last_id'] = $request->request->get('last_id');
+            $liveFilter[$serverName]['last_timestamp'] = $request->request->get('last_timestamp');
         } else {
             $result['filter'] = $liveFilter[$serverName];
             $result['show_filter'] = false;

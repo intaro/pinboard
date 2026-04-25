@@ -1,27 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\IpmReportByServerName;
 use App\Repository\IpmReportByServerNameRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use App\Utils\Utils;
 use Algo26\IdnaConvert\ToUnicode;
 
 class MainController extends AbstractController
 {
-    //    ------------Временно------------------------
-    private EntityManagerInterface $entityManager;
-    function __construct(EntityManagerInterface $entityManager)
-    {
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager
+    ) {
     }
-//    --------------------------------------------
 
     #[Route('/', methods: ['GET'])]
     public function indexAction(IpmReportByServerNameRepository $ipmReportByServerNameRepository): Response

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\EventListener;
 
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -12,13 +14,11 @@ use Symfony\Component\Security\Http\Util\TargetPathTrait;
 class RedirectUserListener
 {
     use TargetPathTrait;
-    private $tokenStorage;
-    private $router;
 
-    public function __construct(TokenStorageInterface $t, RouterInterface $r)
-    {
-        $this->tokenStorage = $t;
-        $this->router = $r;
+    public function __construct(
+        private readonly TokenStorageInterface $tokenStorage,
+        private readonly RouterInterface $router
+    ) {
     }
 
     public function onKernelRequest(RequestEvent $event): void
@@ -44,7 +44,7 @@ class RedirectUserListener
         return $user instanceof User;
     }
 
-    private function isAuthenticatedUserOnAnonymousPage($currentRoute): bool
+    private function isAuthenticatedUserOnAnonymousPage(?string $currentRoute): bool
     {
         return in_array(
             $currentRoute,

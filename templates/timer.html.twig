@@ -215,27 +215,53 @@
 {% block javascripts %}
     {{ parent() }}
     <script type="text/javascript">
-        $('.timer-group-toggle .expand').on('click', function (event) {
-            event.preventDefault();
-
-            const toggle = $(this);
-            const row = toggle.closest('.timer-group-toggle');
-            const groupIndex = row.data('group-index');
-            const detailRows = $('.timer-group-row-' + groupIndex);
-            const collapsed = detailRows.first().hasClass('d-none');
-            const icon = toggle.find('i');
-
-            if (collapsed) {
-                detailRows.removeClass('d-none');
-                row.addClass('table-active');
-                toggle.attr('aria-expanded', 'true');
-                icon.removeClass('bi-plus-circle').addClass('bi-dash-circle');
-            } else {
-                detailRows.addClass('d-none');
-                row.removeClass('table-active');
-                toggle.attr('aria-expanded', 'false');
-                icon.removeClass('bi-dash-circle').addClass('bi-plus-circle');
+        function toggleTimerGroup(row) {
+            const groupIndex = row.dataset.groupIndex;
+            const detailRows = document.querySelectorAll(`.timer-group-row-${groupIndex}`);
+            if (!detailRows.length) {
+                return;
             }
+
+            const toggle = row.querySelector('.expand');
+            const icon = toggle ? toggle.querySelector('i') : null;
+            const collapsed = detailRows[0].classList.contains('d-none');
+
+            detailRows.forEach((detailRow) => {
+                detailRow.classList.toggle('d-none', !collapsed);
+            });
+
+            row.classList.toggle('table-active', collapsed);
+
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', collapsed ? 'true' : 'false');
+            }
+
+            if (icon) {
+                icon.classList.toggle('bi-plus-circle', !collapsed);
+                icon.classList.toggle('bi-dash-circle', collapsed);
+            }
+        }
+
+        document.querySelectorAll('.timer-group-toggle').forEach((row) => {
+            row.addEventListener('click', (event) => {
+                if (event.target.closest('a, button')) {
+                    return;
+                }
+
+                toggleTimerGroup(row);
+            });
+        });
+
+        document.querySelectorAll('.timer-group-toggle .expand').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const row = button.closest('.timer-group-toggle');
+                if (row) {
+                    toggleTimerGroup(row);
+                }
+            });
         });
     </script>
 {% endblock %}

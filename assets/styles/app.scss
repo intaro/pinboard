@@ -60,6 +60,30 @@ main {
     line-height: 15px;
 }
 
+table.sortable thead th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+table.sortable thead th::after {
+    color: #9ca3af;
+    content: "↕";
+    display: inline-block;
+    font-size: 0.75em;
+    margin-left: 0.35rem;
+}
+
+table.sortable thead th[data-sort-dir="asc"]::after {
+    color: inherit;
+    content: "↑";
+}
+
+table.sortable thead th[data-sort-dir="desc"]::after {
+    color: inherit;
+    content: "↓";
+}
+
 footer {
     text-align: center;
     padding: 18px 0;

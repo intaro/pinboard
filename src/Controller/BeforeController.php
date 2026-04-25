@@ -1,26 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Algo26\IdnaConvert\ToUnicode;
-use App\Utils\Utils;
 
 class BeforeController extends AbstractController
 {
-    private EntityManagerInterface $entityManager;
-    function __construct(EntityManagerInterface $entityManager)
-    {
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager
+    ) {
     }
 
     // Не в том месте
 //    #[Route('/before', name: 'before')]
 //    public function actionBefore(): Response
-    public function actionBefore()
+    public function actionBefore(): array
     {
         $result = [
             'servers' => []
@@ -102,7 +100,6 @@ class BeforeController extends AbstractController
 
 //        $app['menu'] = $result;
 //        Надо поправить, т.к. это заглушка
-        $this->menu = $result;
         return $result;
     }
 }

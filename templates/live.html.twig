@@ -297,130 +297,164 @@
         <% } %>
     </script>
     <script type="text/javascript">
-        var liveStatus = true,
-            limit = {{ limit }},
-            frequency = {{ frequency * 1000 }},
-            timersPath = '{{ path('timers_show', { type: 'live', requestId: '00000' }) }}',
-            updating = false,
-            timerHandler;
+        const liveState = {
+            active: true,
+            updating: false,
+            limit: {{ limit }},
+            frequency: {{ frequency * 1000 }},
+            timersPath: '{{ path('timers_show', { type: 'live', requestId: '00000' }) }}',
+            timerHandler: null,
+        };
+        const filterForm = document.getElementById('filter-form');
+        const tableData = document.getElementById('table-data');
+        const pauseButton = document.querySelector('.live-controls .icon-pause');
+        const playButton = document.querySelector('.live-controls .icon-play');
+        const leadBlock = document.querySelector('.lead');
+        const filterBlock = document.querySelector('.filter-form');
+        const filterButton = document.querySelector('.live-controls button.filter');
+        const lastIdInput = filterForm.querySelector('input[name="last_id"]');
+        const lastTimestampInput = filterForm.querySelector('input[name="last_timestamp"]');
 
-        $('#filter-form input[name=last_id]').val({{ last_id }});
-        $('#filter-form input[name=last_timestamp]').val({{ last_timestamp }});
+        lastIdInput.value = {{ last_id }};
+        lastTimestampInput.value = {{ last_timestamp }};
 
-        $(function () {
-            if (liveStatus) {
-                timerHandler = setTimeout(updateLiveList, frequency);
-            }
-        });
+        function setControlState() {
+            pauseButton.classList.toggle('disabled', !liveState.active);
+            playButton.classList.toggle('disabled', liveState.active);
+        }
 
-        updateLiveList = function () {
-            if (updating) {
+        function setVisible(element, visible) {
+            element.style.display = visible ? '' : 'none';
+        }
+
+        function buildCurrentUrl() {
+            const url = new URL(window.location.href);
+            url.search = '';
+
+            ['script_name', 'req_time', 'tags'].forEach((name) => {
+                const input = filterForm.querySelector(`input[name="${name}"]`);
+                if (input && input.value) {
+                    url.searchParams.set(name, input.value);
+                }
+            });
+
+            return url.toString();
+        }
+
+        async function updateLiveList() {
+            if (liveState.updating) {
                 return;
             }
 
-            var filters = ['script_name', 'req_time', 'tags'];
-            var newUrl = document.location.origin + document.location.pathname + '?';
-            for (var i = 0; i < filters.length; i++) {
-                if ($('#filter-form input[name=' + filters[i] + ']').val()) {
-                    newUrl += filters[i] + '=' + encodeURIComponent($('#filter-form input[name=' + filters[i] + ']').val()) + '&';
+            const newUrl = buildCurrentUrl();
+            if (newUrl !== window.location.href) {
+                window.history.pushState(null, '', newUrl);
+            }
+
+            liveState.updating = true;
+
+            try {
+                const response = await fetch("{{ path('server_live', { serverName: server_name, hostName: hostname }) }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(filterForm),
+                });
+
+                const data = await response.json();
+
+                if (Array.isArray(data.pages) && data.pages.length > 0) {
+                    const resHtml = tmpl('row_tpl', { pages: data.pages, timersPath: liveState.timersPath });
+                    tableData.querySelector('#table-header').insertAdjacentHTML('afterend', resHtml);
+
+                    tableData.querySelectorAll('tr[style*="display: none"]').forEach((row) => {
+                        row.style.display = '';
+                    });
+
+                    const rows = Array.from(tableData.querySelectorAll('tr'));
+                    rows.slice(liveState.limit + 1).forEach((row) => row.remove());
+
+                    for (let i = data.pages.length - 1; i >= 0; i--) {
+                        if (rtChartData.length >= liveState.limit) {
+                            rtChartData.shift();
+                        }
+                        rtChartData.push({
+                            page: data.pages[i].script_name,
+                            value: data.pages[i].req_time,
+                        });
+                        if (muChartData.length >= liveState.limit) {
+                            muChartData.shift();
+                        }
+                        muChartData.push({
+                            page: data.pages[i].script_name,
+                            value: data.pages[i].mem_peak_usage,
+                        });
+                        if (cpuChartData.length >= liveState.limit) {
+                            cpuChartData.shift();
+                        }
+                        cpuChartData.push({
+                            page: data.pages[i].script_name,
+                            value: data.pages[i].ru_utime,
+                        });
+                    }
+                    rtChart.validateData();
+                    muChart.validateData();
+                    cpuChart.validateData();
+
+                    lastIdInput.value = data.pages[0].id;
+                    lastTimestampInput.value = data.pages[0].timestamp;
+                }
+            } finally {
+                liveState.updating = false;
+
+                if (liveState.active) {
+                    liveState.timerHandler = setTimeout(updateLiveList, liveState.frequency);
                 }
             }
-            if (newUrl[newUrl.length - 1] === '&' || newUrl[newUrl.length - 1] === '?') {
-                newUrl = newUrl.substring(0, newUrl.length - 1);
+        }
+
+        function startLiveUpdates() {
+            if (liveState.active) {
+                liveState.timerHandler = setTimeout(updateLiveList, liveState.frequency);
             }
+        }
 
-            if (newUrl !== document.location.href) {
-                window.history.pushState(null, null, newUrl);
-            }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startLiveUpdates);
+        } else {
+            startLiveUpdates();
+        }
 
-            updating = true;
+        pauseButton.addEventListener('click', (event) => {
+            event.preventDefault();
 
-            $.ajax({
-                url: "{{ path('server_live', { serverName: server_name, hostName: hostname }) }}",
-                method: 'post',
-                data: $('#filter-form').serialize(),
-                success: function (data) {
-                    if (typeof data.pages !== undefined && data.pages.length > 0) {
-                        var resHtml = tmpl("row_tpl", {pages: data.pages, timersPath: timersPath});
-                        $('#table-header').after(resHtml);
-                        $('#table-data tr:hidden').fadeIn();
-
-                        $('#table-data tr').each(function (index) {
-                            if (index >= limit) {
-                                $(this).remove();
-                            }
-                        });
-
-                        for (var i = data.pages.length - 1; i >= 0; i--) {
-                            if (rtChartData.length >= limit)
-                                rtChartData.shift();
-                            rtChartData.push({
-                                page: data.pages[i].script_name,
-                                value: data.pages[i].req_time
-                            });
-                            if (muChartData.length >= limit)
-                                muChartData.shift();
-                            muChartData.push({
-                                page: data.pages[i].script_name,
-                                value: data.pages[i].mem_peak_usage
-                            });
-                            if (cpuChartData.length >= limit)
-                                cpuChartData.shift();
-                            cpuChartData.push({
-                                page: data.pages[i].script_name,
-                                value: data.pages[i].ru_utime
-                            });
-                        }
-                        rtChart.validateData();
-                        muChart.validateData();
-                        cpuChart.validateData();
-
-                        $('#filter-form input[name=last_id]').val(data.pages[0].id);
-                        $('#filter-form input[name=last_timestamp]').val(data.pages[0].timestamp);
-                    }
-
-                    updating = false;
-
-                    if (liveStatus) {
-                        timerHandler = setTimeout(updateLiveList, frequency);
-                    }
-                },
-                dataType: "json"
-            });
-        };
-
-        $('.live-controls .icon-pause').click(function () {
-            liveStatus = false;
-            clearTimeout(timerHandler);
-
-            $('.live-controls .icon-pause').addClass('disabled');
-            $('.live-controls .icon-play').removeClass('disabled');
-
-            return false;
+            liveState.active = false;
+            clearTimeout(liveState.timerHandler);
+            setControlState();
         });
 
-        $('.live-controls .icon-play').click(function () {
-            if (liveStatus)
-                return false;
+        playButton.addEventListener('click', (event) => {
+            event.preventDefault();
 
-            liveStatus = true;
-            if (!updating) {
+            if (liveState.active) {
+                return;
+            }
+
+            liveState.active = true;
+            setControlState();
+
+            if (!liveState.updating) {
                 updateLiveList();
             }
-            $('.live-controls .icon-pause').removeClass('disabled');
-            $('.live-controls .icon-play').addClass('disabled');
-
-            return false;
         });
 
-        $('.live-controls button.filter').click(function () {
-            if ($('.lead').is(':visible')) {
-                $('.filter-form').show();
-                $('.lead').hide();
-            } else {
-                $('.filter-form').hide();
-                $('.lead').show();
-            }
+        filterButton.addEventListener('click', () => {
+            const leadVisible = getComputedStyle(leadBlock).display !== 'none';
+            setVisible(filterBlock, leadVisible);
+            setVisible(leadBlock, !leadVisible);
         });
+
+        setControlState();
     </script>
 {% endblock %}

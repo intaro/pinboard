@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Stopwatch;
 
 class Stopwatch
 {
-    protected $enabled = false;
-    protected $initTags = [];
+    private bool $enabled = false;
+    private array $initTags = [];
 
     public function __construct()
     {
@@ -26,7 +28,7 @@ class Stopwatch
         }
     }
 
-    public function start(array $tags)
+    public function start(array $tags): StopwatchEvent
     {
         if ($this->enabled) {
             $tags = array_merge($this->initTags, $tags);
@@ -41,10 +43,11 @@ class Stopwatch
         return new StopwatchEvent($this->enabled ? pinba_timer_start($tags) : null);
     }
 
-    public function add(array $tags, $time)
+    public function add(array $tags, int|float $time): void
     {
-        if (!$this->enabled)
+        if (!$this->enabled) {
             return;
+        }
 
         $tags = array_merge($this->initTags, $tags);
 

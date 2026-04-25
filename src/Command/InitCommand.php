@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 namespace App\Command;
 
 use RuntimeException;
@@ -12,7 +14,7 @@ use Symfony\Component\Process\Process;
 #[AsCommand(name: 'register-crontab', description: 'Init crontab for data aggregating')]
 class InitCommand extends Command
 {
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Init crontab for data aggregating');
     }

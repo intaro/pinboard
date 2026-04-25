@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Utils;
 
 /**
@@ -7,12 +9,12 @@ namespace App\Utils;
  */
 class Utils
 {
-    public static function generateColor()
+    public static function generateColor(): string
     {
-        return dechex(rand(0, 10000000));
+        return str_pad(dechex(random_int(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
     }
 
-    public static function parseRequestTags(array $request, $tagsFilter = []): array|bool
+    public static function parseRequestTags(array $request, array $tagsFilter = []): array|bool
     {
         //request tags matches the tags' filter
         if (count($tagsFilter)) {
@@ -45,7 +47,7 @@ class Utils
         return $request;
     }
 
-    public static function urlDecode($s)
+    public static function urlDecode(string $s): string
     {
         $decodeString = urldecode($s);
 

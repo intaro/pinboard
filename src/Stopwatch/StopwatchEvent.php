@@ -1,17 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Stopwatch;
 
 class StopwatchEvent
 {
-    protected $pinbaTimer;
-
-    public function __construct($pinbaTimer = null)
-    {
-        $this->pinbaTimer = $pinbaTimer;
+    public function __construct(
+        private readonly mixed $pinbaTimer = null
+    ) {
     }
 
-    public function stop()
+    public function stop(): void
     {
         if ($this->pinbaTimer) {
             pinba_timer_stop($this->pinbaTimer);

@@ -8,7 +8,7 @@
             {% set host = 'all' %}
             <li>
                 <a class="dropdown-item {{ host == hostname ? 'active' : '' }}"
-                   href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host, format: 'html', pageNum: 1, colOrder: 1, colDir: 1}) }}"
+                   href="{{ path(app.request.attributes.get('_route'), { serverName: server_name, hostName: host, format: 'html', pageNum: 1, colOrder: 1, colDir: 1}) }}"
                    title="">
                     all hosts
                 </a>
@@ -17,7 +17,7 @@
                 {% set host_name_value = host.hostname is defined ? host.hostname : host %}
                 <li>
                     <a class="dropdown-item {{ host_name_value == hostname ? 'active' : '' }}"
-                       href="{{ path(app.request.get('_route'), { serverName: server_name, hostName: host_name_value, format: 'html', pageNum: 1, colOrder: 1, colDir: 1}) }}"
+                       href="{{ path(app.request.attributes.get('_route'), { serverName: server_name, hostName: host_name_value, format: 'html', pageNum: 1, colOrder: 1, colDir: 1}) }}"
                        title="">{{ host_name_value }}</a>
                 </li>
             {% endfor %}
@@ -27,7 +27,7 @@
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
-        <a class="nav-link {{ app.request.get('_route') == 'server' ? 'active' : '' }}"
+        <a class="nav-link {{ app.request.attributes.get('_route') == 'server' ? 'active' : '' }}"
            href="{{ path('server', { serverName: server_name, hostName: hostname, format: 'html' }) }}">
             Overview
         </a>
@@ -35,35 +35,35 @@
     <li class="nav-item ">
         {#                                                                 Проблема с format и server_req_time и ниже тоже всякие допы... #}
         {#         Базово должно быть только serverName: server_name, hostName: hostname #}
-        <a class="nav-link {{ (app.request.get('_route') == 'server_req_time') ? 'active' : '' }}"
+        <a class="nav-link {{ (app.request.attributes.get('_route') == 'server_req_time') ? 'active' : '' }}"
            href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, format: 'html', server_req_time: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             Request time
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ (app.request.get('_route') == 'server_mem_usage') ? 'active' : '' }}"
+        <a class="nav-link {{ (app.request.attributes.get('_route') == 'server_mem_usage') ? 'active' : '' }}"
            href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, format: 'html', server_mem_usage: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             Memory peak usage
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ (app.request.get('_route') == 'server_cpu_usage') ? 'active' : '' }}"
+        <a class="nav-link {{ (app.request.attributes.get('_route') == 'server_cpu_usage') ? 'active' : '' }}"
            href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname, format: 'html', server_cpu_usage: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             CPU peak usage
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ (app.request.get('_route') == 'server_statuses') ? 'active' : '' }}"
+        <a class="nav-link {{ (app.request.attributes.get('_route') == 'server_statuses') ? 'active' : '' }}"
            href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, format: 'html', server_statuses: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             Statuses
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ app.request.get('_route') == 'server_timers' ? 'active' : '' }}"
+        <a class="nav-link {{ app.request.attributes.get('_route') == 'server_timers' ? 'active' : '' }}"
            href="{{ path('server_timers', { serverName: server_name, hostName: hostname, format: 'html', server_timers: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             Timers
@@ -71,7 +71,7 @@
         </a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {{ app.request.get('_route') == 'server_live' ? 'active' : '' }}"
+        <a class="nav-link {{ app.request.attributes.get('_route') == 'server_live' ? 'active' : '' }}"
            href="{{ path('server_live', { serverName: server_name, hostName: hostname, format: 'html', server_live: 1,
                pageNum: 1, colOrder: 1, colDir: 1}) }}">
             Live

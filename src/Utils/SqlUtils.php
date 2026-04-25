@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Utils;
 
 /**
@@ -7,7 +9,7 @@ namespace App\Utils;
  */
 class SqlUtils
 {
-    public static function getDateSelectExpression($period, $field = 'created_at')
+    public static function getDateSelectExpression(string $period, string $field = 'created_at'): string
     {
         if (false !== stripos($period, '1 day')) {
             return $field;
@@ -16,7 +18,7 @@ class SqlUtils
         return "MIN($field)";
     }
 
-    public static function getDateGroupExpression($period, $field = 'created_at')
+    public static function getDateGroupExpression(string $period, string $field = 'created_at'): string
     {
         if (false !== stripos($period, '1 day')) {
             return $field;

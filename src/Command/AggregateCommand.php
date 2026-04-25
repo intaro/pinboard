@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use Doctrine\DBAL\Connection;
@@ -35,7 +37,7 @@ class AggregateCommand extends Command
         $this->projectDir = $kernel->getProjectDir();
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this->setDescription('Aggregate data from source tables and save to report tables');
     }

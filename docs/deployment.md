@@ -31,7 +31,7 @@ pnpm build
 ## Пример crontab для агрегации
 
 ```cron
-*/15 * * * * cd /var/www/pinboard/current && /usr/bin/php8.2 bin/console aggregate --no-interaction >> /var/log/pinboard/aggregate.log 2>&1
+*/15 * * * * cd /var/www/pinboard/current && php bin/console aggregate --no-interaction >> /var/log/pinboard/aggregate.log 2>&1
 ```
 
 Этот пример запускает агрегацию каждые 15 минут и пишет вывод в лог. Пути в строке можно адаптировать под конкретное окружение.

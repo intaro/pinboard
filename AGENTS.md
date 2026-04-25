@@ -2,7 +2,7 @@
 
 ## Project Shape
 
-- Symfony 6 admin for Pinba.
+- Symfony 8 admin for Pinba.
 - Frontend assets are built with Symfony Encore.
 - Local configuration lives in `.env.local`; never commit secrets from it.
 - Use `pnpm` for frontend dependency management.

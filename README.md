@@ -1,12 +1,16 @@
-# Pinboard (Symfony 6)
+# Pinboard (Symfony 8)
 
-Админка для Pinba на Symfony 6.
+Админка для Pinba на Symfony 8.
 
 Проект использует:
+- PHP 8.4 или новее;
+- современный Node.js для сборки фронтенда;
 - `.env` и `.env.local` для конфигурации;
 - Symfony Console для служебных задач;
 - Symfony Encore для сборки фронтенда;
 - `pnpm` для зависимостей фронтенда.
+
+Базовые современные соглашения проекта описаны в [docs/standards.md](docs/standards.md).
 
 ## Быстрый старт
 
@@ -37,4 +41,3 @@
 - [Проверка и тестирование](docs/testing.md)
 - [Запуск и эксплуатация](docs/deployment.md)
 - [Сводка по документации](docs/README.md)
-

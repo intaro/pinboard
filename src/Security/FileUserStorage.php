@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
 use Symfony\Component\Yaml\Yaml;
 
 class FileUserStorage
 {
-    private string $resolvedFilePath;
+    private readonly string $resolvedFilePath;
 
     public function __construct(string $projectDir, string $filePath)
     {

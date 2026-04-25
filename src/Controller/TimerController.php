@@ -1,22 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use App\Utils\Utils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class TimerController extends AbstractController
 {
-//    private $app['controllers_factory'];
-    private $requestTypes = ['live', 'req_time'];
+    private array $requestTypes = ['live', 'req_time'];
 
-    private EntityManagerInterface $entityManager;
-    function __construct(EntityManagerInterface $entityManager)
-    {
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager
+    ) {
     }
 
     #[Route('/timers/{type}/{requestId}/{grouping}', name: 'timers_show', methods: ['GET'], defaults: ['grouping' => ''], requirements: ['type' => 'live|req_time'])]

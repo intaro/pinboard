@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
 use Symfony\Component\PasswordHasher\PasswordHasherInterface;
 
-class LegacyMessageDigestPasswordHasher implements PasswordHasherInterface
+final class LegacyMessageDigestPasswordHasher implements PasswordHasherInterface
 {
     public function hash(string $plainPassword): string
     {

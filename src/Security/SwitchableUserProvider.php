@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Security;
 
 use App\Entity\User;
@@ -13,14 +15,12 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 
 class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
-    private string $source;
-
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly FileUserStorage $fileUserStorage,
-        string $source
+        private string $source
     ) {
-        $this->source = strtolower(trim($source));
+        $this->source = strtolower(trim($this->source));
         if (!in_array($this->source, ['file', 'db'], true)) {
             $this->source = 'file';
         }
