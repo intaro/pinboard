@@ -21,7 +21,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
         private string $source
     ) {
         $this->source = strtolower(trim($this->source));
-        if (!in_array($this->source, ['file', 'db'], true)) {
+        if (!\in_array($this->source, ['file', 'db'], true)) {
             $this->source = 'file';
         }
     }
@@ -34,7 +34,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
                 return $user;
             }
 
-            $e = new UserNotFoundException(sprintf('User "%s" not found in database.', $identifier));
+            $e = new UserNotFoundException(\sprintf('User "%s" not found in database.', $identifier));
             $e->setUserIdentifier($identifier);
             throw $e;
         }
@@ -43,9 +43,9 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
         $storageKey = $identifier;
         $row = $users[$identifier] ?? null;
 
-        if (!is_array($row)) {
+        if (!\is_array($row)) {
             foreach ($users as $candidateKey => $candidateRow) {
-                if (!is_array($candidateRow)) {
+                if (!\is_array($candidateRow)) {
                     continue;
                 }
 
@@ -57,21 +57,21 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
             }
         }
 
-        if (!is_array($row) || !isset($row['password'])) {
-            $e = new UserNotFoundException(sprintf('User "%s" not found in file storage.', $identifier));
+        if (!\is_array($row) || !isset($row['password'])) {
+            $e = new UserNotFoundException(\sprintf('User "%s" not found in file storage.', $identifier));
             $e->setUserIdentifier($identifier);
             throw $e;
         }
 
         $roles = $row['roles'] ?? ['ROLE_USER'];
-        if (is_string($roles)) {
+        if (\is_string($roles)) {
             $roles = array_map('trim', explode(',', $roles));
         }
-        if (!is_array($roles) || $roles === []) {
+        if (!\is_array($roles) || $roles === []) {
             $roles = ['ROLE_USER'];
         }
 
-        $hosts = isset($row['hosts']) && is_string($row['hosts']) ? $row['hosts'] : null;
+        $hosts = isset($row['hosts']) && \is_string($row['hosts']) ? $row['hosts'] : null;
 
         return new FileUser($storageKey, (string)$row['password'], $roles, $hosts);
     }
@@ -79,7 +79,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
     public function refreshUser(UserInterface $user): UserInterface
     {
         if (!$this->supportsClass($user::class)) {
-            throw new UnsupportedUserException(sprintf('Unsupported user class "%s".', $user::class));
+            throw new UnsupportedUserException(\sprintf('Unsupported user class "%s".', $user::class));
         }
 
         return $this->loadUserByIdentifier($user->getUserIdentifier());
@@ -88,17 +88,17 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
     public function supportsClass(string $class): bool
     {
         if ($this->source === 'db') {
-            return is_a($class, User::class, true);
+            return \is_a($class, User::class, true);
         }
 
-        return is_a($class, FileUser::class, true);
+        return \is_a($class, FileUser::class, true);
     }
 
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if ($this->source === 'db') {
             if (!$user instanceof User) {
-                throw new UnsupportedUserException(sprintf('Unsupported user class "%s".', $user::class));
+                throw new UnsupportedUserException(\sprintf('Unsupported user class "%s".', $user::class));
             }
             $this->userRepository->upgradePassword($user, $newHashedPassword);
 
@@ -106,7 +106,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
         }
 
         if (!$user instanceof FileUser) {
-            throw new UnsupportedUserException(sprintf('Unsupported user class "%s".', $user::class));
+            throw new UnsupportedUserException(\sprintf('Unsupported user class "%s".', $user::class));
         }
 
         $this->fileUserStorage->upsertUser(

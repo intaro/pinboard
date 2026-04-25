@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Algo26\IdnaConvert\ToUnicode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Algo26\IdnaConvert\ToUnicode;
 
 class BeforeController extends AbstractController
 {
@@ -16,8 +16,8 @@ class BeforeController extends AbstractController
     }
 
     // Не в том месте
-//    #[Route('/before', name: 'before')]
-//    public function actionBefore(): Response
+    //    #[Route('/before', name: 'before')]
+    //    public function actionBefore(): Response
     public function actionBefore(): array
     {
         $result = [
@@ -28,30 +28,30 @@ class BeforeController extends AbstractController
             'created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))
         ];
 
-//        $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
+        //        $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
         $hostsWhere = '';
 
-//        if ($hostsRegexp !== '.*') {
-//            $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : [$hostsRegexp];
-//            $hostsWhere = " AND (server_name REGEXP '" . implode("' OR server_name REGEXP '", $hostsRegexp) . "')";
-//        }
+        //        if ($hostsRegexp !== '.*') {
+        //            $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : [$hostsRegexp];
+        //            $hostsWhere = " AND (server_name REGEXP '" . implode("' OR server_name REGEXP '", $hostsRegexp) . "')";
+        //        }
 
-//        $sql = "
-//            SELECT
-//                server_name, count(created_at) cnt
-//            FROM
-//                ipm_report_by_server_name
-//            WHERE
-//                created_at >= :created_at AND
-//                server_name IS NOT NULL AND server_name != ''
-//                $hostsWhere
-//            GROUP BY
-//                server_name
-//            HAVING
-//                cnt > 10
-//            ORDER BY
-//                server_name
-//        ";
+        //        $sql = "
+        //            SELECT
+        //                server_name, count(created_at) cnt
+        //            FROM
+        //                ipm_report_by_server_name
+        //            WHERE
+        //                created_at >= :created_at AND
+        //                server_name IS NOT NULL AND server_name != ''
+        //                $hostsWhere
+        //            GROUP BY
+        //                server_name
+        //            HAVING
+        //                cnt > 10
+        //            ORDER BY
+        //                server_name
+        //        ";
 
         // Для теста убрал HAVING, т.к. нет такой большой выборки по данным
         $sql = "
@@ -98,8 +98,8 @@ class BeforeController extends AbstractController
             $result['servers']['IPs'] = $ips;
         }
 
-//        $app['menu'] = $result;
-//        Надо поправить, т.к. это заглушка
+        //        $app['menu'] = $result;
+        //        Надо поправить, т.к. это заглушка
         return $result;
     }
 }

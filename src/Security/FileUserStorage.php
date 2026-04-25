@@ -25,20 +25,20 @@ class FileUserStorage
         $data = $this->loadRawConfig();
         $secure = $data['secure'] ?? null;
 
-        if (!is_array($secure)) {
+        if (!\is_array($secure)) {
             return [];
         }
 
         $users = $secure['users'] ?? [];
 
-        return is_array($users) ? $users : [];
+        return \is_array($users) ? $users : [];
     }
 
     public function upsertUser(string $identifier, string $hashedPassword, array $roles = ['ROLE_USER'], ?string $hosts = null): void
     {
         $data = $this->loadRawConfig();
-        $secure = isset($data['secure']) && is_array($data['secure']) ? $data['secure'] : [];
-        $users = isset($secure['users']) && is_array($secure['users']) ? $secure['users'] : [];
+        $secure = isset($data['secure']) && \is_array($data['secure']) ? $data['secure'] : [];
+        $users = isset($secure['users']) && \is_array($secure['users']) ? $secure['users'] : [];
 
         $record = [
             'password' => $hashedPassword,
@@ -64,7 +64,7 @@ class FileUserStorage
     public function replaceUsers(array $users): void
     {
         $data = $this->loadRawConfig();
-        $secure = isset($data['secure']) && is_array($data['secure']) ? $data['secure'] : [];
+        $secure = isset($data['secure']) && \is_array($data['secure']) ? $data['secure'] : [];
         $secure['enable'] = (bool)($secure['enable'] ?? true);
         $secure['users'] = $users;
         $data['secure'] = $secure;
@@ -74,19 +74,19 @@ class FileUserStorage
 
     private function loadRawConfig(): array
     {
-        if (!is_file($this->resolvedFilePath)) {
+        if (!\is_file($this->resolvedFilePath)) {
             return [];
         }
 
         $data = Yaml::parseFile($this->resolvedFilePath);
 
-        return is_array($data) ? $data : [];
+        return \is_array($data) ? $data : [];
     }
 
     private function saveRawConfig(array $data): void
     {
-        $dir = dirname($this->resolvedFilePath);
-        if (!is_dir($dir)) {
+        $dir = \dirname($this->resolvedFilePath);
+        if (!\is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
 

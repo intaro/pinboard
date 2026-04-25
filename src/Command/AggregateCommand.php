@@ -19,13 +19,12 @@ use Twig\Environment;
 class AggregateCommand extends Command
 {
     private array $params = [];
-    private OutputInterface $output;
     private string $projectDir;
 
-    const DEFAULT_REQ_TIME_BORDER = 1.5;
-    const DEFAULT_SLOW_REQ_TIME = 1.5;
-    const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
-    const DEFAULT_HEAVY_PAGE_CPU = 1;
+    public const DEFAULT_REQ_TIME_BORDER = 1.5;
+    public const DEFAULT_SLOW_REQ_TIME = 1.5;
+    public const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
+    public const DEFAULT_HEAVY_PAGE_CPU = 1;
 
     public function __construct(
         private readonly Connection $db,
@@ -86,22 +85,30 @@ class AggregateCommand extends Command
 
     private function envString(string $name, string $default = ''): string
     {
-        $value = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
-        if ($value === false || $value === null || $value === '') {
+        $value = $_ENV[$name] ?? $_SERVER[$name] ?? null;
+        if (!is_string($value) || $value === '') {
+            $value = getenv($name);
+        }
+
+        if ($value === false || $value === '') {
             return $default;
         }
 
-        return (string)$value;
+        return $value;
     }
 
     private function envBool(string $name, bool $default = false): bool
     {
-        $raw = $_ENV[$name] ?? $_SERVER[$name] ?? getenv($name);
-        if ($raw === false || $raw === null || $raw === '') {
+        $raw = $_ENV[$name] ?? $_SERVER[$name] ?? null;
+        if (!is_string($raw) || $raw === '') {
+            $raw = getenv($name);
+        }
+
+        if ($raw === false || $raw === '') {
             return $default;
         }
 
-        $value = strtolower((string)$raw);
+        $value = strtolower($raw);
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
 
@@ -198,7 +205,6 @@ class AggregateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->params = $this->loadParams();
-        $this->output = $output;
 
         $db = $this->db;
 
@@ -242,15 +248,15 @@ class AggregateCommand extends Command
         ];
 
         $tablesForClear = [
-            "ipm_report_2_by_hostname_and_server",
-            "ipm_report_by_hostname",
-            "ipm_report_by_hostname_and_server",
-            "ipm_report_by_server_name",
-            "ipm_req_time_details",
-            "ipm_mem_peak_usage_details",
-            "ipm_status_details",
-            "ipm_cpu_usage_details",
-            "ipm_timer",
+            'ipm_report_2_by_hostname_and_server',
+            'ipm_report_by_hostname',
+            'ipm_report_by_hostname_and_server',
+            'ipm_report_by_server_name',
+            'ipm_req_time_details',
+            'ipm_mem_peak_usage_details',
+            'ipm_status_details',
+            'ipm_cpu_usage_details',
+            'ipm_timer',
         ];
 
         $sql = '';
@@ -264,11 +270,9 @@ class AggregateCommand extends Command
                 created_at < :created_at
             ;';
         }
-        if ($sql !== '') {
-            $db->executeStatement($sql, $params);
-        }
+        $db->executeStatement($sql, $params);
 
-        if (!empty($this->params['notification']['enable']) && $this->params['notification']['enable']) {
+        if (!empty($this->params['notification']['enable'])) {
             $sql = '
                 SELECT
                     server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
@@ -286,7 +290,7 @@ class AggregateCommand extends Command
                 try {
                     $this->sendErrorEmails($errorPages);
                 } catch (Exception $e) {
-                    $output->writeln("<error>Notification sending error\n" . $e->getMessage() . "</error>");
+                    $output->writeln("<error>Notification sending error\n" . $e->getMessage() . '</error>');
                 }
             }
 

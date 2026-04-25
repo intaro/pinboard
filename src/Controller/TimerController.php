@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Doctrine\ORM\EntityManagerInterface;
 use App\Utils\Utils;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -86,7 +86,7 @@ class TimerController extends AbstractController
         return $this->render('timer.html.twig', $result);
     }
 
-    function getRequestById($conn, $type, $id, $date = null)
+    public function getRequestById($conn, $type, $id, $date = null)
     {
         if ($type === 'live') {
             $params = [
@@ -107,14 +107,14 @@ class TimerController extends AbstractController
                 'date' => $date
             ];
 
-//            $sql = '
-//            SELECT
-//                *
-//            FROM
-//                ipm_req_time_details
-//            WHERE
-//                request_id = :id AND created_at = :date
-//        ';
+            //            $sql = '
+            //            SELECT
+            //                *
+            //            FROM
+            //                ipm_req_time_details
+            //            WHERE
+            //                request_id = :id AND created_at = :date
+            //        ';
             $sql = '
             SELECT
                 *
@@ -125,7 +125,7 @@ class TimerController extends AbstractController
         ';
         }
 
-//        $data = $conn->fetchAll($sql, $params);
+        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (count($data)) {
@@ -135,7 +135,7 @@ class TimerController extends AbstractController
         return null;
     }
 
-    function getTimers($conn, $type, $id, $date = null)
+    public function getTimers($conn, $type, $id, $date = null)
     {
         if ($type === 'live') {
             $params = [
@@ -171,7 +171,7 @@ class TimerController extends AbstractController
         ';
         }
 
-//        $data = $conn->fetchAll($sql, $params);
+        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (!count($data)) {
@@ -200,7 +200,7 @@ class TimerController extends AbstractController
     }
 
     // Search tags which exist in all timers
-    function findGroupingTags($timers)
+    public function findGroupingTags($timers)
     {
         if (!count($timers)) {
             return [];
@@ -229,7 +229,7 @@ class TimerController extends AbstractController
         return $tags;
     }
 
-    function groupTimers($timers, $groupingTag)
+    public function groupTimers($timers, $groupingTag)
     {
         $data = [];
 
@@ -267,7 +267,7 @@ class TimerController extends AbstractController
         return $data;
     }
 
-    function formatRequestTimes($r)
+    public function formatRequestTimes($r)
     {
         $r['req_time'] = intval($r['req_time'] * 1000);
         $r['req_time_format'] = number_format($r['req_time'], 0, '.', ',');

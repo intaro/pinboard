@@ -1,8 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Routing\Attribute\Route;
 
 class MailerController extends AbstractController
 {
@@ -21,5 +27,7 @@ class MailerController extends AbstractController
             ->html('<p>See Twig integration for better HTML integration!</p>');
 
         $mailer->send($email);
+
+        return new Response('ok');
     }
 }

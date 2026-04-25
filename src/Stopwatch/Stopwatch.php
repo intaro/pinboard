@@ -34,9 +34,7 @@ class Stopwatch
             $tags = array_merge($this->initTags, $tags);
             if (isset($tags['group']) && !isset($tags['category']) && strpos($tags['group'], '::') !== false) {
                 $v = explode('::', $tags['group']);
-                if (count($v) > 0) {
-                    $tags['category'] = $v[0];
-                }
+                $tags['category'] = $v[0];
             }
         }
 

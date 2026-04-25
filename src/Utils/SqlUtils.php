@@ -11,7 +11,7 @@ class SqlUtils
 {
     public static function getDateSelectExpression(string $period, string $field = 'created_at'): string
     {
-        if (false !== stripos($period, '1 day')) {
+        if (stripos($period, '1 day') !== false) {
             return $field;
         }
 
@@ -20,10 +20,10 @@ class SqlUtils
 
     public static function getDateGroupExpression(string $period, string $field = 'created_at'): string
     {
-        if (false !== stripos($period, '1 day')) {
+        if (stripos($period, '1 day') !== false) {
             return $field;
         }
-        if (false !== stripos($period, '1 week') || false !== stripos($period, '3 days')) {
+        if (stripos($period, '1 week') !== false || stripos($period, '3 days') !== false) {
             return "day($field), hour($field)";
         }
 

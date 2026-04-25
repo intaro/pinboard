@@ -13,7 +13,7 @@ class StopwatchEvent
 
     public function stop(): void
     {
-        if ($this->pinbaTimer) {
+        if ($this->pinbaTimer !== null) {
             pinba_timer_stop($this->pinbaTimer);
         }
     }

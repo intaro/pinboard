@@ -1,0 +1,29 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+
+parameters:
+    level: 5
+    paths:
+        - bin/console
+        - config/preload.php
+        - migrations
+        - public/index.php
+        - src
+        - tests
+    excludePaths:
+        analyse:
+            - config/bundles.php
+            - config/reference.php
+            - migrations/*
+            - src/Entity/*
+            - src/Repository/*
+    tmpDir: var/phpstan
+    bootstrapFiles:
+        - stubs/pinba.php
+    stubFiles:
+        - stubs/pinba.php
+    treatPhpDocTypesAsCertain: true
+    reportUnmatchedIgnoredErrors: true
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml

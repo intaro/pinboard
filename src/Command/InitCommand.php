@@ -1,14 +1,16 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Command;
 
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\Process;
 
 #[AsCommand(name: 'register-crontab', description: 'Init crontab for data aggregating')]
@@ -25,6 +27,10 @@ class InitCommand extends Command
         $output->writeln('<info>Please enter the frequency of data aggregating</info> <comment>(frequency must be equal "pinba_stats_history" of the pinba engine config)</comment>.');
 
         $helper = $this->getHelper('question');
+        if (!$helper instanceof QuestionHelper) {
+            throw new RuntimeException('Question helper is not available');
+        }
+
         $question = new Question('Frequency (in minutes, default "15"): ', '15');
         $question->setValidator(function ($answer) {
             if ((int)$answer <= 0) {
