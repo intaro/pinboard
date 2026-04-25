@@ -1,3 +1,4 @@
+const path = require('path');
 const Encore = require('@symfony/webpack-encore');
 
 // Manually configure the runtime environment if not already configured yet by the "encore" command.
@@ -55,7 +56,17 @@ Encore
     })
 
     // enables Sass/SCSS support
-    .enableSassLoader()
+    .enableSassLoader((options) => {
+        options.api = 'modern';
+        options.sassOptions = {
+            ...(options.sassOptions || {}),
+            loadPaths: [
+                path.resolve(__dirname, 'node_modules'),
+            ],
+            quietDeps: true,
+            style: Encore.isProduction() ? 'compressed' : 'expanded',
+        };
+    })
 
     // uncomment if you use TypeScript
     //.enableTypeScriptLoader()

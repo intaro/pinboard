@@ -2,47 +2,47 @@
 
 {% block title %}{{ title }} — {{ parent() }}{% endblock %}
 {% block content %}
-    <h1>
-        Request timers
+    {% set is_grouped = grouping is not empty %}
+    <h1 class="d-flex flex-wrap align-items-center gap-2">
+        <span>Request timers</span>
         {% if grouping_tags|length %}
-            <small style="display: inline-block;">grouped by </small> <small style="display: inline-block;"
-                                                                             class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                {{ grouping }}
-                <b class="caret"></b>
-            </a>
-            <ul class="dropdown-menu">
-                {% for t in grouping_tags %}
-                    <li class="{{ t == grouping ? 'active' : '' }}">
-                        <a href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-' ~ t }) }}">
-                            {{ t }}
+            <span class="text-muted fs-6">grouped by</span>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ grouping is empty ? 'none' : grouping }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for t in grouping_tags %}
+                        <li>
+                            <a class="dropdown-item {{ t == grouping ? 'active' : '' }}" href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-' ~ t }) }}">
+                                {{ t }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    <li>
+                        <a class="dropdown-item {{ not grouping ? 'active' : '' }}" href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-none' }) }}">
+                            none
                         </a>
                     </li>
-                {% endfor %}
-                <li class="{{ not grouping ? 'active' : '' }}">
-                    <a href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-none' }) }}">
-                        none
-                    </a>
-                </li>
-            </ul>
-        </small>
+                </ul>
+            </div>
         {% endif %}
     </h1>
     <hr/>
-    <div class="row">
-        <div class="span10">
+    <div class="row g-3 align-items-start">
+        <div class="col-12 col-lg-10">
             <p class="lead timer">
                 <a href="//{{ request.server_name ~ request.script_name }}" title="">
                     {{ request.server_name ~ request.script_name }}
                 </a>
                 <br/>
                 {% for k, v in request.tags %}
-                    <span class="muted"><small>{{ k }} = {{ v }}{{ not loop.last ? ',' : '' }}</small></span>
+                    <span class="text-body-secondary"><small>{{ k }} = {{ v }}{{ not loop.last ? ',' : '' }}</small></span>
                 {% endfor %}
             </p>
         </div>
-        <div class="span2">
-            <p class="lead timer text-right">
+        <div class="col-12 col-lg-2 text-lg-end">
+            <p class="lead timer">
                 {{ request.req_time_format }} ms<br/>
                 {% if request.mem_peak_usage_format is defined %}
                     {{ request.mem_peak_usage_format }} kB<br/>
@@ -51,8 +51,8 @@
         </div>
     </div>
     <div class="row">
-        <div class="span12">
-            {% if grouping %}
+        <div class="col-12">
+            {% if is_grouped %}
                 <div id="req-chart" style="height: 150px;"></div>
                 <script type="text/javascript">
                     rtChart = null;
@@ -116,113 +116,126 @@
                         rtChart.write("req-chart");
                     });
                 </script>
-            {% else %}
-
             {% endif %}
         </div>
     </div>
-    {% if grouping %}
-        {% for k, v in request.timers %}
-            <div class="row">
-                <div class="span7">
-                    <h4 class="timer-head expanded">
-                        <a href="#" class="expand"><i class="icon-minus-sign"></i></a> {{ k }}
-                    </h4>
-                </div>
-                <div class="span1 text-right">
-                    <h4 class="timer-head expanded">&nbsp;<small>{{ v.hit_count }}</small></h4>
-                </div>
-                <div class="span2 text-right">
-                    <h4 class="timer-head expanded">&nbsp;<small>{{ v.value_percent }}%</small></h4>
-                </div>
-                <div class="span2 text-right">
-                    <h4 class="timer-head expanded">&nbsp;<small>{{ v.value_format }} ms</small></h4>
-                </div>
-            </div>
-            <div class="timers">
-                {% for timer in v.timers %}
-                    <div class="row">
-                        <div class="span7">
-                            <div class="cell">
-                                <small>
-                                    {% for tag, tag_value in timer.tags %}
-                                        {{ tag ~ ' = ' ~ tag_value }}<br/>
-                                    {% else %}
-                                        —
-                                    {% endfor %}
-                                </small>
-                            </div>
-                        </div>
-                        <div class="span1 text-right">
-                            <div class="cell">
+    {% if is_grouped %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle timer-table">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Timer</th>
+                    <th scope="col" class="text-end">Hit count</th>
+                    <th scope="col" class="text-end">Value %</th>
+                    <th scope="col" class="text-end">Timer value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for k, v in request.timers %}
+                    {% set group_index = loop.index %}
+                    <tr class="table-active timer-group-toggle" data-group-index="{{ group_index }}">
+                        <td>
+                            <button type="button" class="btn btn-link btn-sm p-0 me-2 expand" aria-expanded="true">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                            <strong>{{ k }}</strong>
+                        </td>
+                        <td class="text-end">{{ v.hit_count }}</td>
+                        <td class="text-end">{{ v.value_percent }}%</td>
+                        <td class="text-end">{{ v.value_format }} ms</td>
+                    </tr>
+                    {% for timer in v.timers %}
+                        <tr class="timer-group-row timer-group-row-{{ group_index }}">
+                            <td>
+                                <div class="ps-4">
+                                    <small class="text-body-secondary">
+                                        {% for tag, tag_value in timer.tags %}
+                                            {{ tag ~ ' = ' ~ tag_value }}<br/>
+                                        {% else %}
+                                            —
+                                        {% endfor %}
+                                    </small>
+                                </div>
+                            </td>
+                            <td class="text-end">
                                 <small>{{ timer.hit_count }}</small>
-                            </div>
-                        </div>
-                        <div class="span2 text-right">
-                            <div class="cell">
+                            </td>
+                            <td class="text-end">
                                 <small>{{ timer.value_percent }}%</small>
-                            </div>
-                        </div>
-                        <div class="span2 text-right">
-                            <div class="cell last">
+                            </td>
+                            <td class="text-end">
                                 <small>{{ timer.value_format }} ms</small>
-                            </div>
-                        </div>
-                    </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
                 {% endfor %}
-            </div>
-        {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
         <hr/>
-        <div class="timers">
-            {% for timer in request.timers %}
-                <div class="row">
-                    <div class="span7">
-                        <div class="cell">
-                            <small>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle timer-table">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Timer</th>
+                    <th scope="col" class="text-end">Hit count</th>
+                    <th scope="col" class="text-end">Value %</th>
+                    <th scope="col" class="text-end">Timer value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for timer in request.timers %}
+                    <tr>
+                        <td>
+                            <small class="text-body-secondary">
                                 {% for tag, tag_value in timer.tags %}
                                     {{ tag ~ ' = ' ~ tag_value }}<br/>
                                 {% else %}
                                     —
                                 {% endfor %}
                             </small>
-                        </div>
-                    </div>
-                    <div class="span1 text-right">
-                        <div class="cell">
+                        </td>
+                        <td class="text-end">
                             <small>{{ timer.hit_count }}</small>
-                        </div>
-                    </div>
-                    <div class="span2 text-right">
-                        <div class="cell">
+                        </td>
+                        <td class="text-end">
                             <small>{{ timer.value_percent }}%</small>
-                        </div>
-                    </div>
-                    <div class="span2 text-right">
-                        <div class="cell last">
+                        </td>
+                        <td class="text-end">
                             <small>{{ timer.value_format }} ms</small>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     {% endif %}
 {% endblock %}
 {% block javascripts %}
     {{ parent() }}
     <script type="text/javascript">
-        $('.row h4 a.expand').click(function () {
-            if ($(this).parent().hasClass('expanded')) {
-                $(this).parent().parent().parent().find('h4').removeClass('expanded');
-                $(this).parent().parent().parent().next().hide();
-                $(this).find('i').removeClass('icon-minus-sign').addClass('icon-plus-sign');
-            } else {
-                $(this).parent().parent().parent().find('h4').addClass('expanded');
-                $(this).parent().parent().parent().next().show();
-                $(this).find('i').addClass('icon-minus-sign').removeClass('icon-plus-sign');
-            }
+        $('.timer-group-toggle .expand').on('click', function (event) {
+            event.preventDefault();
 
-            return false;
+            const toggle = $(this);
+            const row = toggle.closest('.timer-group-toggle');
+            const groupIndex = row.data('group-index');
+            const detailRows = $('.timer-group-row-' + groupIndex);
+            const collapsed = detailRows.first().hasClass('d-none');
+            const icon = toggle.find('i');
+
+            if (collapsed) {
+                detailRows.removeClass('d-none');
+                row.addClass('table-active');
+                toggle.attr('aria-expanded', 'true');
+                icon.removeClass('bi-plus-circle').addClass('bi-dash-circle');
+            } else {
+                detailRows.addClass('d-none');
+                row.removeClass('table-active');
+                toggle.attr('aria-expanded', 'false');
+                icon.removeClass('bi-dash-circle').addClass('bi-plus-circle');
+            }
         });
     </script>
 {% endblock %}

@@ -4,29 +4,45 @@
 {% set frequency = 5 %}
 {% block content %}
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
-    <div class="pull-right live-controls">
-        <a href="#" title="Play" class="icon-play disabled"></a>
-        <a href="#" title="Pause" class="icon-pause"></a>
-        <button class="btn btn-mini filter" type="button">Filter</button>
+    <div class="d-flex justify-content-end align-items-center gap-2 live-controls mb-2">
+        <a href="#" title="Play" class="btn btn-sm btn-outline-secondary icon-play disabled">
+            <i class="bi bi-play-fill"></i>
+        </a>
+        <a href="#" title="Pause" class="btn btn-sm btn-outline-secondary icon-pause">
+            <i class="bi bi-pause-fill"></i>
+        </a>
+        <button class="btn btn-sm btn-outline-secondary filter" type="button">Filter</button>
     </div>
     <p class="lead" style="display: {{ show_filter ? 'none' : 'block' }};">
         <span>
             The page is refreshed every {{ frequency }} seconds
         </span>
     </p>
-    <div class="filter-form" style="display: {{ show_filter ? 'block' : 'none' }};">
+    <div class="filter-form mb-3" style="display: {{ show_filter ? 'block' : 'none' }};">
         <form id="filter-form">
-            <div class="controls">
-                <div class="input-prepend">
-                    <span class="add-on"><i class="icon-tag"></i></span>
-                    <input name="tags" class="span4" type="text" value="{{ filter.tags is defined ? filter.tags : '' }}"
-                           placeholder="Tag value (tag_name=tag_value)">
+            <div class="row g-2">
+                <div class="col-12 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                        <input name="tags" class="form-control" type="text" value="{{ filter.tags is defined ? filter.tags : '' }}"
+                               placeholder="Tag value (tag_name=tag_value)">
+                    </div>
                 </div>
-                <div class="input-prepend">
-                    <span class="add-on"><i class="icon-time"></i></span>
-                    <input name="req_time" class="span4" type="text"
-                           value="{{ filter.req_time is defined ? filter.req_time : '' }}"
-                           placeholder="Min request time, ms">
+                <div class="col-12 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                        <input name="script_name" class="form-control" type="text"
+                               value="{{ filter.script_name is defined ? filter.script_name : '' }}"
+                               placeholder="URL">
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                        <input name="req_time" class="form-control" type="text"
+                               value="{{ filter.req_time is defined ? filter.req_time : '' }}"
+                               placeholder="Min request time, ms">
+                    </div>
                 </div>
             </div>
             <input type="hidden" name="last_id"/>
@@ -34,7 +50,7 @@
         </form>
     </div>
     <div class="row">
-        <div class="span4">
+        <div class="col-12 col-lg-4">
             <h3>Request time</h3>
             <div id="req-time-chart" style="height: 200px;"></div>
             <script type="text/javascript">
@@ -84,7 +100,7 @@
                 });
             </script>
         </div>
-        <div class="span4">
+        <div class="col-12 col-lg-4">
             <h3>Memory peak usage</h3>
             <div id="mem-usage-chart" style="height: 200px;"></div>
             <script type="text/javascript">
@@ -133,7 +149,7 @@
                 });
             </script>
         </div>
-        <div class="span4">
+        <div class="col-12 col-lg-4">
             <h3>CPU peak usage</h3>
             <div id="cpu-usage-chart" style="height: 200px;"></div>
             <script type="text/javascript">
@@ -184,26 +200,26 @@
         </div>
     </div>
     <div class="row">
-        <div class="span12">
+        <div class="col-12">
             <h3>Last requests</h3>
             <table id="table-data" class="table table-bordered table-hover table-striped">
                 <tr id="table-header">
                     <th>Host name</th>
                     <th>Script name</th>
                     <th>
-                        <div class="text-right">Request time, ms</div>
+                        <div class="text-end">Request time, ms</div>
                     </th>
                     <th>
-                        <div class="text-right">Status</div>
+                        <div class="text-end">Status</div>
                     </th>
                     <th>
-                        <div class="text-right">Memory usage, kB</div>
+                        <div class="text-end">Memory usage, kB</div>
                     </th>
                     <th>
-                        <div class="text-right">CPU usage</div>
+                        <div class="text-end">CPU usage</div>
                     </th>
                     <th>
-                        <div class="text-right">Time</div>
+                        <div class="text-end">Time</div>
                     </th>
                 </tr>
                 {% for page in pages %}
@@ -213,29 +229,29 @@
                             <a class="script-name" href="http://{{ page.server_name ~ page.script_name }}"
                                title="{{ page.script_name }}">{{ page.script_name }}</a>
                             {% for k, v in page.tags %}
-                                <div class="muted"><small>{{ k }} = {{ v }}</small></div>
+                                <div class="text-body-secondary"><small>{{ k }} = {{ v }}</small></div>
                             {% endfor %}
                             {% if page.timers_cnt %}
                                 <div>
                                     <a href="{{ path('timers_show', { type: 'live', requestId: page.id }) }}"><small><i
-                                                    class="icon-time"></i> timers details</small></a>
+                                                    class="bi bi-clock"></i> timers details</small></a>
                                 </div>
                             {% endif %}
                         </td>
                         <td>
-                            <div class="text-right">{{ page.req_time_format }}</div>
+                            <div class="text-end">{{ page.req_time_format }}</div>
                         </td>
                         <td>
-                            <div class="text-right">{{ page.status }}</div>
+                            <div class="text-end">{{ page.status }}</div>
                         </td>
                         <td>
-                            <div class="text-right">{{ page.mem_peak_usage_format }}</div>
+                            <div class="text-end">{{ page.mem_peak_usage_format }}</div>
                         </td>
                         <td>
-                            <div class="text-right">{{ page.ru_utime }}</div>
+                            <div class="text-end">{{ page.ru_utime }}</div>
                         </td>
                         <td>
-                            <div class="text-right">{{ page.timestamp_format }}</div>
+                            <div class="text-end">{{ page.timestamp_format }}</div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -253,29 +269,29 @@
                 <a class="script-name" href="http://<%=pages[i].server_name%><%=pages[i].script_name%>"
                    title="<%=pages[i].script_name%>"><%=pages[i].script_name%></a>
                 <% for (k in pages[i].tags) { %>
-                <div class="muted"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
+                <div class="text-body-secondary"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
                 <% } %>
                 <% if (pages[i].timers_cnt > 0) { %>
                 <div>
-                    <a href="<%=timersPath.replace('00000', pages[i].id)%>"><small><i class="icon-time"></i> timers
+                    <a href="<%=timersPath.replace('00000', pages[i].id)%>"><small><i class="bi bi-clock"></i> timers
                             details</small></a>
                 </div>
                 <% } %>
             </td>
             <td>
-                <div class="text-right"><%=pages[i].req_time_format%></div>
+                <div class="text-end"><%=pages[i].req_time_format%></div>
             </td>
             <td>
-                <div class="text-right"><%=pages[i].status%></div>
+                <div class="text-end"><%=pages[i].status%></div>
             </td>
             <td>
-                <div class="text-right"><%=pages[i].mem_peak_usage_format%></div>
+                <div class="text-end"><%=pages[i].mem_peak_usage_format%></div>
             </td>
             <td>
-                <div class="text-right"><%=pages[i].ru_utime%></div>
+                <div class="text-end"><%=pages[i].ru_utime%></div>
             </td>
             <td>
-                <div class="text-right"><%=pages[i].timestamp_format%></div>
+                <div class="text-end"><%=pages[i].timestamp_format%></div>
             </td>
         </tr>
         <% } %>
@@ -300,6 +316,21 @@
         updateLiveList = function () {
             if (updating) {
                 return;
+            }
+
+            var filters = ['script_name', 'req_time', 'tags'];
+            var newUrl = document.location.origin + document.location.pathname + '?';
+            for (var i = 0; i < filters.length; i++) {
+                if ($('#filter-form input[name=' + filters[i] + ']').val()) {
+                    newUrl += filters[i] + '=' + encodeURIComponent($('#filter-form input[name=' + filters[i] + ']').val()) + '&';
+                }
+            }
+            if (newUrl[newUrl.length - 1] === '&' || newUrl[newUrl.length - 1] === '?') {
+                newUrl = newUrl.substring(0, newUrl.length - 1);
+            }
+
+            if (newUrl !== document.location.href) {
+                window.history.pushState(null, null, newUrl);
             }
 
             updating = true;

@@ -1,8 +1,8 @@
-@import "bootstrap";
-@import "bootstrap-icons";
-@import "./variables";
-$bootstrap-icons-font-dir: "~bootstrap-icons/font/fonts";
-@import "~bootstrap-icons/font/bootstrap-icons.scss";
+@use "bootstrap/scss/bootstrap";
+@use "./variables" as *;
+@use "bootstrap-icons/font/bootstrap-icons.scss" with (
+    $bootstrap-icons-font-dir: "fonts"
+);
 
 body {
     display: flex;
@@ -62,8 +62,14 @@ main {
 
 footer {
     text-align: center;
-    padding: 30px 0;
+    padding: 18px 0;
     margin-top: 10px;
     border-top: 1px solid #e5e5e5;
     background: #f5f5f5 !important;
+    font-size: 0.875rem;
+    line-height: 1.35;
+
+    p {
+        margin-bottom: 0.25rem;
+    }
 }

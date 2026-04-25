@@ -3,14 +3,11 @@
         <a class="nav-link link-secondary" aria-current="page" href="/">Overview</a>
     </li>
 
-    <li class="divider"></li>
-
     <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle link-secondary active" href="#" role="button" data-bs-auto-close="outside"
            data-bs-toggle="dropdown" aria-expanded="false">
             Sites
         </a>
-        <b class="caret"></b>
         <ul class="dropdown-menu">
             {% if menu.servers is defined %}
                 {% for domain, servers in menu.servers %}
@@ -22,8 +19,7 @@
                             {% for server_name, server in servers %}
                                 <li>
                                     <a class="dropdown-item link-primary"
-                                                                            {# hostName и format тут не должны быть #}
-                                       href="{{ path('server', { serverName: server_name, hostName: server_name, format: 'html' }) }}">
+                                       href="{{ path('server', { serverName: server_name, hostName: 'all', format: 'html' }) }}">
                                         {{ server_name }}
                                     </a>
                                 </li>

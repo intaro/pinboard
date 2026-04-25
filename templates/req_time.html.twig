@@ -4,41 +4,41 @@
 {% block content %}
     {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
     <div class="row">
-        <div class="span12">
+        <div class="col-12">
             <p class="lead">Slowest pages for a last day</p>
             {% if pages|length > 0 %}
-                <table class="table table-bordered table-hover table-striped">
+                <table class="table table-sm table-bordered table-hover table-striped align-middle">
                     <tr>
                         <th class="hostname">Host name
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'asc' }) }}">
-                                <i class=" icon-chevron-up"></i>
+                                <i class="bi bi-chevron-up"></i>
                             </a>
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'desc' }) }}">
-                                <i class=" icon-chevron-down"></i>
+                                <i class="bi bi-chevron-down"></i>
                             </a>
                         </th>
                         <th>Script name
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'asc' }) }}">
-                                <i class=" icon-chevron-up"></i>
+                                <i class="bi bi-chevron-up"></i>
                             </a>
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}">
-                                <i class=" icon-chevron-down"></i>
+                                <i class="bi bi-chevron-down"></i>
                             </a>
                         </th>
                         <th class="req-time">Request time, ms
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'asc' }) }}">
-                                <i class=" icon-chevron-up"></i>
+                                <i class="bi bi-chevron-up"></i>
                             </a>
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'time', colDir: 'desc' }) }}">
-                                <i class=" icon-chevron-down"></i>
+                                <i class="bi bi-chevron-down"></i>
                             </a>
                         </th>
                         <th class="date">Date
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}">
-                                <i class=" icon-chevron-up"></i>
+                                <i class="bi bi-chevron-up"></i>
                             </a>
                             <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}">
-                                <i class=" icon-chevron-down"></i>
+                                <i class="bi bi-chevron-down"></i>
                             </a>
                         </th>
                     </tr>
@@ -51,13 +51,13 @@
                                     {{ page.script_name }}
                                 </a>
                                 {% for k, v in page.tags %}
-                                    <div class="muted"><small>{{ k }} = {{ v }}</small></div>
+                                    <div class="text-body-secondary"><small>{{ k }} = {{ v }}</small></div>
                                 {% endfor %}
                                 {% if page.timers_cnt and page.request_id %}
                                     <div>
                                         <a href="{{ path('timers_show', { type: 'req_time', requestId: page.request_id ~ '::' ~ page.created_at }) }}">
                                             <small>
-                                                <i class="icon-time"></i>
+                                                <i class="bi bi-clock"></i>
                                                 timers details
                                             </small>
                                         </a>
@@ -102,4 +102,3 @@
         </div>
     </div>
 {% endblock %}
-

@@ -360,12 +360,13 @@ class ServerController extends AbstractController
             'limit' => 100
         ];
 
+        // save filter in session
+        foreach (['req_time', 'script_name', 'tags'] as $item) {
+            $liveFilter[$serverName][$item] = $request->get($item);
+        }
+
         if ($request->isXmlHttpRequest()) {
             $result['limit'] = 50;
-
-            // save filter in session
-            $liveFilter[$serverName]['req_time'] = $request->get('req_time');
-            $liveFilter[$serverName]['tags'] = $request->get('tags');
 
             $session?->set('filter_params', $liveFilter);
 
@@ -1144,7 +1145,7 @@ class ServerController extends AbstractController
                 id IN ($ids)
         ";
 
-        return $conn->fetchAll($sql);
+        return $conn->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
 
@@ -1171,6 +1172,11 @@ class ServerController extends AbstractController
         if (isset($filter['req_time']) && $filter['req_time']) {
             $params['req_time'] = $filter['req_time'] / 1000;
             $idCondition .= ' AND req_time >= :req_time';
+        }
+
+        if (isset($filter['script_name']) && $filter['script_name']) {
+            $params['script_name'] = $filter['script_name'] . '%';
+            $idCondition .= ' AND script_name LIKE :script_name';
         }
 
         $sql = "

@@ -19,8 +19,8 @@ class TimerController extends AbstractController
         $this->entityManager = $entityManager;
     }
 
-    #[Route('/timers/{type}/{requestId}/{grouping}', name: 'timers_show', methods: ['GET'], defaults: ['grouping' => 'grouping-none'], requirements: ['type' => 'live|req_time'])]
-    #[Route('/{type}/{requestId}/{grouping}', name: 'timer_legacy', methods: ['GET'], defaults: ['grouping' => 'grouping-none'], requirements: ['type' => 'live|req_time'])]
+    #[Route('/timers/{type}/{requestId}/{grouping}', name: 'timers_show', methods: ['GET'], defaults: ['grouping' => ''], requirements: ['type' => 'live|req_time'])]
+    #[Route('/{type}/{requestId}/{grouping}', name: 'timer_legacy', methods: ['GET'], defaults: ['grouping' => ''], requirements: ['type' => 'live|req_time'])]
     public function actionTimer($type, $requestId, $grouping): Response
     {
         if (!in_array($type, $this->requestTypes)) {
@@ -78,6 +78,7 @@ class TimerController extends AbstractController
             'grouping' => $grouping,
             'type' => $type,
             'request_id' => "$requestId::$date",
+            'menu' => $this->buildMenu(),
 //           Надо разобраться с этим base_url, сделать нормальную маршрутизацию
             'base_url' => '/'
         ];
@@ -297,5 +298,10 @@ class TimerController extends AbstractController
         }
 
         return $r;
+    }
+
+    private function buildMenu(): array
+    {
+        return (new BeforeController($this->entityManager))->actionBefore();
     }
 }
