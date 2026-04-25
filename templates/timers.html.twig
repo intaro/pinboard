@@ -24,76 +24,34 @@
                 <div class="col-12">
                     <h2>{{ chart.title }} {{ chart.subtitle is defined ? ('<small>(' ~ chart.subtitle ~ ')</small>')|raw : '' }}</h2>
                     {% if chart.data.timers|length > 0 %}
-                        <div id="{{ chart.field }}-chart" style="height: 250px;"></div>
-                        <div id="{{ chart.field }}-legend" style="height: 100px;"></div>
+                        <div style="height: 250px;">
+                            <canvas id="{{ chart.field }}-chart"></canvas>
+                        </div>
                         <script type="text/javascript">
-                            let {{ chart.field }}Chart;
-
-                            let {{ chart.field }}ChartData = [];
+                            document.addEventListener('DOMContentLoaded', () => {
+                            const {{ chart.field }}ChartData = [];
                             {% for date, item in chart.data.values %}
                             {{ chart.field }}ChartData.push({
+                                x: new Date({{ date }})
                                 {% for timer in chart.data.timers %}
-                                '{{ timer }}': {{ item[timer] is defined and item[timer] > 0 ? item[timer] : 0 }},
+                                , '{{ timer }}': {{ item[timer] is defined and item[timer] > 0 ? item[timer] : 0 }}
                                 {% endfor %}
-                                date: new Date({{ date }})
                             });
                             {% endfor %}
 
-                            AmCharts.ready(function () {
-                                // SERIAL CHART
-                                {{ chart.field }}Chart = new AmCharts.AmSerialChart();
-                                {{ chart.field }}Chart.pathToImages = "/js/amcharts/images/";
-                                {{ chart.field }}Chart.dataProvider = {{ chart.field }}ChartData;
-                                {{ chart.field }}Chart.categoryField = "date";
-
-                                let categoryAxis = {{ chart.field }}Chart.categoryAxis;
-                                categoryAxis.parseDates = true;
-                                categoryAxis.equalSpacing = false;
-                                categoryAxis.minPeriod = "mm";
-                                categoryAxis.gridAlpha = 0.07;
-                                categoryAxis.axisColor = "#DADADA";
-
-                                // Value
-                                let valueAxis = new AmCharts.ValueAxis();
-                                valueAxis.gridAlpha = 0.07;
-                                valueAxis.stackType = "regular";
-                                //valueAxis.logarithmic = true;
-                                {{ chart.field }}Chart.addValueAxis(valueAxis);
-
-                                // GRAPH
-                                let graph;
-
-                                {% for timer in chart.data.timers %}
-                                graph = new AmCharts.AmGraph();
-                                graph.type = "line"; // try to change it to "column"
-                                {% if request_graphs[timer] is defined %}
-                                graph.title = "{{ request_graphs[timer]['title'] }}";
-                                graph.stackable = false;
-                                graph.lineAlpha = 0.5;
-                                graph.fillAlphas = 0.3;
-                                {% else %}
-                                graph.title = "{{ timer }}";
-                                graph.lineAlpha = 1;
-                                graph.fillAlphas = 1;
-                                {% endif %}
-                                graph.balloonText = "[[value]]{{ chart.unit }}";
-                                graph.valueField = "{{ timer }}";
-                                graph.type = "smoothedLine";
-                                {{ chart.field }}Chart.addGraph(graph);
-                                {% endfor %}
-
-                                // CURSOR
-                                let chartCursor = new AmCharts.ChartCursor();
-                                chartCursor.cursorPosition = "mouse";
-                                chartCursor.categoryBalloonDateFormat = "JJ:NN, DD MMMM YYYY";
-                                {{ chart.field }}Chart.addChartCursor(chartCursor);
-
-                                // LEGEND
-                                let legend = new AmCharts.AmLegend();
-                                {{ chart.field }}Chart.addLegend(legend, "{{ chart.field }}-legend");
-
-                                // WRITE
-                                {{ chart.field }}Chart.write("{{ chart.field }}-chart");
+                            const {{ chart.field }}Chart = window.PinboardCharts.renderTimeSeriesChart('{{ chart.field }}-chart', {
+                                stacked: true,
+                                series: [
+                                    {% for timer in chart.data.timers %}
+                                    {
+                                        label: "{{ request_graphs[timer] is defined ? request_graphs[timer]['title'] : timer }}",
+                                        color: "{{ request_graphs[timer] is defined ? '#39A3B9' : '#729462' }}",
+                                        fill: true,
+                                        data: {{ chart.field }}ChartData.map((point) => ({x: point.x, y: point['{{ timer }}'] ?? 0})),
+                                    }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            });
                             });
                         </script>
                     {% else %}

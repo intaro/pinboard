@@ -53,67 +53,57 @@
     <div class="row">
         <div class="col-12">
             {% if is_grouped %}
-                <div id="req-chart" style="height: 150px;"></div>
+                <div style="height: 170px;">
+                    <canvas id="req-chart"></canvas>
+                </div>
                 <script type="text/javascript">
-                    rtChart = null;
-                    rtChartData = [{
-                        {% for k, v in request.timers %}
-                        "{{ k }}": "{{ v.value }}"{{ loop.revindex0 > 0 ? ',' : '' }}
-                        {% endfor %}
-                        {% if request.req_time_other is defined %}
-                        , "other": "{{ request.req_time_other }}"
-                        {% endif %}
-                    }];
-
-                    AmCharts.ready(function () {
-                        // SERIAL CHART
-                        rtChart = new AmCharts.AmSerialChart();
-                        rtChart.pathToImages = "/js/amcharts/images/";
-                        rtChart.dataProvider = rtChartData;
-                        rtChart.rotate = true;
-
-                        let categoryAxis = rtChart.categoryAxis;
-                        categoryAxis.gridAlpha = 0.02;
-                        //categoryAxis.axisColor = "#DADADA";
-                        categoryAxis.labelsEnabled = false;
-
-                        // Value
-                        let valueAxis = new AmCharts.ValueAxis();
-                        valueAxis.gridAlpha = 0.02;
-                        valueAxis.stackType = '100%';
-                        rtChart.addValueAxis(valueAxis);
-
-                        let graph = new AmCharts.AmGraph();
-
-                        // GRAPH
-                        {% for k, v in request.timers %}
-                        graph = new AmCharts.AmGraph();
-                        graph.type = "column";
-                        graph.balloonText = "[[title]]: {{ v.value_percent }}%";
-                        graph.valueText = "[[value]] ms";
-                        graph.labelText = "[[value]] ms";
-                        graph.valueField = "{{ k }}";
-                        graph.title = "{{ k }}";
-                        graph.lineAlpha = 0.5;
-                        graph.fillAlphas = 0.3;
-                        rtChart.addGraph(graph);
-                        {% endfor %}
-
-                        {% if request.req_time_other_percent is defined %}
-                        graph = new AmCharts.AmGraph();
-                        graph.type = "column";
-                        graph.balloonText = "[[title]]: {{ request.req_time_other_percent }}%";
-                        graph.valueText = "[[value]] ms";
-                        graph.labelText = "[[value]] ms";
-                        graph.valueField = "other";
-                        graph.title = "other";
-                        graph.lineAlpha = 0.5;
-                        graph.fillAlphas = 0.3;
-                        rtChart.addGraph(graph);
-                        {% endif %}
-
-                        // WRITE
-                        rtChart.write("req-chart");
+                    document.addEventListener('DOMContentLoaded', () => {
+                    const rtChart = window.PinboardCharts.renderCategoryChart('req-chart', {
+                        type: 'bar',
+                        indexAxis: 'y',
+                        labels: ['Timers'],
+                        stacked: true,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true,
+                            axis: 'x',
+                        },
+                        tooltip: {
+                            mode: 'nearest',
+                            intersect: true,
+                            displayColors: false,
+                            callbacks: {
+                                title() {
+                                    return '';
+                                },
+                                label(context) {
+                                    const value = Number(context.raw ?? 0);
+                                    const total = context.chart.data.datasets.reduce((sum, dataset) => {
+                                        const datasetValue = Number(dataset.data?.[context.dataIndex] ?? 0);
+                                        return sum + datasetValue;
+                                    }, 0);
+                                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return `${context.dataset.label}: ${percent}% (${Math.round(value)} ms)`;
+                                },
+                            },
+                        },
+                        series: [
+                            {% for k, v in request.timers %}
+                            {
+                                label: "{{ k }}",
+                                color: "{{ ['#39A3B9', '#700193', '#C38630', '#729462', '#e24a14', '#b93939'][(loop.index0) % 6] }}",
+                                data: [{{ v.value }}],
+                            }{{ not loop.last or request.req_time_other is defined ? ',' : '' }}
+                            {% endfor %}
+                            {% if request.req_time_other is defined %}
+                            {
+                                label: 'other',
+                                color: '#6f42c1',
+                                data: [{{ request.req_time_other }}],
+                            }
+                            {% endif %}
+                        ],
+                    });
                     });
                 </script>
             {% endif %}

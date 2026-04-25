@@ -8,6 +8,6 @@
 // any CSS you import will output into a single css file (app.css in this case)
 import './styles/app.scss';
 import '../public/css/application.scss';
-import '../public/css/tableStyle.css';
+import './pinboard-charts';
 
 import 'bootstrap';

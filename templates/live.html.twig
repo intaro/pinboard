@@ -52,149 +52,93 @@
     <div class="row">
         <div class="col-12 col-lg-4">
             <h3>Request time</h3>
-            <div id="req-time-chart" style="height: 200px;"></div>
+            <div style="height: 200px;">
+                <canvas id="req-time-chart"></canvas>
+            </div>
             <script type="text/javascript">
-                rtChart = null;
-                rtChartData = [];
-                {% for item in pages|reverse %}
-                rtChartData.push({page: "{{ item.script_name }}", value: "{{ item.req_time }}"});
-                {% endfor %}
+                document.addEventListener('DOMContentLoaded', () => {
+                const rtChartLabels = [
+                    {% for item in pages|reverse %}
+                    "{{ item.script_name|e('js') }}"{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
+                const rtChartValues = [
+                    {% for item in pages|reverse %}
+                    {{ item.req_time }}{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
 
-                AmCharts.ready(function () {
-                    // SERIAL CHART
-                    rtChart = new AmCharts.AmSerialChart();
-                    rtChart.pathToImages = "{{ base_url }}js/amcharts/images/";
-                    rtChart.dataProvider = rtChartData;
-                    rtChart.categoryField = "page";
-
-                    var categoryAxis = rtChart.categoryAxis;
-                    categoryAxis.gridAlpha = 0.07;
-                    categoryAxis.axisColor = "#DADADA";
-                    categoryAxis.labelsEnabled = false;
-
-                    // Value
-                    var valueAxis = new AmCharts.ValueAxis();
-                    valueAxis.gridAlpha = 0.07;
-                    rtChart.addValueAxis(valueAxis);
-
-                    // GRAPH
-                    var graph = new AmCharts.AmGraph();
-                    graph.type = "line"; // try to change it to "column"
-                    graph.title = "Request time";
-                    graph.balloonText = "[[value]] ms";
-                    graph.valueField = "value";
-                    graph.descriptionField = "page";
-                    graph.lineAlpha = 1;
-                    graph.lineColor = "#729462";
-                    graph.fillAlphas = 0.2;
-                    graph.fillColor = "#729462";
-                    rtChart.addGraph(graph);
-
-                    // CURSOR
-                    var chartCursor = new AmCharts.ChartCursor();
-                    chartCursor.cursorPosition = "mouse";
-                    rtChart.addChartCursor(chartCursor);
-
-                    // WRITE
-                    rtChart.write("req-time-chart");
+                const rtChart = window.PinboardCharts.renderCategoryChart('req-time-chart', {
+                    labels: rtChartLabels,
+                    series: [{
+                        label: 'Request time',
+                        color: '#729462',
+                        data: rtChartValues,
+                    }],
+                    legend: false,
+                    yTitle: 'ms',
+                });
                 });
             </script>
         </div>
         <div class="col-12 col-lg-4">
             <h3>Memory peak usage</h3>
-            <div id="mem-usage-chart" style="height: 200px;"></div>
+            <div style="height: 200px;">
+                <canvas id="mem-usage-chart"></canvas>
+            </div>
             <script type="text/javascript">
-                muChart = null;
-                muChartData = [];
-                {% for item in pages|reverse %}
-                muChartData.push({page: "{{ item.script_name }}", value: "{{ item.mem_peak_usage }}"});
-                {% endfor %}
+                document.addEventListener('DOMContentLoaded', () => {
+                const muChartLabels = [
+                    {% for item in pages|reverse %}
+                    "{{ item.script_name|e('js') }}"{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
+                const muChartValues = [
+                    {% for item in pages|reverse %}
+                    {{ item.mem_peak_usage }}{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
 
-                AmCharts.ready(function () {
-                    // SERIAL CHART
-                    muChart = new AmCharts.AmSerialChart();
-                    muChart.pathToImages = "{{ base_url }}js/amcharts/images/";
-                    muChart.dataProvider = muChartData;
-                    muChart.categoryField = "page";
-
-                    var categoryAxis = muChart.categoryAxis;
-                    categoryAxis.gridAlpha = 0.07;
-                    categoryAxis.axisColor = "#DADADA";
-                    categoryAxis.labelsEnabled = false;
-
-                    // Value
-                    var valueAxis = new AmCharts.ValueAxis();
-                    valueAxis.gridAlpha = 0.07;
-                    muChart.addValueAxis(valueAxis);
-
-                    // GRAPH
-                    var graph = new AmCharts.AmGraph();
-                    graph.type = "line"; // try to change it to "column"
-                    graph.title = "Memory peak usage";
-                    graph.balloonText = "[[value]] kB";
-                    graph.valueField = "value";
-                    graph.descriptionField = "page";
-                    graph.lineAlpha = 1;
-                    graph.lineColor = "#39A3B9";
-                    graph.fillAlphas = 0.2;
-                    muChart.addGraph(graph);
-
-                    // CURSOR
-                    var chartCursor = new AmCharts.ChartCursor();
-                    chartCursor.cursorPosition = "mouse";
-                    muChart.addChartCursor(chartCursor);
-
-                    // WRITE
-                    muChart.write("mem-usage-chart");
+                const muChart = window.PinboardCharts.renderCategoryChart('mem-usage-chart', {
+                    labels: muChartLabels,
+                    series: [{
+                        label: 'Memory peak usage',
+                        color: '#39A3B9',
+                        data: muChartValues,
+                    }],
+                    legend: false,
+                    yTitle: 'kB',
+                });
                 });
             </script>
         </div>
         <div class="col-12 col-lg-4">
             <h3>CPU peak usage</h3>
-            <div id="cpu-usage-chart" style="height: 200px;"></div>
+            <div style="height: 200px;">
+                <canvas id="cpu-usage-chart"></canvas>
+            </div>
             <script type="text/javascript">
-                cpuChart = null;
-                cpuChartData = [];
-                {% for item in pages|reverse %}
-                cpuChartData.push({page: "{{ item.script_name }}", value: "{{ item.ru_utime }}"});
-                {% endfor %}
+                document.addEventListener('DOMContentLoaded', () => {
+                const cpuChartLabels = [
+                    {% for item in pages|reverse %}
+                    "{{ item.script_name|e('js') }}"{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
+                const cpuChartValues = [
+                    {% for item in pages|reverse %}
+                    {{ item.ru_utime }}{{ not loop.last ? ',' : '' }}
+                    {% endfor %}
+                ];
 
-                AmCharts.ready(function () {
-                    // SERIAL CHART
-                    cpuChart = new AmCharts.AmSerialChart();
-                    cpuChart.pathToImages = "{{ base_url }}js/amcharts/images/";
-                    cpuChart.dataProvider = cpuChartData;
-                    cpuChart.categoryField = "page";
-
-                    var categoryAxis = cpuChart.categoryAxis;
-                    categoryAxis.gridAlpha = 0.07;
-                    categoryAxis.axisColor = "#DADADA";
-                    categoryAxis.labelsEnabled = false;
-
-                    // Value
-                    var valueAxis = new AmCharts.ValueAxis();
-                    valueAxis.gridAlpha = 0.07;
-                    cpuChart.addValueAxis(valueAxis);
-
-                    // GRAPH
-                    var graph = new AmCharts.AmGraph();
-                    graph.type = "line"; // try to change it to "column"
-                    graph.title = "CPU usage";
-                    graph.balloonText = "[[value]]";
-                    graph.valueField = "value";
-                    graph.descriptionField = "page";
-                    graph.lineAlpha = 1;
-                    graph.lineColor = "#b93939";
-                    graph.fillAlphas = 0.2;
-                    cpuChart.addGraph(graph);
-
-                    // CURSOR
-                    var chartCursor = new AmCharts.ChartCursor();
-                    chartCursor.cursorPosition = "mouse";
-                    cpuChart.addChartCursor(chartCursor);
-
-                    // WRITE
-                    cpuChart.write("cpu-usage-chart");
+                const cpuChart = window.PinboardCharts.renderCategoryChart('cpu-usage-chart', {
+                    labels: cpuChartLabels,
+                    series: [{
+                        label: 'CPU usage',
+                        color: '#b93939',
+                        data: cpuChartValues,
+                    }],
+                    legend: false,
+                });
                 });
             </script>
         </div>
@@ -367,40 +311,44 @@
                 if (Array.isArray(data.pages) && data.pages.length > 0) {
                     const resHtml = tmpl('row_tpl', { pages: data.pages, timersPath: liveState.timersPath });
                     tableData.querySelector('#table-header').insertAdjacentHTML('afterend', resHtml);
-
                     tableData.querySelectorAll('tr[style*="display: none"]').forEach((row) => {
                         row.style.display = '';
                     });
-
-                    const rows = Array.from(tableData.querySelectorAll('tr'));
-                    rows.slice(liveState.limit + 1).forEach((row) => row.remove());
+                    Array.from(tableData.querySelectorAll('tr')).slice(liveState.limit + 1).forEach((row) => {
+                        row.remove();
+                    });
 
                     for (let i = data.pages.length - 1; i >= 0; i--) {
-                        if (rtChartData.length >= liveState.limit) {
-                            rtChartData.shift();
+                        if (rtChart.data.labels.length >= liveState.limit) {
+                            rtChart.data.labels.shift();
                         }
-                        rtChartData.push({
-                            page: data.pages[i].script_name,
-                            value: data.pages[i].req_time,
-                        });
-                        if (muChartData.length >= liveState.limit) {
-                            muChartData.shift();
+                        rtChart.data.labels.push(data.pages[i].script_name);
+                        if (rtChart.data.datasets[0].data.length >= liveState.limit) {
+                            rtChart.data.datasets[0].data.shift();
                         }
-                        muChartData.push({
-                            page: data.pages[i].script_name,
-                            value: data.pages[i].mem_peak_usage,
-                        });
-                        if (cpuChartData.length >= liveState.limit) {
-                            cpuChartData.shift();
+                        rtChart.data.datasets[0].data.push(data.pages[i].req_time);
+
+                        if (muChart.data.labels.length >= liveState.limit) {
+                            muChart.data.labels.shift();
                         }
-                        cpuChartData.push({
-                            page: data.pages[i].script_name,
-                            value: data.pages[i].ru_utime,
-                        });
+                        muChart.data.labels.push(data.pages[i].script_name);
+                        if (muChart.data.datasets[0].data.length >= liveState.limit) {
+                            muChart.data.datasets[0].data.shift();
+                        }
+                        muChart.data.datasets[0].data.push(data.pages[i].mem_peak_usage);
+
+                        if (cpuChart.data.labels.length >= liveState.limit) {
+                            cpuChart.data.labels.shift();
+                        }
+                        cpuChart.data.labels.push(data.pages[i].script_name);
+                        if (cpuChart.data.datasets[0].data.length >= liveState.limit) {
+                            cpuChart.data.datasets[0].data.shift();
+                        }
+                        cpuChart.data.datasets[0].data.push(data.pages[i].ru_utime);
                     }
-                    rtChart.validateData();
-                    muChart.validateData();
-                    cpuChart.validateData();
+                    rtChart.update();
+                    muChart.update();
+                    cpuChart.update();
 
                     lastIdInput.value = data.pages[0].id;
                     lastTimestampInput.value = data.pages[0].timestamp;
