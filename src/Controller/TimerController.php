@@ -269,24 +269,24 @@ class TimerController extends AbstractController
 
     public function formatRequestTimes($r)
     {
-        $r['req_time'] = intval($r['req_time'] * 1000);
+        $r['req_time'] = (int) (((float) $r['req_time']) * 1000);
         $r['req_time_format'] = number_format($r['req_time'], 0, '.', ',');
         if (isset($r['mem_peak_usage'])) {
-            $r['mem_peak_usage_format'] = number_format($r['mem_peak_usage'], 0, '.', ',');
+            $r['mem_peak_usage_format'] = number_format((float) $r['mem_peak_usage'], 0, '.', ',');
         }
 
         $v = 0;
         foreach ($r['timers'] as &$group) {
-            $group['value'] = intval($group['value'] * 1000);
+            $group['value'] = (int) (((float) $group['value']) * 1000);
             $v += $group['value'];
             $group['value_format'] = number_format($group['value'], 0, '.', ',');
-            $group['value_percent'] = number_format($group['value'] / $r['req_time'] * 100, 2, '.', ',');
+            $group['value_percent'] = number_format($r['req_time'] > 0 ? $group['value'] / $r['req_time'] * 100 : 0, 2, '.', ',');
 
             if (isset($group['timers'])) {
                 foreach ($group['timers'] as &$timer) {
-                    $timer['value'] = intval($timer['value'] * 1000);
+                    $timer['value'] = (int) (((float) $timer['value']) * 1000);
                     $timer['value_format'] = number_format($timer['value'], 0, '.', ',');
-                    $timer['value_percent'] = number_format($timer['value'] / $r['req_time'] * 100, 2, '.', ',');
+                    $timer['value_percent'] = number_format($r['req_time'] > 0 ? $timer['value'] / $r['req_time'] * 100 : 0, 2, '.', ',');
                 }
             }
         }
@@ -294,7 +294,7 @@ class TimerController extends AbstractController
         if ($r['req_time'] - $v >= 0) {
             $r['req_time_other'] = $r['req_time'] - $v;
             $r['req_time_other_format'] = number_format($r['req_time_other'], 0, '.', ',');
-            $r['req_time_other_percent'] = number_format($r['req_time_other'] / $r['req_time'] * 100, 2, '.', ',');
+            $r['req_time_other_percent'] = number_format($r['req_time'] > 0 ? $r['req_time_other'] / $r['req_time'] * 100 : 0, 2, '.', ',');
         }
 
         return $r;

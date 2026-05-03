@@ -50,7 +50,7 @@ class ServerController extends AbstractController
             $result['period'] = $period;
             $result['periods'] = $this->allowedPeriods;
             $result['title'] = $serverName;
-            $result['req_time_border'] = number_format($this->getReqTimeBorder($this, $serverName) * 1000, 0, '.', '');
+            $result['req_time_border'] = number_format((float) $this->getReqTimeBorder($this, $serverName) * 1000, 0, '.', '');
             $result['menu'] = $this->buildMenu();
 
             //            Для теста
@@ -599,7 +599,7 @@ class ServerController extends AbstractController
                 // 'date' => $date,
                 'hostname' => $item['hostname'],
                 'parsed_hostname' => $parsedHostname,
-                'req_per_sec' => number_format($item['req_per_sec'], 2, '.', '')
+                'req_per_sec' => number_format((float) $item['req_per_sec'], 2, '.', '')
             ];
 
             if (!isset($rpqData['hosts'][$parsedHostname])) {
@@ -637,7 +637,7 @@ class ServerController extends AbstractController
                     //'date' => $date,
                     'hostname' => '_',
                     'parsed_hostname' => '_',
-                    'req_per_sec' => number_format($item['req_per_sec'], 2, '.', '')
+                    'req_per_sec' => number_format((float) $item['req_per_sec'], 2, '.', '')
                 ];
             }
         }
@@ -695,13 +695,13 @@ class ServerController extends AbstractController
             $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['req_time_' . $percent] = number_format($item['req_time_' . $percent] * 1000, 0, '.', '');
+                $item['req_time_' . $percent] = number_format((float) $item['req_time_' . $percent] * 1000, 0, '.', '');
             }
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['mem_peak_usage_' . $percent] = number_format($item['mem_peak_usage_' . $percent], 0, '.', '');
+                $item['mem_peak_usage_' . $percent] = number_format((float) $item['mem_peak_usage_' . $percent], 0, '.', '');
             }
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['cpu_peak_usage_' . $percent] = number_format($item['cpu_peak_usage_' . $percent], 3, '.', ',');
+                $item['cpu_peak_usage_' . $percent] = number_format((float) $item['cpu_peak_usage_' . $percent], 3, '.', ',');
             }
         }
 
@@ -771,13 +771,13 @@ class ServerController extends AbstractController
                 $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
                 if (isset($item['req_time_median'])) {
-                    $item['req_time_median'] = number_format($item['req_time_median'] * 1000, 3, '.', '');
+                    $item['req_time_median'] = number_format((float) $item['req_time_median'] * 1000, 3, '.', '');
                 }
                 if (isset($item['req_time_p95'])) {
-                    $item['req_time_p95'] = number_format($item['req_time_p95'] * 1000, 3, '.', '');
+                    $item['req_time_p95'] = number_format((float) $item['req_time_p95'] * 1000, 3, '.', '');
                 }
                 if (isset($item['req_time_total'])) {
-                    $item['req_time_total'] = number_format($item['req_time_total'], 3, '.', '');
+                    $item['req_time_total'] = number_format((float) $item['req_time_total'], 3, '.', '');
                 }
 
                 if (!isset($result[$item['date']])) {
@@ -818,16 +818,16 @@ class ServerController extends AbstractController
             $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
             if (isset($item['timer_median'])) {
-                $item['timer_median'] = number_format($item['timer_median'] * 1000, 3, '.', '');
+                $item['timer_median'] = number_format((float) $item['timer_median'] * 1000, 3, '.', '');
             }
             if (isset($item['timer_p95'])) {
-                $item['timer_p95'] = number_format($item['timer_p95'] * 1000, 3, '.', '');
+                $item['timer_p95'] = number_format((float) $item['timer_p95'] * 1000, 3, '.', '');
             }
             if (isset($item['timer_value'])) {
-                $item['timer_value'] = number_format($item['timer_value'], 3, '.', '');
+                $item['timer_value'] = number_format((float) $item['timer_value'], 3, '.', '');
             }
             if (isset($item['hit_count'])) {
-                $item['hit_count'] = number_format($item['hit_count'], 0, '.', '');
+                $item['hit_count'] = number_format((float) $item['hit_count'], 0, '.', '');
             }
 
             $key = $item['category'];
@@ -966,7 +966,7 @@ class ServerController extends AbstractController
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['req_time'] = number_format($item['req_time'] * 1000, 0, '.', ',');
+            $item['req_time'] = number_format((float) $item['req_time'] * 1000, 0, '.', ',');
             $item = Utils::parseRequestTags($item);
         }
 
@@ -1068,7 +1068,7 @@ class ServerController extends AbstractController
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['cpu_peak_usage'] = number_format($item['cpu_peak_usage'], 3);
+            $item['cpu_peak_usage'] = number_format((float) $item['cpu_peak_usage'], 3);
             $item = Utils::parseRequestTags($item);
         }
 
@@ -1118,7 +1118,7 @@ class ServerController extends AbstractController
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['mem_peak_usage'] = number_format($item['mem_peak_usage'], 0, '.', ',');
+            $item['mem_peak_usage'] = number_format((float) $item['mem_peak_usage'], 0, '.', ',');
             $item = Utils::parseRequestTags($item);
         }
 
@@ -1215,8 +1215,8 @@ class ServerController extends AbstractController
 
             $item['script_name'] = Utils::urlDecode($item['script_name']);
             $item['req_time'] = $item['req_time'] * 1000;
-            $item['req_time_format'] = number_format($item['req_time']);
-            $item['mem_peak_usage_format'] = number_format($item['mem_peak_usage']);
+            $item['req_time_format'] = number_format((float) $item['req_time']);
+            $item['mem_peak_usage_format'] = number_format((float) $item['mem_peak_usage']);
             $item['timestamp_format'] = date('H:i:s', $item['timestamp']);
         }
 
