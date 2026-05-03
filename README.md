@@ -40,4 +40,5 @@
 - [Конфигурация](docs/configuration.md)
 - [Проверка и тестирование](docs/testing.md)
 - [Запуск и эксплуатация](docs/deployment.md)
+- [Docker: Pinboard + Pinba](docs/docker.md)
 - [Сводка по документации](docs/README.md)
