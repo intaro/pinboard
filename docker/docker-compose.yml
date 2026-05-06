@@ -1,6 +1,11 @@
 services:
   mysql-pinba:
-    image: ${PINBA_IMAGE}
+    image: ${COMPOSE_PROJECT_NAME}-mysql-pinba:local
+    build:
+      context: ./../
+      dockerfile: ./docker/mysql/Dockerfile
+      args:
+        PINBA_IMAGE: ${PINBA_IMAGE}
     container_name: ${COMPOSE_PROJECT_NAME}-mysql-pinba
     restart: unless-stopped
     environment:
@@ -14,7 +19,6 @@ services:
       - "${PINBA_UDP_PORT}:30002/udp"
     volumes:
       - pinba-mysql-data:/var/lib/mysql
-      - ./mysql-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
@@ -85,7 +89,8 @@ services:
       TZ: ${TZ}
     volumes:
       - ./../:/var/www
-    command: ["/bin/sh", "-lc", "while true; do php bin/console aggregate --no-interaction; sleep ${AGGREGATE_INTERVAL_SECONDS}; done"]
+      - ./php-fpm/aggregate.cron:/etc/crontabs/aggregate.cron:ro
+    command: ["supercronic", "/etc/crontabs/aggregate.cron"]
 
 volumes:
   pinba-mysql-data:

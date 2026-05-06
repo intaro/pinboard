@@ -47,4 +47,3 @@
 - `db`
 
 Выбор задаётся через `APP_AUTH_USER_SOURCE`.
-
