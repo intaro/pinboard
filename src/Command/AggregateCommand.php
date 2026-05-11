@@ -25,6 +25,7 @@ class AggregateCommand extends Command
     public const DEFAULT_SLOW_REQ_TIME = 1.5;
     public const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
     public const DEFAULT_HEAVY_PAGE_CPU = 1;
+    public const DEFAULT_LOCK_TTL_SECONDS = 900;
 
     public function __construct(
         private readonly Connection $db,
@@ -110,6 +111,17 @@ class AggregateCommand extends Command
 
         $value = strtolower($raw);
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function envInt(string $name, int $default): int
+    {
+        $raw = $this->envString($name, (string)$default);
+        if (!is_numeric($raw)) {
+            return $default;
+        }
+
+        $value = (int)$raw;
+        return $value > 0 ? $value : $default;
     }
 
     private function envCsv(string $name): array
@@ -217,6 +229,27 @@ class AggregateCommand extends Command
         }
 
         $lockFile = $this->projectDir . '/var/aggregate.lock';
+        $lockTtlSeconds = $this->envInt('APP_AGGREGATE_LOCK_TTL_SECONDS', self::DEFAULT_LOCK_TTL_SECONDS);
+        if (file_exists($lockFile)) {
+            $mtime = @filemtime($lockFile);
+            if ($mtime !== false && (time() - $mtime) > $lockTtlSeconds) {
+                if (@unlink($lockFile)) {
+                    $output->writeln(sprintf(
+                        '<comment>Removed stale lock file %s (older than %d seconds).</comment>',
+                        $lockFile,
+                        $lockTtlSeconds
+                    ));
+                } else {
+                    $output->writeln(sprintf(
+                        '<error>Found stale lock file %s, but cannot remove it. Please remove it manually.</error>',
+                        $lockFile
+                    ));
+
+                    return Command::FAILURE;
+                }
+            }
+        }
+
         if (file_exists($lockFile)) {
             $output->writeln('<error>Cannot run data aggregation: another instance is already executing. Otherwise, remove ' . $lockFile . '</error>');
 
