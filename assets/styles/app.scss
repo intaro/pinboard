@@ -1,0 +1,99 @@
+@use "bootstrap/scss/bootstrap";
+@use "./variables" as *;
+@use "bootstrap-icons/font/bootstrap-icons.scss" with (
+    $bootstrap-icons-font-dir: "fonts"
+);
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+a {
+    text-decoration: none;
+}
+
+main {
+    flex: 1;
+}
+
+.navbar-brand {
+    font-family: $font-family-title;
+    font-weight: $font-weight-normal;
+    font-size: 1.8rem;
+}
+
+.navbar-brand, .nav-link {
+    transition: all .15s;
+}
+
+.nav-conference {
+    display: inline-block;
+    padding: 5px 10px;
+    color: #666;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.lift {
+    transition: box-shadow .25s ease,transform .25s ease;
+
+    &:focus, &:hover {
+        box-shadow: 0 1rem 2.5rem rgba(22,28,45,.1),0 .5rem 1rem -.75rem rgba(22,28,45,.1)!important;
+        transform: translate3d(0, -4px, 0);
+    }
+}
+
+.comment-img {
+    width: 250px;
+    height: 150px;
+
+    img {
+        max-width: 250px;
+        max-height: 150px;
+    }
+}
+
+.comment-text {
+    font-size: 12px;
+    line-height: 15px;
+}
+
+table.sortable thead th {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+table.sortable thead th::after {
+    color: #9ca3af;
+    content: "↕";
+    display: inline-block;
+    font-size: 0.75em;
+    margin-left: 0.35rem;
+}
+
+table.sortable thead th[data-sort-dir="asc"]::after {
+    color: inherit;
+    content: "↑";
+}
+
+table.sortable thead th[data-sort-dir="desc"]::after {
+    color: inherit;
+    content: "↓";
+}
+
+footer {
+    text-align: center;
+    padding: 18px 0;
+    margin-top: 10px;
+    border-top: 1px solid #e5e5e5;
+    background: #f5f5f5 !important;
+    font-size: 0.875rem;
+    line-height: 1.35;
+
+    p {
+        margin-bottom: 0.25rem;
+    }
+}

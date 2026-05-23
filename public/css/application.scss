@@ -1,0 +1,130 @@
+* {
+    margin: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+#push {
+    height: 131px; /* .push must be the same height as .footer */
+}
+
+footer {
+    text-align: center;
+    padding: 30px 0;
+    margin-top: 10px;
+    border-top: 1px solid #e5e5e5;
+    background: #f5f5f5;
+}
+
+.navbar .brand {
+    padding: 5px 20px 5px 5px;
+}
+
+table.table th.hostname {
+    min-width: 110px;
+}
+
+table.table th.req-time {
+    min-width: 160px;
+}
+
+table.table th.mem-peak-usage {
+    min-width: 200px;
+}
+
+table.table th.cpu-peak-usage {
+    min-width: 130px;
+}
+
+table.table th.date {
+    min-width: 170px;
+}
+
+table.table td.host {
+    min-width: 85px;
+}
+
+table.table td a.script-name {
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+    text-overflow: ellipsis;
+    max-width: 460px;
+}
+
+@media (min-width: 1200px) {
+    table.table td a.script-name {
+        max-width: 660px;
+    }
+}
+
+.nav-pills.small > li > a {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 7px;
+    padding-right: 7px;
+    font-size: 11px;
+    line-height: 12px;
+    margin-right: 5px;
+}
+
+.nav-pills.period {
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+h1 .dropdown-menu {
+    font-size: 16px;
+}
+
+.live-controls a {
+    position: relative;
+    top: 2px;
+}
+
+.live-controls a.disabled {
+    opacity: 0.2;
+}
+
+.live-controls button {
+    margin-left: 5px;
+}
+
+.filter-form > form {
+    margin-bottom: 10px;
+}
+
+h4.timer-head {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #fff;
+}
+
+h4.timer-head.expanded {
+    border-bottom-color: #eee;
+}
+
+h4.timer-head .expand {
+    position: relative;
+    top: 5px;
+}
+
+.lead.timer {
+    margin-bottom: 0;
+}
+
+.timers .row {
+}
+
+.timers .row:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+
+.timers .row .cell {
+    padding: 5px 0;
+}
+
+.timers .row .cell.last {
+    padding-right: 10px;
+}

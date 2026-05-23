@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{% block title %}Intaro Pinboard{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ base_url }}img/favicon.ico" rel="icon" type="image/x-icon"/>
+</head>
+<body>
+<a class="visually-hidden-focusable position-absolute top-0 start-0 p-2 bg-body" href="#main-content">Перейти к содержимому</a>
+<div id="wrap">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-black">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="{{ base_url }}img/intaropinboard_logo.png"/>
+            </a>
+            {% include '_menu.html.twig' %}
+        </div>
+    </nav>
+    <main id="main-content" class="{% block body_classes %}container{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="push"></div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <p>Developed by <a href="http://intaro.ru" target="_blank">Intaro</a></p>
+        <p>Code and documentation licensed under the MIT license.</p>
+    </div>
+</footer>
+
+{% block stylesheets %}
+    {{ encore_entry_link_tags('app') }}
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ base_url }}js/micro_tpl.js" type="text/javascript"></script>
+    {{ encore_entry_script_tags('app') }}
+{% endblock %}
+
+</body>
+</html>

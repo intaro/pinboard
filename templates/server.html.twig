@@ -1,0 +1,297 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    {% include '_period_menu.html.twig' with { server_name: server_name, hostname: hostname, period: period, periods: periods } %}
+    <div>
+        <div class="row">
+            <div class="col-{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
+                <h2>
+                    Request time
+                    <small>
+                        <a href="{{ path('server_req_time', { serverName: server_name, hostName: hostname,
+                            pageNum: 1, colOrder: 1, colDir: 1}) }}">
+                            view details
+                        </a>
+                    </small>
+                </h2>
+                {% if req|length > 0 %}
+                    <div style="height: 450px;">
+                        <canvas id="req-time-chart"></canvas>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', () => {
+                        const reqTimeSeries = [
+                            {
+                                label: 'Max request time',
+                                color: '#729462',
+                                hidden: true,
+                                data: [
+                                    {% for item in req %}
+                                    {x: new Date({{ item.date }}), y: {{ item.req_time_100 }} }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            },
+                            {
+                                label: '99th percentile of request time',
+                                color: '#C38630',
+                                data: [
+                                    {% for item in req %}
+                                    {x: new Date({{ item.date }}), y: {{ item.req_time_99 }} }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            },
+                            {
+                                label: '95th percentile of request time',
+                                color: '#700193',
+                                data: [
+                                    {% for item in req %}
+                                    {x: new Date({{ item.date }}), y: {{ item.req_time_95 }} }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            },
+                            {
+                                label: '90th percentile of request time',
+                                color: '#39A3B9',
+                                data: [
+                                    {% for item in req %}
+                                    {x: new Date({{ item.date }}), y: {{ item.req_time_90 }} }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            },
+                            {
+                                label: 'Border request time',
+                                color: '#e24a14',
+                                data: [
+                                    {% for item in req %}
+                                    {x: new Date({{ item.date }}), y: {{ req_time_border }} }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            },
+                        ];
+
+                        window.PinboardCharts.renderTimeSeriesChart('req-time-chart', {
+                            series: reqTimeSeries,
+                        });
+                        });
+                    </script>
+                {% else %}
+                    <p>No data for requests.</p>
+                {% endif %}
+            </div>
+            <div class="col-{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
+                <h2>
+                    Requests per sec
+                    {# <small><a href="{{ path('server_request_time', { serverName: server_name }) }}">view details</a></small> #}
+                </h2>
+                {% if req_per_sec.data|length > 0 %}
+                    <div style="height: {{ 346 + req_per_sec.hosts|length * 19 + (req_per_sec.hosts|length > 1 ? 19 : 0) }}px;">
+                        <canvas id="req-per-sec-chart"></canvas>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', () => {
+                        const rpsChartData = [];
+                        {% for date, item in req_per_sec.data %}
+                        rpsChartData.push({
+                            x: new Date({{ date }})
+                            {% for iter in item %}
+                            , rps{{ iter.parsed_hostname }}: {{ iter.req_per_sec }}
+                            {% endfor %}
+                        });
+                        {% endfor %}
+
+                        const rpsSeries = [
+                            {% for host, keydata in req_per_sec.hosts %}
+                            {
+                                label: "{{ host == '_' ? 'Total requests per second at all hosts' : 'Requests per second at host ' ~ keydata.host }}",
+                                color: "#{{ keydata.color }}",
+                                data: rpsChartData.map((point) => ({x: point.x, y: point['rps{{ host }}'] ?? 0})),
+                            }{{ not loop.last ? ',' : '' }}
+                            {% endfor %}
+                        ];
+
+                        window.PinboardCharts.renderTimeSeriesChart('req-per-sec-chart', {
+                            series: rpsSeries,
+                        });
+                        });
+                    </script>
+                {% else %}
+                    <p>No data for requests frequency</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
+                <h2>
+                    Memory peak usage
+                    <small>
+                        {# Опять же pageNum и т.п. тут не должен быть, поправить #}
+                        <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname,
+                            pageNum: 1, colOrder: 1, colDir: 1}) }}">
+                            view details
+                        </a>
+                    </small>
+                </h2>
+                {% if req|length > 0 %}
+                    <div style="height: 450px;">
+                        <canvas id="mem-usage-chart"></canvas>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', () => {
+                        window.PinboardCharts.renderTimeSeriesChart('mem-usage-chart', {
+                            series: [
+                                {
+                                    label: 'Max memory peak usage',
+                                    color: '#729462',
+                                    hidden: true,
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.mem_peak_usage_100 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '99th percentile of memory peak usage',
+                                    color: '#C38630',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.mem_peak_usage_99 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '95th percentile of memory peak usage',
+                                    color: '#700193',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.mem_peak_usage_95 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '90th percentile of memory peak usage',
+                                    color: '#39A3B9',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.mem_peak_usage_90 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                            ],
+                        });
+                        });
+                    </script>
+                {% else %}
+                    <p>No data for memory usage.</p>
+                {% endif %}
+            </div>
+            <div class="col-{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
+                <h2>
+                    CPU peak usage
+                    <small>
+                        <a href="{{ path('server_cpu_usage', { serverName: server_name, hostName: hostname,
+                            pageNum: 1, colOrder: 1, colDir: 1}) }}">
+                            view details
+                        </a>
+                    </small>
+                </h2>
+                {% if req|length > 0 %}
+                    <div style="height: 450px;">
+                        <canvas id="cpu-usage-chart"></canvas>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', () => {
+                        window.PinboardCharts.renderTimeSeriesChart('cpu-usage-chart', {
+                            series: [
+                                {
+                                    label: 'Max CPU peak usage',
+                                    color: '#729462',
+                                    hidden: true,
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.cpu_peak_usage_100 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '99th percentile of CPU peak usage',
+                                    color: '#C38630',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.cpu_peak_usage_99 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '95th percentile of CPU peak usage',
+                                    color: '#700193',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.cpu_peak_usage_95 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                                {
+                                    label: '90th percentile of CPU peak usage',
+                                    color: '#39A3B9',
+                                    data: [
+                                        {% for item in req %}
+                                        {x: new Date({{ item.date }}), y: {{ item.cpu_peak_usage_90 }} }{{ not loop.last ? ',' : '' }}
+                                        {% endfor %}
+                                    ],
+                                },
+                            ],
+                        });
+                        });
+                    </script>
+                {% else %}
+                    <p>No data for CPU usage.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-{{ period == '1 month' or period == '1 week' ? '12' : '6' }}">
+                <h2>
+                    Error statuses
+                    <small>
+                        <a href="{{ path('server_statuses', { serverName: server_name,
+                            hostName: hostname, pageNum: 1, colOrder: 1, colDir: 1}) }}">
+                            view details
+                        </a>
+                    </small>
+                </h2>
+                {% if statuses.data|length > 0 %}
+                    <div style="height: 350px;">
+                        <canvas id="statuses-chart"></canvas>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', () => {
+                        const statusChartData = [];
+                        {% for item in statuses.data %}
+                        statusChartData.push({
+                            x: new Date({{ item.date }})
+                            , status{{ item.error_code }}: {{ item.error_count }}
+                        });
+                        {% endfor %}
+
+                        window.PinboardCharts.renderTimeSeriesChart('statuses-chart', {
+                            series: [
+                                {% for code, color in statuses.codes %}
+                                {
+                                    label: "Status {{ code }}",
+                                    color: "#{{ color }}",
+                                    data: statusChartData.map((point) => ({x: point.x, y: point['status{{ code }}'] ?? 0})),
+                                }{{ not loop.last ? ',' : '' }}
+                                {% endfor %}
+                            ],
+                        });
+                        });
+                    </script>
+                {% else %}
+                    <p>No data for error statuses</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,44 @@
+# Dev dependencies — rebuilt in Docker stages
+node_modules/
+vendor/
+
+# Build output — rebuilt in Stage 1 (node-builder)
+public/build/
+
+# Runtime state — not needed in the image
+var/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Local env overrides — never bake secrets into the image
+.env.local
+.env.*.local
+.env.public.example
+
+# Tests and CI
+tests/
+.github/
+phpunit.xml.dist
+phpstan.neon
+
+# Dev Docker files (not needed to build the prod image)
+docker-compose.yml
+docker-compose.*.yml
+docker/.env
+docker/.env.*
+Dockerfile
+Dockerfile.*
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Docs (not needed at runtime)
+docs/
+wiki/
+knowledge/

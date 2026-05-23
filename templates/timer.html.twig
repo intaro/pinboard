@@ -1,0 +1,257 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% set is_grouped = grouping is not empty %}
+    <h1 class="d-flex flex-wrap align-items-center gap-2">
+        <span>Request timers</span>
+        {% if grouping_tags|length %}
+            <span class="text-muted fs-6">grouped by</span>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ grouping is empty ? 'none' : grouping }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for t in grouping_tags %}
+                        <li>
+                            <a class="dropdown-item {{ t == grouping ? 'active' : '' }}" href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-' ~ t }) }}">
+                                {{ t }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    <li>
+                        <a class="dropdown-item {{ not grouping ? 'active' : '' }}" href="{{ path('timers_show', { type: type, requestId: request_id, grouping: 'grouping-none' }) }}">
+                            none
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+    </h1>
+    <hr/>
+    <div class="row g-3 align-items-start">
+        <div class="col-12 col-lg-10">
+            <p class="lead timer">
+                <a href="//{{ request.server_name ~ request.script_name }}" title="">
+                    {{ request.server_name ~ request.script_name }}
+                </a>
+                <br/>
+                {% for k, v in request.tags %}
+                    <span class="text-body-secondary"><small>{{ k }} = {{ v }}{{ not loop.last ? ',' : '' }}</small></span>
+                {% endfor %}
+            </p>
+        </div>
+        <div class="col-12 col-lg-2 text-lg-end">
+            <p class="lead timer">
+                {{ request.req_time_format }} ms<br/>
+                {% if request.mem_peak_usage_format is defined %}
+                    {{ request.mem_peak_usage_format }} kB<br/>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {% if is_grouped %}
+                <div style="height: 170px;">
+                    <canvas id="req-chart"></canvas>
+                </div>
+                <script type="text/javascript">
+                    document.addEventListener('DOMContentLoaded', () => {
+                    const rtChart = window.PinboardCharts.renderCategoryChart('req-chart', {
+                        type: 'bar',
+                        indexAxis: 'y',
+                        labels: ['Timers'],
+                        stacked: true,
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: true,
+                            axis: 'x',
+                        },
+                        tooltip: {
+                            mode: 'nearest',
+                            intersect: true,
+                            displayColors: false,
+                            callbacks: {
+                                title() {
+                                    return '';
+                                },
+                                label(context) {
+                                    const value = Number(context.raw ?? 0);
+                                    const total = context.chart.data.datasets.reduce((sum, dataset) => {
+                                        const datasetValue = Number(dataset.data?.[context.dataIndex] ?? 0);
+                                        return sum + datasetValue;
+                                    }, 0);
+                                    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return `${context.dataset.label}: ${percent}% (${Math.round(value)} ms)`;
+                                },
+                            },
+                        },
+                        series: [
+                            {% for k, v in request.timers %}
+                            {
+                                label: "{{ k }}",
+                                color: "{{ ['#39A3B9', '#700193', '#C38630', '#729462', '#e24a14', '#b93939'][(loop.index0) % 6] }}",
+                                data: [{{ v.value }}],
+                            }{{ not loop.last or request.req_time_other is defined ? ',' : '' }}
+                            {% endfor %}
+                            {% if request.req_time_other is defined %}
+                            {
+                                label: 'other',
+                                color: '#6f42c1',
+                                data: [{{ request.req_time_other }}],
+                            }
+                            {% endif %}
+                        ],
+                    });
+                    });
+                </script>
+            {% endif %}
+        </div>
+    </div>
+    {% if is_grouped %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle timer-table">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Timer</th>
+                    <th scope="col" class="text-end">Hit count</th>
+                    <th scope="col" class="text-end">Value %</th>
+                    <th scope="col" class="text-end">Timer value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for k, v in request.timers %}
+                    {% set group_index = loop.index %}
+                    <tr class="table-active timer-group-toggle" data-group-index="{{ group_index }}">
+                        <td>
+                            <button type="button" class="btn btn-link btn-sm p-0 me-2 expand" aria-expanded="true">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                            <strong>{{ k }}</strong>
+                        </td>
+                        <td class="text-end">{{ v.hit_count }}</td>
+                        <td class="text-end">{{ v.value_percent }}%</td>
+                        <td class="text-end">{{ v.value_format }} ms</td>
+                    </tr>
+                    {% for timer in v.timers %}
+                        <tr class="timer-group-row timer-group-row-{{ group_index }}">
+                            <td>
+                                <div class="ps-4">
+                                    <small class="text-body-secondary">
+                                        {% for tag, tag_value in timer.tags %}
+                                            {{ tag ~ ' = ' ~ tag_value }}<br/>
+                                        {% else %}
+                                            —
+                                        {% endfor %}
+                                    </small>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <small>{{ timer.hit_count }}</small>
+                            </td>
+                            <td class="text-end">
+                                <small>{{ timer.value_percent }}%</small>
+                            </td>
+                            <td class="text-end">
+                                <small>{{ timer.value_format }} ms</small>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <hr/>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle timer-table">
+                <thead class="table-light">
+                <tr>
+                    <th scope="col">Timer</th>
+                    <th scope="col" class="text-end">Hit count</th>
+                    <th scope="col" class="text-end">Value %</th>
+                    <th scope="col" class="text-end">Timer value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for timer in request.timers %}
+                    <tr>
+                        <td>
+                            <small class="text-body-secondary">
+                                {% for tag, tag_value in timer.tags %}
+                                    {{ tag ~ ' = ' ~ tag_value }}<br/>
+                                {% else %}
+                                    —
+                                {% endfor %}
+                            </small>
+                        </td>
+                        <td class="text-end">
+                            <small>{{ timer.hit_count }}</small>
+                        </td>
+                        <td class="text-end">
+                            <small>{{ timer.value_percent }}%</small>
+                        </td>
+                        <td class="text-end">
+                            <small>{{ timer.value_format }} ms</small>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        function toggleTimerGroup(row) {
+            const groupIndex = row.dataset.groupIndex;
+            const detailRows = document.querySelectorAll(`.timer-group-row-${groupIndex}`);
+            if (!detailRows.length) {
+                return;
+            }
+
+            const toggle = row.querySelector('.expand');
+            const icon = toggle ? toggle.querySelector('i') : null;
+            const collapsed = detailRows[0].classList.contains('d-none');
+
+            detailRows.forEach((detailRow) => {
+                detailRow.classList.toggle('d-none', !collapsed);
+            });
+
+            row.classList.toggle('table-active', collapsed);
+
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', collapsed ? 'true' : 'false');
+            }
+
+            if (icon) {
+                icon.classList.toggle('bi-plus-circle', !collapsed);
+                icon.classList.toggle('bi-dash-circle', collapsed);
+            }
+        }
+
+        document.querySelectorAll('.timer-group-toggle').forEach((row) => {
+            row.addEventListener('click', (event) => {
+                if (event.target.closest('a, button')) {
+                    return;
+                }
+
+                toggleTimerGroup(row);
+            });
+        });
+
+        document.querySelectorAll('.timer-group-toggle .expand').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const row = button.closest('.timer-group-toggle');
+                if (row) {
+                    toggleTimerGroup(row);
+                }
+            });
+        });
+    </script>
+{% endblock %}

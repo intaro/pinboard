@@ -1,9 +1,0 @@
-<ul class="nav nav-pills small period">
-    {% for label in periods %}
-    <li class="{{ period == label ? 'active' : '' }}">
-        <a href="{{ path('server', { serverName: server_name, hostName: hostname, period: label }) }}">
-            {{ label }}
-        </a>
-    </li>
-    {% endfor %}
-</ul>

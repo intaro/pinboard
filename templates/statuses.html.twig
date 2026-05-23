@@ -1,0 +1,85 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+    <div class="row">
+        <div class="col-12">
+            <p class="lead">Error pages for a last week</p>
+            {% if statuses|length > 0 %}
+                <table class="table table-sm table-bordered table-hover table-striped align-middle">
+                    <tr>
+                        <th class="hostname">Host name
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'asc' }) }}">
+                                <i class="bi bi-chevron-up"></i>
+                            </a>
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'host', colDir: 'desc' }) }}">
+                                <i class="bi bi-chevron-down"></i>
+                            </a>
+                        </th>
+                        <th>Script name
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'asc' }) }}">
+                                <i class="bi bi-chevron-up"></i>
+                            </a>
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'script', colDir: 'desc' }) }}">
+                                <i class="bi bi-chevron-down"></i>
+                            </a>
+                        </th>
+                        <th>Status</th>
+                        <th class="date">Date
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'asc' }) }}">
+                                <i class="bi bi-chevron-up"></i>
+                            </a>
+                            <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page1', colOrder: 'date', colDir: 'desc' }) }}">
+                                <i class="bi bi-chevron-down"></i>
+                            </a>
+                        </th>
+                    </tr>
+                    {% for status in statuses %}
+                        <tr>
+                            <td>{{ status.hostname }}</a></td>
+                            <td>
+                                <a class="script-name" href="http://{{ status.server_name ~ status.script_name }}"
+                                   title="">{{ status.script_name }}</a>
+                                {% for k, v in status.tags %}
+                                    <div class="text-body-secondary"><small>{{ k }} = {{ v }}</small></div>
+                                {% endfor %}
+                            </td>
+                            <td>{{ status.status }}</td>
+                            <td>{{ status.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                {% if rowCount > rowPerPage %}
+                    <div class="pagination">
+                        <ul>
+                            {% if pageNum > 1 %}
+                                <li>
+                                    <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum - 1), colOrder: colOrder, colDir: colDir }) }}">
+                                        Prev
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% for i in 1..pageCount %}
+                                <li {{ pageNum == i ? 'class="active"' : '' }}>
+                                    <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ i, colOrder: colOrder, colDir: colDir }) }}">
+                                        {{ i }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            {% if pageNum < pageCount %}
+                                <li>
+                                    <a href="{{ path('server_statuses', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum + 1), colOrder: colOrder, colDir: colDir }) }}">
+                                        Next
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p>No error pages for a last week.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+    <li class="nav-item">
+        <a class="nav-link link-secondary" aria-current="page" href="/">Overview</a>
+    </li>
+
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle link-secondary active" href="#" role="button" data-bs-auto-close="outside"
+           data-bs-toggle="dropdown" aria-expanded="false">
+            Sites
+        </a>
+        <ul class="dropdown-menu">
+            {% if menu.servers is defined %}
+                {% for domain, servers in menu.servers %}
+                    <li class="dropend">
+                        <a class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" href="#">
+                            {{ domain }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for server_name, server in servers %}
+                                <li>
+                                    <a class="dropdown-item link-primary"
+                                       href="{{ path('server', { serverName: server_name, hostName: 'all', format: 'html' }) }}">
+                                        {{ server_name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            {% endif %}
+        </ul>
+    </li>
+
+</ul>
