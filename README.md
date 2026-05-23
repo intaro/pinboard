@@ -1,44 +1,154 @@
-# Pinboard (Symfony 8)
+# Pinboard
 
-Админка для Pinba на Symfony 8.
+A web admin panel for [Pinba](https://github.com/tony2001/pinba_engine) — a MySQL storage engine that collects real-time performance statistics from PHP applications.
 
-Проект использует:
-- PHP 8.4 или новее;
-- современный Node.js для сборки фронтенда;
-- `.env` и `.env.local` для конфигурации;
-- Symfony Console для служебных задач;
-- Symfony Encore для сборки фронтенда;
-- `pnpm` для зависимостей фронтенда.
+## What is this?
 
-Базовые современные соглашения проекта описаны в [docs/standards.md](docs/standards.md).
+**Pinba** is a system for passive performance monitoring of PHP sites:
 
-## Быстрый старт
+1. **PHP extension** (`pinba`) — embedded in each PHP process, collects request timing, memory usage, CPU time, and custom timer groups. Sends a UDP packet to a Pinba server at the end of every request.
+2. **Pinba MySQL engine** (`pinba_engine`) — a MySQL plugin that receives those UDP packets and stores them as virtual tables. Acts as the "server" that listens on UDP port 30002.
+3. **Pinboard** (this project) — a Symfony web app that reads data from the Pinba MySQL engine, aggregates it on a 15-minute schedule, and displays dashboards with request-time histograms, memory usage graphs, error rates, and slow-request logs.
 
-1. Установить зависимости:
-   - `composer install`
-   - `pnpm install`
-2. Подготовить локальную конфигурацию в `.env.local`.
-3. Собрать фронтенд:
-   - `pnpm build`
-4. Подготовить базу данных:
-   - `php bin/console doctrine:migrations:migrate`
-   - `php bin/console doctrine:fixtures:load`
-5. Создать пользователя для входа:
-   - `php bin/console add-user admin@admin.com admin ROLE_USER`
-6. Запустить приложение через ваш веб-сервер или Symfony CLI.
+```
+PHP app  ──UDP──▶  MySQL + pinba_engine  ──SQL──▶  Pinboard web UI
+(pinba ext)           (collects stats)              (aggregates & shows)
+```
 
-## Основные команды
+## Quick start (Docker Hub — recommended)
 
-- `php bin/console aggregate`
-- `php bin/console register-crontab`
-- `php bin/console add-user <email> <password> [roles_csv] [hosts_regexp]`
-- `php bin/console users:migrate-file-to-db`
-- `php bin/console users:migrate-db-to-file`
+The fastest way to run the full stack. No build step needed.
 
-## Документация
+**Prerequisites:** Docker Engine + Docker Compose v2.
 
-- [Конфигурация](docs/configuration.md)
-- [Проверка и тестирование](docs/testing.md)
-- [Запуск и эксплуатация](docs/deployment.md)
-- [Docker: Pinboard + Pinba](docs/docker.md)
-- [Сводка по документации](docs/README.md)
+```bash
+# 1. Copy the example env file and fill in the required values
+cp .env.public.example .env
+
+# Edit .env — set APP_SECRET (openssl rand -hex 32) and passwords
+nano .env
+
+# 2. Start the stack
+docker compose -f docker-compose.public.yml up -d
+
+# 3. Create the first admin user (run once)
+docker exec pinboard-web php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+```
+
+Open **http://localhost:8080** (or `PINBOARD_HTTP_PORT` from your `.env`).
+
+### Sending stats from your PHP app
+
+Add to your PHP configuration (`php.ini` or pool config):
+
+```ini
+pinba.enabled = 1
+pinba.server  = <docker-host-ip>:30002
+; use PINBA_UDP_PORT from .env if you changed it from the default
+```
+
+Restart PHP-FPM. Make a few requests on your site — data appears in Pinboard after the next aggregation cycle (every 15 minutes by default, or run `docker exec pinboard-aggregate php bin/console aggregate` to trigger immediately).
+
+### Docker images used
+
+| Image | Description |
+|---|---|
+| `xolegator/pinba-engine:8.4-lts` | MySQL 8.4 LTS with Pinba storage engine plugin |
+| `xolegator/pinboard:latest` | Pinboard web UI + aggregate worker |
+
+Source for the MySQL image: [XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine)
+
+## Developer setup (run on host)
+
+For local development without Docker.
+
+**Requirements:** PHP ≥ 8.5, MySQL 8.x with `pinba_engine` plugin, Node.js ≥ 22, pnpm ≥ 9.
+
+```bash
+# PHP dependencies
+composer install
+
+# Frontend dependencies and build
+pnpm install
+pnpm build
+
+# App configuration
+cp .env .env.local
+# Edit .env.local — set DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+
+# Database migrations
+php bin/console doctrine:migrations:migrate
+
+# Create first user
+php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+
+# Start a web server (e.g. Symfony CLI or nginx + php-fpm)
+symfony serve
+```
+
+## Developer setup (Docker — dev stack)
+
+For development with Docker, using source-mounted volumes and Xdebug support:
+
+```bash
+# Start dev stack (MySQL 8.4 LTS by default)
+make up
+
+# Or explicitly choose MySQL version:
+make up84   # MySQL 8.4 LTS (same as default)
+make up80   # MySQL 8.0 (for compatibility testing)
+
+# Run migrations and create a user
+make db_migrate
+docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml \
+  exec -u www-data php-fpm php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+```
+
+See [docs/docker.md](docs/docker.md) for full details on both the dev stack and the public image stack.
+
+## Console commands
+
+| Command | Description |
+|---|---|
+| `php bin/console aggregate` | Run the aggregation pipeline (normally runs via cron every 15 min) |
+| `php bin/console add-user <email> <password> [ROLE] [hosts_regexp]` | Create or update a user |
+| `php bin/console users:migrate-file-to-db` | Migrate users from file-based auth to DB |
+| `php bin/console users:migrate-db-to-file` | Migrate users from DB auth to file |
+| `php bin/console register-crontab` | Print a crontab entry for the aggregation job |
+
+## Configuration
+
+Key environment variables (set in `.env.local` or as Docker env):
+
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | MySQL host |
+| `DB_PORT` | `3306` | MySQL port |
+| `DB_NAME` | `pinba` | Database name |
+| `DB_USER` | — | Database user |
+| `DB_PASSWORD` | — | Database password |
+| `DB_SERVER_VERSION` | `8.4.0` | MySQL server version (for Doctrine) |
+| `APP_AUTH_USER_SOURCE` | `db` | User storage: `db` or `file` |
+| `APP_RECORDS_LIFETIME` | `P1M` | How long to keep raw data (ISO 8601 duration) |
+| `APP_AGGREGATION_PERIOD` | `PT15M` | Aggregation window size |
+| `APP_LOGGING_LONG_REQUEST_TIME_GLOBAL` | `1.5` | Slow request threshold (seconds) |
+| `APP_NOTIFICATION_ENABLE` | `0` | Enable email notifications |
+
+Full variable reference: [docs/configuration.md](docs/configuration.md)
+
+## Related projects
+
+- **[XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine)** — MySQL 8.0/8.4 port of the Pinba storage engine. Original by [tony2001/pinba_engine](https://github.com/tony2001/pinba_engine) (MySQL 5.x).
+- **[PHP Pinba extension](https://github.com/tony2001/pinba_extension)** — the PHP extension that sends UDP packets. Available for PHP 7/8 via PECL or package managers.
+
+## Documentation
+
+- [Configuration reference](docs/configuration.md)
+- [Docker: quick-start & dev stack](docs/docker.md)
+- [Deployment & operations](docs/deployment.md)
+- [Testing](docs/testing.md)
+- [Code standards](docs/standards.md)
+
+## License
+
+GNU GPL v2 — see `composer.json` for full dependency licenses.

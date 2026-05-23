@@ -1,0 +1,113 @@
+# docker-compose.public.yml — Pinboard quick start
+#
+# Uses pre-built images from Docker Hub:
+#   xolegator/pinba-engine:8.4-lts   MySQL 8.4 LTS + Pinba storage engine
+#   xolegator/pinboard:latest         Pinboard web app + aggregate worker
+#
+# Quick start:
+#   cp .env.public.example .env
+#   # Edit .env — set APP_SECRET and passwords
+#   docker compose -f docker-compose.public.yml up -d
+#
+# Create first admin user (run once after containers are up):
+#   docker exec pinboard-web php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+#
+# Open: http://localhost:8080  (or PINBOARD_HTTP_PORT from .env)
+#
+# PHP app on monitored hosts must send Pinba stats to:
+#   pinba.server = <this-host-ip>
+#   pinba.port   = 30002   (or PINBA_UDP_PORT from .env)
+
+services:
+
+  # ── MySQL 8.4 LTS + Pinba storage engine ────────────────────────────────────
+  pinba-db:
+    image: xolegator/pinba-engine:8.4-lts
+    container_name: pinboard-pinba-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pinba}
+      MYSQL_USER: ${DB_USER:-pinba}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pinba}
+    ports:
+      - "${MYSQL_PORT:-13306}:3306"
+      - "${PINBA_UDP_PORT:-30002}:30002/udp"
+    volumes:
+      - pinba-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # ── Pinboard web UI (nginx + php-fpm in one container) ──────────────────────
+  pinboard:
+    image: xolegator/pinboard:latest
+    container_name: pinboard-web
+    restart: unless-stopped
+    depends_on:
+      pinba-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: ${APP_SECRET}
+      DB_HOST: pinba-db
+      DB_PORT: "3306"
+      DB_NAME: ${MYSQL_DATABASE:-pinba}
+      DB_USER: ${DB_USER:-pinba}
+      DB_PASSWORD: ${DB_PASSWORD:-pinba}
+      DB_SERVER_VERSION: "8.4.0"
+      MAILER_DSN: ${MAILER_DSN:-null://null}
+      TZ: ${TZ:-UTC}
+      APP_AUTH_USER_SOURCE: ${APP_AUTH_USER_SOURCE:-db}
+      APP_RECORDS_LIFETIME: ${APP_RECORDS_LIFETIME:-P1M}
+      APP_AGGREGATION_PERIOD: ${APP_AGGREGATION_PERIOD:-PT15M}
+      APP_LOGGING_LONG_REQUEST_TIME_GLOBAL: ${APP_LOGGING_LONG_REQUEST_TIME_GLOBAL:-1.5}
+      APP_LOGGING_HEAVY_REQUEST_GLOBAL: ${APP_LOGGING_HEAVY_REQUEST_GLOBAL:-30000}
+      APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL: ${APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL:-1}
+      APP_NOTIFICATION_ENABLE: ${APP_NOTIFICATION_ENABLE:-0}
+      APP_NOTIFICATION_SENDER: ${APP_NOTIFICATION_SENDER:-noreply@pinboard.local}
+      APP_NOTIFICATION_GLOBAL_EMAIL: ${APP_NOTIFICATION_GLOBAL_EMAIL:-}
+    ports:
+      - "${PINBOARD_HTTP_PORT:-8080}:80"
+    volumes:
+      - pinboard-var:/var/www/var
+
+  # ── Aggregate worker (same image, cron mode) ─────────────────────────────────
+  aggregate:
+    image: xolegator/pinboard:latest
+    container_name: pinboard-aggregate
+    restart: unless-stopped
+    depends_on:
+      pinba-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: ${APP_SECRET}
+      DB_HOST: pinba-db
+      DB_PORT: "3306"
+      DB_NAME: ${MYSQL_DATABASE:-pinba}
+      DB_USER: ${DB_USER:-pinba}
+      DB_PASSWORD: ${DB_PASSWORD:-pinba}
+      DB_SERVER_VERSION: "8.4.0"
+      TZ: ${TZ:-UTC}
+      APP_AUTH_USER_SOURCE: ${APP_AUTH_USER_SOURCE:-db}
+      APP_RECORDS_LIFETIME: ${APP_RECORDS_LIFETIME:-P1M}
+      APP_AGGREGATION_PERIOD: ${APP_AGGREGATION_PERIOD:-PT15M}
+      APP_LOGGING_LONG_REQUEST_TIME_GLOBAL: ${APP_LOGGING_LONG_REQUEST_TIME_GLOBAL:-1.5}
+      APP_LOGGING_HEAVY_REQUEST_GLOBAL: ${APP_LOGGING_HEAVY_REQUEST_GLOBAL:-30000}
+      APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL: ${APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL:-1}
+      APP_NOTIFICATION_ENABLE: ${APP_NOTIFICATION_ENABLE:-0}
+      APP_NOTIFICATION_SENDER: ${APP_NOTIFICATION_SENDER:-noreply@pinboard.local}
+      APP_NOTIFICATION_GLOBAL_EMAIL: ${APP_NOTIFICATION_GLOBAL_EMAIL:-}
+      APP_AGGREGATE_LOCK_TTL_SECONDS: "900"
+    command: ["supercronic", "/etc/crontabs/aggregate.cron"]
+    volumes:
+      - pinboard-var:/var/www/var
+
+volumes:
+  pinba-mysql-data:
+  pinboard-var:

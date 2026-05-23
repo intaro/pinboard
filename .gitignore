@@ -22,6 +22,7 @@
 ###< phpunit/phpunit ###
 
 .idea/
+/composer
 ###> symfony/webpack-encore-bundle ###
 /node_modules/
 /public/build/

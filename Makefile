@@ -3,6 +3,8 @@
 ##################
 
 DOCKER_COMPOSE = docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml
+DOCKER_COMPOSE_80 = docker compose --env-file ./docker/.env.mysql80 -f ./docker/docker-compose.yml
+DOCKER_COMPOSE_84 = docker compose --env-file ./docker/.env.mysql84 -f ./docker/docker-compose.yml
 DOCKER_COMPOSE_PHP_FPM_EXEC = ${DOCKER_COMPOSE} exec -u www-data php-fpm
 
 ##################
@@ -12,6 +14,12 @@ DOCKER_COMPOSE_PHP_FPM_EXEC = ${DOCKER_COMPOSE} exec -u www-data php-fpm
 build:
 	${DOCKER_COMPOSE} build
 
+build80:
+	${DOCKER_COMPOSE_80} build
+
+build84:
+	${DOCKER_COMPOSE_84} build
+
 start:
 	${DOCKER_COMPOSE} start
 
@@ -20,6 +28,12 @@ stop:
 
 up:
 	${DOCKER_COMPOSE} up -d --remove-orphans
+
+up80:
+	${DOCKER_COMPOSE_80} up -d --remove-orphans
+
+up84:
+	${DOCKER_COMPOSE_84} up -d --remove-orphans
 
 down:
 	${DOCKER_COMPOSE} down
