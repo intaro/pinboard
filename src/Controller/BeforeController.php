@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Algo26\IdnaConvert\ToUnicode;
+use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -28,13 +29,13 @@ class BeforeController extends AbstractController
             'created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))
         ];
 
-        //        $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
+        $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
         $hostsWhere = '';
 
-        //        if ($hostsRegexp !== '.*') {
-        //            $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : [$hostsRegexp];
-        //            $hostsWhere = " AND (server_name REGEXP '" . implode("' OR server_name REGEXP '", $hostsRegexp) . "')";
-        //        }
+        if ($hostsRegexp !== '.*') {
+            $hostsWhere = 'AND server_name REGEXP :hosts_regexp';
+            $params['hosts_regexp'] = $hostsRegexp;
+        }
 
         //        $sql = "
         //            SELECT

@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use Algo26\IdnaConvert\ToUnicode;
 use App\Repository\IpmReportByServerNameRepository;
+use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,7 +24,8 @@ class MainController extends AbstractController
     {
         $result = [];
 
-        $result['servers'] = $ipmReportByServerNameRepository->findAllServers();
+        $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
+        $result['servers'] = $ipmReportByServerNameRepository->findAllServers($hostsRegexp);
 
         $idn = new ToUnicode();
 

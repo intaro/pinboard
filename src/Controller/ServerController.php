@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ServerController extends AbstractController
 {
@@ -30,9 +31,17 @@ class ServerController extends AbstractController
         $this->rowPerPage = $rowPerPage > 0 ? $rowPerPage : self::ROW_PER_PAGE;
     }
 
+    private function assertServerAccess(string $serverName): void
+    {
+        if (!Utils::userCanAccessServer($this->getUser(), $serverName)) {
+            throw new AccessDeniedHttpException('Access to this server is not allowed for your account.');
+        }
+    }
+
     #[Route('/{serverName}/{hostName}/overview.{format}', name: 'server', methods: ['GET'])]
     public function actionOverview(Request $request, string $serverName, string $hostName, string $format): Response
     {
+        $this->assertServerAccess($serverName);
         $period = $request->query->get('period', '1 day');
         if (!in_array($period, $this->allowedPeriods)) {
             $period = '1 day';
@@ -115,6 +124,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/timers', name: 'server_timers', methods: ['GET'])]
     public function actionTimers(Request $request, string $serverName, string $hostName): Response
     {
+        $this->assertServerAccess($serverName);
         $period = $request->query->get('period', '1 day');
         if (!in_array($period, $this->allowedPeriods)) {
             $period = '1 day';
@@ -186,6 +196,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/statuses/{pageNum}/{colOrder}/{colDir}', name: 'server_statuses', methods: ['GET'])]
     public function actionStatuses(Request $request, string $serverName, string $hostName, string $pageNum, string $colOrder, string $colDir): Response
     {
+        $this->assertServerAccess($serverName);
         $pageNum = (int) str_replace('page', '', $pageNum);
 
         $result = [
@@ -225,6 +236,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/req-time/{pageNum}/{colOrder}/{colDir}', name: 'server_req_time', methods: ['GET'])]
     public function actionReqTime(Request $request, string $serverName, string $hostName, string $pageNum, string $colOrder, string $colDir): Response
     {
+        $this->assertServerAccess($serverName);
         $pageNum = (int) str_replace('page', '', $pageNum);
 
         $result = [
@@ -263,6 +275,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/mem-usage/{pageNum}/{colOrder}/{colDir}', name: 'server_mem_usage', methods: ['GET'])]
     public function actionMemUsage(Request $request, string $serverName, string $hostName, string $pageNum, string $colOrder, string $colDir): Response
     {
+        $this->assertServerAccess($serverName);
         $pageNum = (int) str_replace('page', '', $pageNum);
 
         $result = [
@@ -301,6 +314,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/cpu-usage/{pageNum}/{colOrder}/{colDir}', name: 'server_cpu_usage', methods: ['GET'])]
     public function actionCpuUsage(Request $request, string $serverName, string $hostName, string $pageNum, string $colOrder, string $colDir): Response
     {
+        $this->assertServerAccess($serverName);
         $pageNum = (int) str_replace('page', '', $pageNum);
 
         $result = [
@@ -339,6 +353,7 @@ class ServerController extends AbstractController
     #[Route('/{serverName}/{hostName}/live', name: 'server_live', methods: ['GET', 'POST'])]
     public function actionLive(Request $request, $serverName, $hostName)
     {
+        $this->assertServerAccess($serverName);
         $session = $request->hasSession() ? $request->getSession() : null;
 
         // filter from session

@@ -21,61 +21,29 @@ class IpmReportByServerNameRepository extends ServiceEntityRepository
         parent::__construct($registry, IpmReportByServerName::class);
     }
 
-    public function findAllServers()
+    public function findAllServers(string $hostsRegexp = '.*'): array
     {
+        $params = ['created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))];
+        $hostsWhere = '';
 
-        return $this->createQueryBuilder('a')
-//            ->select("
-//                a.server_name,
-//                sum(a.req_count) as req_count,
-//                avg(a.req_per_sec) as req_per_sec,
-//                (
-//                    SELECT
-//                        count(b.server_name)
-//                    FROM
-//                        ipm_status_details b
-//
-//                )
-//                as error_count")
-            ->select("
-                a.server_name,
-                sum(a.req_count) as req_count,
-                avg(a.req_per_sec) as req_per_sec,
-                0 as error_count")
-            ->andWhere('a.created_at > :created_at')
-            ->setParameter('created_at', date('Y-m-d H:00:00', strtotime('-1 day')))
-            ->groupBy('a.server_name')
-            ->getQuery()
-            ->getResult();
+        if ($hostsRegexp !== '.*') {
+            $hostsWhere = 'AND server_name REGEXP :hosts_regexp';
+            $params['hosts_regexp'] = $hostsRegexp;
+        }
 
-//        $hostsRegexp = Utils::getUserAccessHostsRegexp($app);
-//        if ($hostsRegexp !== '.*') {
-//            $hostsRegexp = is_array($hostsRegexp) ? $hostsRegexp : [$hostsRegexp];
-//            $hostsWhere = " AND (a.server_name REGEXP '" . implode("' OR a.server_name REGEXP '", $hostsRegexp) . "')";
-//        }
-//
-//        $sql = "
-//            SELECT
-//                a.server_name,
-//                sum(a.req_count) as req_count,
-//                avg(a.req_per_sec) as req_per_sec,
-//                (
-//                    SELECT
-//                        count(*)
-//                    FROM
-//                        ipm_status_details b
-//                    WHERE
-//                        a.server_name = b.server_name AND b.created_at > :created_at
-//                )
-//                as error_count
-//            FROM
-//                ipm_report_by_hostname_and_server a
-//            WHERE
-//                a.created_at > :created_at
-//                $hostsWhere
-//            GROUP BY
-//                a.server_name
-//        ";
+        $sql = "
+            SELECT server_name,
+                   sum(req_count)    as req_count,
+                   avg(req_per_sec)  as req_per_sec,
+                   0                 as error_count
+            FROM ipm_report_by_server_name
+            WHERE created_at > :created_at
+              $hostsWhere
+            GROUP BY server_name
+            ORDER BY server_name
+        ";
+
+        return $this->getEntityManager()->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
     }
 
 //    /**

@@ -4,11 +4,43 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Security\FileUser;
+use Symfony\Component\Security\Core\User\UserInterface;
+
 /**
  * Usefull methods
  */
 class Utils
 {
+    /**
+     * Returns the hosts regexp for the current user, or '.*' if unrestricted.
+     * Only FileUser supports per-user host filtering; DB users see everything.
+     */
+    public static function getUserHostsRegexp(?UserInterface $user): string
+    {
+        if ($user instanceof FileUser) {
+            $hosts = $user->getHosts();
+            if ($hosts !== null && trim($hosts) !== '' && trim($hosts) !== '.*') {
+                return $hosts;
+            }
+        }
+
+        return '.*';
+    }
+
+    /**
+     * Returns true if the user is allowed to see the given server name.
+     */
+    public static function userCanAccessServer(?UserInterface $user, string $serverName): bool
+    {
+        $regexp = self::getUserHostsRegexp($user);
+        if ($regexp === '.*') {
+            return true;
+        }
+
+        return (bool) preg_match('/' . $regexp . '/', $serverName);
+    }
+
     public static function generateColor(): string
     {
         return str_pad(dechex(random_int(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
