@@ -15,9 +15,6 @@ class BeforeController extends AbstractController
     ) {
     }
 
-    // Не в том месте
-    //    #[Route('/before', name: 'before')]
-    //    public function actionBefore(): Response
     public function actionBefore(string $hostsRegexp = '.*'): array
     {
         $result = [
@@ -35,24 +32,6 @@ class BeforeController extends AbstractController
             $params['hosts_regexp'] = $hostsRegexp;
         }
 
-        //        $sql = "
-        //            SELECT
-        //                server_name, count(created_at) cnt
-        //            FROM
-        //                ipm_report_by_server_name
-        //            WHERE
-        //                created_at >= :created_at AND
-        //                server_name IS NOT NULL AND server_name != ''
-        //                $hostsWhere
-        //            GROUP BY
-        //                server_name
-        //            HAVING
-        //                cnt > 10
-        //            ORDER BY
-        //                server_name
-        //        ";
-
-        // Для теста убрал HAVING, т.к. нет такой большой выборки по данным
         $sql = "
             SELECT
                 server_name, count(created_at) cnt
@@ -64,11 +43,12 @@ class BeforeController extends AbstractController
                 $hostsWhere
             GROUP BY
                 server_name
+            HAVING
+                cnt > 10
             ORDER BY
                 server_name
         ";
 
-        // Возможно надо сделать какое-то кеширование, чтобы не сильно долбить базу
         $list = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         $idn = new ToUnicode();
@@ -97,8 +77,6 @@ class BeforeController extends AbstractController
             $result['servers']['IPs'] = $ips;
         }
 
-        //        $app['menu'] = $result;
-        //        Надо поправить, т.к. это заглушка
         return $result;
     }
 }
