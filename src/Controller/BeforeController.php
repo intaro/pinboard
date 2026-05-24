@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Algo26\IdnaConvert\ToUnicode;
-use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -19,7 +18,7 @@ class BeforeController extends AbstractController
     // Не в том месте
     //    #[Route('/before', name: 'before')]
     //    public function actionBefore(): Response
-    public function actionBefore(): array
+    public function actionBefore(string $hostsRegexp = '.*'): array
     {
         $result = [
             'servers' => []
@@ -29,7 +28,6 @@ class BeforeController extends AbstractController
             'created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))
         ];
 
-        $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
         $hostsWhere = '';
 
         if ($hostsRegexp !== '.*') {

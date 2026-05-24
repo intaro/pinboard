@@ -467,7 +467,8 @@ class ServerController extends AbstractController
     // Нужно переосмыслить метод полносьтю, пока для теста
     private function buildMenu(): array
     {
-        return (new BeforeController($this->entityManager))->actionBefore();
+        $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
+        return (new BeforeController($this->entityManager))->actionBefore($hostsRegexp);
     }
 
     // Нужно переосмыслить метод полносьтю, пока для теста
