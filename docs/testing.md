@@ -1,19 +1,21 @@
-# Проверка и тестирование
+# Testing
 
-## Проверки кода
+## Code checks
 
-- PHP синтаксис: `php -l path/to/file.php`
-- Twig синтаксис: `php bin/console lint:twig templates/...`
-- Сборка фронтенда: `pnpm build`
+- PHP syntax: `php -l path/to/file.php`
+- Twig syntax: `php bin/console lint:twig templates/...`
+- Frontend build: `pnpm build`
+- Static analysis: `vendor/bin/phpstan analyse`
+- Code style: `vendor/bin/php-cs-fixer fix --dry-run`
 
-## Что проверять после правок
+## What to verify after changes
 
-- шаблоны и верстку - в браузере;
-- Sass и JS - после пересборки фронтенда;
-- команды Symfony Console - на реальном локальном окружении;
-- изменения в данных Pinba - на страницах админки и в БД.
+- Templates and layout — in a browser.
+- Sass and JS — after rebuilding the frontend.
+- Symfony Console commands — on a real local environment.
+- Pinba data changes — on admin pages and in the database.
 
-## Практика
+## Practices
 
-- Для точечных изменений лучше запускать только проверки затронутых файлов.
-- Если правка затрагивает общий layout или сборку, пересобирай фронтенд и открывай ключевые страницы вручную.
+- For targeted changes, run only the checks relevant to the modified files.
+- If a change touches the shared layout or build pipeline, rebuild the frontend and open key pages manually.

@@ -128,7 +128,7 @@ Key environment variables (set in `.env.local` or as Docker env):
 | `DB_USER` | — | Database user |
 | `DB_PASSWORD` | — | Database password |
 | `DB_SERVER_VERSION` | `8.4.0` | MySQL server version (for Doctrine) |
-| `APP_AUTH_USER_SOURCE` | `db` | User storage: `db` or `file` |
+| `APP_AUTH_USER_SOURCE` | `file` | User storage: `file` or `db` |
 | `APP_RECORDS_LIFETIME` | `P1M` | How long to keep raw data (ISO 8601 duration) |
 | `APP_AGGREGATION_PERIOD` | `PT15M` | Aggregation window size |
 | `APP_LOGGING_LONG_REQUEST_TIME_GLOBAL` | `1.5` | Slow request threshold (seconds) |
@@ -149,6 +149,18 @@ Full variable reference: [docs/configuration.md](docs/configuration.md)
 - [Testing](docs/testing.md)
 - [Code standards](docs/standards.md)
 
+## Upgrading from 1.x
+
+If you have an existing Pinboard 1.x (Silex-based) installation:
+
+1. Back up the database.
+2. Check out this branch / the new release.
+3. Run `composer install && pnpm install && pnpm build`.
+4. Copy your old `config/parameters.yml` — file-based auth settings are preserved.
+5. Run `php bin/console doctrine:migrations:migrate`.
+
+See [docs/deployment.md](docs/deployment.md) for the full upgrade guide.
+
 ## License
 
-GNU GPL v2 — see `composer.json` for full dependency licenses.
+MIT — see [LICENSE](LICENSE).

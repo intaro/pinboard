@@ -1,30 +1,30 @@
-# Текущие стандарты проекта
+# Code Standards
 
-Этот документ фиксирует актуальные базовые решения, на которые ориентируется кодовая база.
+This document records the foundational decisions the codebase follows.
 
 ## PHP
 
-- Целевой уровень - PHP 8.4 и новее.
-- В ручном коде используется `declare(strict_types=1);`.
-- Для зависимостей и состояний объектов предпочитаются типизированные и `readonly`-свойства.
-- Динамические свойства не используются.
-- В новых участках кода применяются явные типы параметров и возвращаемых значений.
+- Target platform: PHP 8.4 and later.
+- All manually written files use `declare(strict_types=1);`.
+- Typed and `readonly` properties are preferred for dependencies and object state.
+- Dynamic properties are not used.
+- New code uses explicit parameter types and return types throughout.
 
 ## HTML
 
-- Шаблоны строятся на семантических элементах HTML5: `main`, `nav`, `footer`.
-- В шаблонах используется Bootstrap 5.
-- Для интерактивных элементов предпочтительны стандартные HTML-контролы и нативные атрибуты доступности.
+- Templates are built on semantic HTML5 elements: `main`, `nav`, `footer`.
+- Templates use Bootstrap 5.
+- Standard HTML controls and native accessibility attributes are preferred for interactive elements.
 
 ## JavaScript
 
-- Исходный код пишется на современном JavaScript уровня ES2024+ без jQuery.
-- Целевой базис сборки - современные evergreen-браузеры.
-- В проекте используются актуальные возможности ECMAScript, а Babel нужен только для минимальной совместимости и полифилов по `browserslist`.
-- Новые скрипты строятся на стандартных DOM API, `fetch`, `FormData`, `classList` и `URL`.
-- Для графиков используется `Chart.js` вместо устаревших библиотек.
+- Source code is written in modern JavaScript (ES2024+) without jQuery.
+- Target: modern evergreen browsers.
+- Current ECMAScript features are used directly; Babel is only needed for minimal compatibility polyfills via `browserslist`.
+- New scripts use standard DOM APIs: `fetch`, `FormData`, `classList`, `URL`.
+- Charts use `Chart.js` instead of deprecated libraries.
 
-## Практика
+## Practices
 
-- Не добавляй устаревшие библиотеки без необходимости.
-- При обновлениях ориентируйся на текущие официальные рекомендации инструментов, а не на старые паттерны проекта.
+- Do not add deprecated libraries unless strictly necessary.
+- When updating, follow the current official recommendations of the tool — not old project patterns.

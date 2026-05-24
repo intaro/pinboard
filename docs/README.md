@@ -1,9 +1,9 @@
-# Документация
+# Documentation
 
-Короткий указатель на отдельные темы:
+Short index of topics:
 
-- [Конфигурация](configuration.md)
-- [Проверка и тестирование](testing.md)
-- [Запуск и эксплуатация](deployment.md)
+- [Configuration](configuration.md)
+- [Testing](testing.md)
+- [Deployment & operations](deployment.md)
 - [Docker: Pinboard + Pinba](docker.md)
-- [Текущие стандарты проекта](standards.md)
+- [Code standards](standards.md)

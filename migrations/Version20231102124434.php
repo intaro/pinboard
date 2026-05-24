@@ -7,117 +7,95 @@ namespace DoctrineMigrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
 final class Version20231102124434 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Create PINBA virtual report tables (report2/3/6 with percentile columns) and add p90/p95/p99 to aggregate tables';
     }
 
     public function up(Schema $schema): void
     {
-//        $this->addSql("
-//            CREATE TABLE `ipm_pinba_report_by_hostname_and_server_90_95_99` (
-//                ...
-//            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report6:::90,95,99';
-//        ");
-
         $this->addSql("
             CREATE TABLE `ipm_pinba_report_by_hostname_and_server_90_95_99` (
-                    `req_count` int(11) DEFAULT NULL,
-                    `req_per_sec` float DEFAULT NULL,
-                    `req_time_total` float DEFAULT NULL,
-                    `req_time_percent` float DEFAULT NULL,
-                    `req_time_per_sec` float DEFAULT NULL,
-                    `ru_utime_total` float DEFAULT NULL,
-                    `ru_utime_percent` float DEFAULT NULL,
-                    `ru_utime_per_sec` float DEFAULT NULL,
-                    `ru_stime_total` float DEFAULT NULL,
-                    `ru_stime_percent` float DEFAULT NULL,
-                    `ru_stime_per_sec` float DEFAULT NULL,
-                    `traffic_total` float DEFAULT NULL,
-                    `traffic_percent` float DEFAULT NULL,
-                    `traffic_per_sec` float DEFAULT NULL,
-                    `hostname` varchar(32) DEFAULT NULL,
-                    `server_name` varchar(64) DEFAULT NULL,
-                    `memory_footprint_total` float DEFAULT NULL,
-                    `memory_footprint_percent` float DEFAULT NULL,
-                    `req_time_median` float DEFAULT NULL,
-                    `index_value` varchar(256) DEFAULT NULL,
-                    `p90` float DEFAULT NULL,
-                    `p95` float DEFAULT NULL,
-                    `p99` float DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+                `req_count` int(11) DEFAULT NULL,
+                `req_per_sec` float DEFAULT NULL,
+                `req_time_total` float DEFAULT NULL,
+                `req_time_percent` float DEFAULT NULL,
+                `req_time_per_sec` float DEFAULT NULL,
+                `ru_utime_total` float DEFAULT NULL,
+                `ru_utime_percent` float DEFAULT NULL,
+                `ru_utime_per_sec` float DEFAULT NULL,
+                `ru_stime_total` float DEFAULT NULL,
+                `ru_stime_percent` float DEFAULT NULL,
+                `ru_stime_per_sec` float DEFAULT NULL,
+                `traffic_total` float DEFAULT NULL,
+                `traffic_percent` float DEFAULT NULL,
+                `traffic_per_sec` float DEFAULT NULL,
+                `hostname` varchar(32) DEFAULT NULL,
+                `server_name` varchar(64) DEFAULT NULL,
+                `memory_footprint_total` float DEFAULT NULL,
+                `memory_footprint_percent` float DEFAULT NULL,
+                `req_time_median` float DEFAULT NULL,
+                `index_value` varchar(256) DEFAULT NULL,
+                `p90` float DEFAULT NULL,
+                `p95` float DEFAULT NULL,
+                `p99` float DEFAULT NULL
+            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report6:::90,95,99'
         ");
-
-//        $this->addSql("
-//            CREATE TABLE `ipm_pinba_report_by_server_90_95_99` (
-//                ...
-//            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report2:::90,95,99';
-//        ");
-
 
         $this->addSql("
             CREATE TABLE `ipm_pinba_report_by_server_90_95_99` (
-                    `req_count` int(11) DEFAULT NULL,
-                    `req_per_sec` float DEFAULT NULL,
-                    `req_time_total` float DEFAULT NULL,
-                    `req_time_percent` float DEFAULT NULL,
-                    `req_time_per_sec` float DEFAULT NULL,
-                    `ru_utime_total` float DEFAULT NULL,
-                    `ru_utime_percent` float DEFAULT NULL,
-                    `ru_utime_per_sec` float DEFAULT NULL,
-                    `ru_stime_total` float DEFAULT NULL,
-                    `ru_stime_percent` float DEFAULT NULL,
-                    `ru_stime_per_sec` float DEFAULT NULL,
-                    `traffic_total` float DEFAULT NULL,
-                    `traffic_percent` float DEFAULT NULL,
-                    `traffic_per_sec` float DEFAULT NULL,
-                    `server_name` varchar(64) DEFAULT NULL,
-                    `memory_footprint_total` float DEFAULT NULL,
-                    `memory_footprint_percent` float DEFAULT NULL,
-                    `req_time_median` float DEFAULT NULL,
-                    `index_value` varchar(256) DEFAULT NULL,
-                    `p90` float DEFAULT NULL,
-                    `p95` float DEFAULT NULL,
-                    `p99` float DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+                `req_count` int(11) DEFAULT NULL,
+                `req_per_sec` float DEFAULT NULL,
+                `req_time_total` float DEFAULT NULL,
+                `req_time_percent` float DEFAULT NULL,
+                `req_time_per_sec` float DEFAULT NULL,
+                `ru_utime_total` float DEFAULT NULL,
+                `ru_utime_percent` float DEFAULT NULL,
+                `ru_utime_per_sec` float DEFAULT NULL,
+                `ru_stime_total` float DEFAULT NULL,
+                `ru_stime_percent` float DEFAULT NULL,
+                `ru_stime_per_sec` float DEFAULT NULL,
+                `traffic_total` float DEFAULT NULL,
+                `traffic_percent` float DEFAULT NULL,
+                `traffic_per_sec` float DEFAULT NULL,
+                `server_name` varchar(64) DEFAULT NULL,
+                `memory_footprint_total` float DEFAULT NULL,
+                `memory_footprint_percent` float DEFAULT NULL,
+                `req_time_median` float DEFAULT NULL,
+                `index_value` varchar(256) DEFAULT NULL,
+                `p90` float DEFAULT NULL,
+                `p95` float DEFAULT NULL,
+                `p99` float DEFAULT NULL
+            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report2:::90,95,99'
         ");
-
-//        $this->addSql("
-//            CREATE TABLE `ipm_pinba_report_by_hostname_90_95_99` (
-//                ...
-//            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report3:::90,95,99';
-//        ");
 
         $this->addSql("
             CREATE TABLE `ipm_pinba_report_by_hostname_90_95_99` (
-                    `req_count` int(11) DEFAULT NULL,
-                    `req_per_sec` float DEFAULT NULL,
-                    `req_time_total` float DEFAULT NULL,
-                    `req_time_percent` float DEFAULT NULL,
-                    `req_time_per_sec` float DEFAULT NULL,
-                    `ru_utime_total` float DEFAULT NULL,
-                    `ru_utime_percent` float DEFAULT NULL,
-                    `ru_utime_per_sec` float DEFAULT NULL,
-                    `ru_stime_total` float DEFAULT NULL,
-                    `ru_stime_percent` float DEFAULT NULL,
-                    `ru_stime_per_sec` float DEFAULT NULL,
-                    `traffic_total` float DEFAULT NULL,
-                    `traffic_percent` float DEFAULT NULL,
-                    `traffic_per_sec` float DEFAULT NULL,
-                    `hostname` varchar(32) DEFAULT NULL,
-                    `memory_footprint_total` float DEFAULT NULL,
-                    `memory_footprint_percent` float DEFAULT NULL,
-                    `req_time_median` float DEFAULT NULL,
-                    `index_value` varchar(256) DEFAULT NULL,
-                    `p90` float DEFAULT NULL,
-                    `p95` float DEFAULT NULL,
-                    `p99` float DEFAULT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+                `req_count` int(11) DEFAULT NULL,
+                `req_per_sec` float DEFAULT NULL,
+                `req_time_total` float DEFAULT NULL,
+                `req_time_percent` float DEFAULT NULL,
+                `req_time_per_sec` float DEFAULT NULL,
+                `ru_utime_total` float DEFAULT NULL,
+                `ru_utime_percent` float DEFAULT NULL,
+                `ru_utime_per_sec` float DEFAULT NULL,
+                `ru_stime_total` float DEFAULT NULL,
+                `ru_stime_percent` float DEFAULT NULL,
+                `ru_stime_per_sec` float DEFAULT NULL,
+                `traffic_total` float DEFAULT NULL,
+                `traffic_percent` float DEFAULT NULL,
+                `traffic_per_sec` float DEFAULT NULL,
+                `hostname` varchar(32) DEFAULT NULL,
+                `memory_footprint_total` float DEFAULT NULL,
+                `memory_footprint_percent` float DEFAULT NULL,
+                `req_time_median` float DEFAULT NULL,
+                `index_value` varchar(256) DEFAULT NULL,
+                `p90` float DEFAULT NULL,
+                `p95` float DEFAULT NULL,
+                `p99` float DEFAULT NULL
+            ) ENGINE=PINBA DEFAULT CHARSET=latin1 COMMENT='report3:::90,95,99'
         ");
 
         $this->addSql("ALTER TABLE `ipm_report_by_hostname` ADD p90 float DEFAULT NULL");

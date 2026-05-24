@@ -1,6 +1,28 @@
 {
+    "name": "intaro/pinboard",
+    "description": "Web admin panel for Pinba — real-time PHP performance monitoring via MySQL storage engine.",
     "type": "project",
-    "license": "proprietary",
+    "license": "MIT",
+    "homepage": "http://intaro.github.io/pinboard/",
+    "authors": [
+        {
+            "name": "Ilyas Salikhov",
+            "homepage": "https://intaro.ru",
+            "email": "support@intaro.ru"
+        },
+        {
+            "name": "Arthur Khasanov",
+            "email": "foparu68@gmail.com"
+        },
+        {
+            "name": "Oleg Ekhlakov",
+            "email": "ekhlakov@intaro.ru"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/intaro/pinboard/issues",
+        "source": "https://github.com/intaro/pinboard"
+    },
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {

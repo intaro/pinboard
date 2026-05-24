@@ -11,7 +11,7 @@ final class Version20260309173000 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Switch ipm_pinba_* source tables to PINBA engine with legacy comments';
+        return 'Repair: convert ipm_pinba_* tables from InnoDB to PINBA engine (fixes installations made before migration 20231102124237 was corrected)';
     }
 
     public function isTransactional(): bool
@@ -26,6 +26,20 @@ final class Version20260309173000 extends AbstractMigration
         );
 
         $this->abortIf(!$pinbaAvailable, 'PINBA storage engine is not available in current MySQL instance.');
+
+        // Skip if the tables already have PINBA engine (fresh installs with fixed migrations).
+        $alreadyPinba = (bool)$this->connection->fetchOne(
+            "SELECT COUNT(*) FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'ipm_pinba_report_by_hostname_and_server_90_95_99'
+               AND ENGINE = 'PINBA'"
+        );
+
+        if ($alreadyPinba) {
+            $this->note('ipm_pinba_* tables already use PINBA engine — skipping repair.');
+            return;
+        }
+
         $this->dropPinbaSourceTables();
         $this->createPinbaSourceTables();
     }
