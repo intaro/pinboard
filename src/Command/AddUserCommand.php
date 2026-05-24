@@ -51,7 +51,7 @@ class AddUserCommand extends Command
             ->addArgument(
                 'hosts',
                 InputArgument::OPTIONAL,
-                'Regexp string - hosts, allowed for this user (file mode only)'
+                'Regexp of server names this user can see, e.g. "site-a\.com|site-b\.com". Default: .* (all)'
             );
     }
 
@@ -94,6 +94,7 @@ class AddUserCommand extends Command
         }
         $user->setRoles($roles);
         $user->setPassword($this->passwordHasher->hashPassword($user, $password));
+        $user->setHosts(is_string($hosts) && trim($hosts) !== '' ? trim($hosts) : null);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 

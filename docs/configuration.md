@@ -80,11 +80,23 @@ Use the `add-user` console command to create or update users (it hashes the pass
 
 ```bash
 php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+
+# Restrict to specific servers (regexp):
+php bin/console add-user bob@example.com secret ROLE_USER 'site-a\.com|site-b\.com'
 ```
+
+The optional fourth argument is a PHP regexp applied to server names. A user with a restricted `hosts` value will only see matching servers in the menu and on the index page; direct URL access to other servers returns 403.
 
 ### Database auth
 
 Set `APP_AUTH_USER_SOURCE=db`. Users are stored in the `user` table (created by migrations).
+
+```bash
+php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+
+# Restrict to specific servers (same regexp syntax as file mode):
+php bin/console add-user bob@example.com secret ROLE_USER 'site-a\.com|site-b\.com'
+```
 
 Migrate existing file users to the database:
 

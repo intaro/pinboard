@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Utils;
 
+use App\Entity\User;
 use App\Security\FileUser;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -18,11 +19,16 @@ class Utils
      */
     public static function getUserHostsRegexp(?UserInterface $user): string
     {
+        $hosts = null;
+
         if ($user instanceof FileUser) {
             $hosts = $user->getHosts();
-            if ($hosts !== null && trim($hosts) !== '' && trim($hosts) !== '.*') {
-                return $hosts;
-            }
+        } elseif ($user instanceof User) {
+            $hosts = $user->getHosts();
+        }
+
+        if ($hosts !== null && trim($hosts) !== '' && trim($hosts) !== '.*') {
+            return $hosts;
         }
 
         return '.*';
