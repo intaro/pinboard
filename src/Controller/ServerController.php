@@ -59,11 +59,8 @@ class ServerController extends AbstractController
             $result['period'] = $period;
             $result['periods'] = $this->allowedPeriods;
             $result['title'] = $serverName;
-            $result['req_time_border'] = number_format((float) $this->getReqTimeBorder($this, $serverName) * 1000, 0, '.', '');
+            $result['req_time_border'] = number_format((float) $this->getReqTimeBorder($serverName) * 1000, 0, '.', '');
             $result['menu'] = $this->buildMenu();
-
-            //            Для теста
-            $result['base_url'] = '/';
 
             return $this->render('server.html.twig', $result);
         }
@@ -186,8 +183,6 @@ class ServerController extends AbstractController
             ],
         ];
 
-        //            Для теста
-        $result['base_url'] = '/';
         $result['menu'] = $this->buildMenu();
 
         return $this->render('timers.html.twig', $result);
@@ -226,8 +221,6 @@ class ServerController extends AbstractController
         $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
         $result['statuses'] = $this->getErrorPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
-        //            Для теста
-        $result['base_url'] = '/';
         $result['menu'] = $this->buildMenu();
 
         return $this->render('statuses.html.twig', $result);
@@ -265,8 +258,6 @@ class ServerController extends AbstractController
         $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
         $result['pages'] = $this->getSlowPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
-        //            Для теста
-        $result['base_url'] = '/';
         $result['menu'] = $this->buildMenu();
 
         return $this->render('req_time.html.twig', $result);
@@ -304,8 +295,6 @@ class ServerController extends AbstractController
         $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
         $result['pages'] = $this->getHeavyPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
-        //            Для теста
-        $result['base_url'] = '/';
         $result['menu'] = $this->buildMenu();
 
         return $this->render('mem_usage.html.twig', $result);
@@ -343,8 +332,6 @@ class ServerController extends AbstractController
         $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
         $result['pages'] = $this->getCPUPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
-        //            Для теста
-        $result['base_url'] = '/';
         $result['menu'] = $this->buildMenu();
 
         return $this->render('cpu_usage.html.twig', $result);
@@ -448,9 +435,6 @@ class ServerController extends AbstractController
             $result['last_timestamp'] = count($result['pages']) ? $result['pages'][0]['timestamp'] : 0;
             $result['menu'] = $this->buildMenu();
 
-            //            Для теста
-            $result['base_url'] = '/';
-
             $response = $this->render('live.html.twig', $result);
 
             $response->headers->addCacheControlDirective('no-cache', true);
@@ -464,24 +448,14 @@ class ServerController extends AbstractController
     }
 
 
-    // Нужно переосмыслить метод полносьтю, пока для теста
     private function buildMenu(): array
     {
         $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
         return (new BeforeController($this->entityManager))->actionBefore($hostsRegexp);
     }
 
-    // Нужно переосмыслить метод полносьтю, пока для теста
-    public function getReqTimeBorder($app, $serverName)
+    public function getReqTimeBorder(string $serverName): float
     {
-        //        if (isset($app['params']['notification']['border']['req_time'][$serverName])) {
-        //            return $app['params']['notification']['border']['req_time'][$serverName];
-        //        }
-        //
-        //        if (isset($app['params']['notification']['border']['req_time']['global'])) {
-        //            return $app['params']['notification']['border']['req_time']['global'];
-        //        }
-
         return AggregateCommand::DEFAULT_REQ_TIME_BORDER;
     }
 
@@ -498,13 +472,7 @@ class ServerController extends AbstractController
                 hostname
         ';
 
-        //        $stmt = $conn->executeQuery($sql, ['server_name' => $serverName]);
         $hosts = $conn->getConnection()->executeQuery($sql, ['server_name' => $serverName])->fetchAllAssociative();
-
-        //        $hosts = [];
-        //        while ($data = $stmt->fetch()) {
-        //            $hosts[] = $data['hostname'];
-        //        }
 
         return array_map(static fn (array $row): string => (string) $row['hostname'], $hosts);
     }
@@ -538,7 +506,6 @@ class ServerController extends AbstractController
                 created_at
         ';
 
-        //        $stmt = $conn->executeQuery($sql, $params);
         $stmt = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         $statuses = [
@@ -596,7 +563,6 @@ class ServerController extends AbstractController
                 created_at
         ';
 
-        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         $rpqData = [
@@ -703,7 +669,6 @@ class ServerController extends AbstractController
                 created_at
         ";
 
-        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
@@ -1282,7 +1247,7 @@ class ServerController extends AbstractController
         ];
         $hostCondition = '';
 
-        if ($hostName != 'all') {
+        if ($hostName !== 'all') {
             $params['hostname'] = $hostName;
             $hostCondition = 'AND hostname = :hostname';
         }

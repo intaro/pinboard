@@ -79,8 +79,6 @@ class TimerController extends AbstractController
             'type' => $type,
             'request_id' => "$requestId::$date",
             'menu' => $this->buildMenu(),
-//           Надо разобраться с этим base_url, сделать нормальную маршрутизацию
-            'base_url' => '/'
         ];
 
         return $this->render('timer.html.twig', $result);
@@ -104,17 +102,8 @@ class TimerController extends AbstractController
         } else {
             $params = [
                 'id' => $id,
-                'date' => $date
             ];
 
-            //            $sql = '
-            //            SELECT
-            //                *
-            //            FROM
-            //                ipm_req_time_details
-            //            WHERE
-            //                request_id = :id AND created_at = :date
-            //        ';
             $sql = '
             SELECT
                 *
@@ -125,7 +114,6 @@ class TimerController extends AbstractController
         ';
         }
 
-        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (count($data)) {
@@ -171,7 +159,6 @@ class TimerController extends AbstractController
         ';
         }
 
-        //        $data = $conn->fetchAll($sql, $params);
         $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (!count($data)) {
@@ -302,6 +289,6 @@ class TimerController extends AbstractController
 
     private function buildMenu(): array
     {
-        return (new BeforeController($this->entityManager))->actionBefore();
+        return (new BeforeController($this->entityManager))->actionBefore(Utils::getUserHostsRegexp($this->getUser()));
     }
 }
