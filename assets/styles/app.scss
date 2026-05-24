@@ -84,6 +84,19 @@ table.sortable thead th[data-sort-dir="desc"]::after {
     content: "↓";
 }
 
+// Login page
+main.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+}
+
 footer {
     text-align: center;
     padding: 18px 0;

@@ -1,35 +1,41 @@
-{#{% extends 'base.html.twig' %}#}
+{% extends 'base.html.twig' %}
 
-{% block stylesheets %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-{% endblock %}
+{% block title %}Sign in — Pinboard{% endblock %}
 
-{#{% block title %}Log in!{% endblock %}#}
+{% block body_classes %}login-page{% endblock %}
 
-{% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+{% block content %}
+<div class="login-card card shadow-sm border-0">
+    <div class="card-body p-4 p-sm-5">
+        <h1 class="h5 mb-4 text-center fw-semibold">Sign in to Pinboard</h1>
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Logout</a>
-        </div>
-    {% endif %}
+        {% if error %}
+            <div class="alert alert-danger py-2 small" role="alert">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+        {% if app.user %}
+            <div class="alert alert-info py-2 small">
+                Signed in as <strong>{{ app.user.userIdentifier }}</strong>.
+                <a href="{{ path('app_logout') }}" class="alert-link">Sign out</a>
+            </div>
+        {% endif %}
 
-    <label for="inputEmail">Login or email</label>
-    <input type="text" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="username" required autofocus>
-
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+        <form method="post" novalidate>
+            <div class="mb-3">
+                <label for="inputEmail" class="form-label">Login or email</label>
+                <input type="text" value="{{ last_username }}" name="email" id="inputEmail"
+                       class="form-control" autocomplete="username" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label for="inputPassword" class="form-label">Password</label>
+                <input type="password" name="password" id="inputPassword"
+                       class="form-control" autocomplete="current-password" required>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button class="btn btn-primary w-100" type="submit">Sign in</button>
+        </form>
+    </div>
+</div>
 {% endblock %}
