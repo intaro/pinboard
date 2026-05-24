@@ -40,18 +40,24 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
             throw $e;
         }
 
+        if ($identifier === '') {
+            $e = new UserNotFoundException('Empty user identifier.');
+            $e->setUserIdentifier($identifier);
+            throw $e;
+        }
+
         $users = $this->fileUserStorage->loadUsers();
         $storageKey = $identifier;
         $row = $users[$identifier] ?? null;
 
         if (!\is_array($row)) {
             foreach ($users as $candidateKey => $candidateRow) {
-                if (!\is_array($candidateRow)) {
+                if (!\is_array($candidateRow) || $candidateKey === '') {
                     continue;
                 }
 
                 if (($candidateRow['email'] ?? null) === $identifier) {
-                    $storageKey = (string)$candidateKey;
+                    $storageKey = $candidateKey;
                     $row = $candidateRow;
                     break;
                 }
@@ -74,7 +80,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
 
         $hosts = isset($row['hosts']) && \is_string($row['hosts']) ? $row['hosts'] : null;
 
-        return new FileUser($storageKey, (string)$row['password'], $roles, $hosts);
+        return new FileUser($storageKey, (string)$row['password'], array_values(array_map('strval', $roles)), $hosts);
     }
 
     public function refreshUser(UserInterface $user): UserInterface

@@ -10,16 +10,18 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class FileUser implements UserInterface, PasswordAuthenticatedUserInterface
 {
     /**
+     * @param non-empty-string $identifier
      * @param list<string> $roles
      */
     public function __construct(
-        private string $identifier,
+        private readonly string $identifier,
         private string $password,
         private array $roles = ['ROLE_USER'],
         private ?string $hosts = null
     ) {
     }
 
+    /** @return non-empty-string */
     public function getUserIdentifier(): string
     {
         return $this->identifier;

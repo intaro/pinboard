@@ -486,7 +486,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
+            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
         ];
 
         $hostCondition = '';
@@ -544,7 +544,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
+            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
         ];
 
         $hostCondition = '';
@@ -640,7 +640,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period)),
+            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period)),
         ];
 
         $selectFields = '
@@ -700,7 +700,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-' . $period))
+            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
         ];
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $timeGroupBy = SqlUtils::getDateGroupExpression($period);
@@ -883,7 +883,10 @@ class ServerController extends AbstractController
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item = Utils::parseRequestTags($item);
+            $parsed = Utils::parseRequestTags($item);
+            if (is_array($parsed)) {
+                $item = $parsed;
+            }
         }
 
         return $data;
@@ -957,7 +960,10 @@ class ServerController extends AbstractController
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
             $item['req_time'] = number_format((float) $item['req_time'] * 1000, 0, '.', ',');
-            $item = Utils::parseRequestTags($item);
+            $parsed = Utils::parseRequestTags($item);
+            if (is_array($parsed)) {
+                $item = $parsed;
+            }
         }
 
         return $data;
@@ -1060,7 +1066,10 @@ class ServerController extends AbstractController
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
             $item['cpu_peak_usage'] = number_format((float) $item['cpu_peak_usage'], 3);
-            $item = Utils::parseRequestTags($item);
+            $parsed = Utils::parseRequestTags($item);
+            if (is_array($parsed)) {
+                $item = $parsed;
+            }
         }
 
         return $data;
@@ -1111,7 +1120,10 @@ class ServerController extends AbstractController
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
             $item['mem_peak_usage'] = number_format((float) $item['mem_peak_usage'], 0, '.', ',');
-            $item = Utils::parseRequestTags($item);
+            $parsed = Utils::parseRequestTags($item);
+            if (is_array($parsed)) {
+                $item = $parsed;
+            }
         }
 
         return $data;
@@ -1220,7 +1232,7 @@ class ServerController extends AbstractController
             $item['timestamp_format'] = date('H:i:s', $item['timestamp']);
         }
 
-        return $data;
+        return array_values($data);
     }
 
     private function generateOrderBy(?string $colOrder, string $colDir, string $table): string

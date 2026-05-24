@@ -21,10 +21,10 @@ class Stopwatch
             $pinbaData = pinba_get_info();
 
             if (isset($pinbaData['hostname'])) {
-                $this->initTags['__hostname'] = $pinbaData['hostname'];
+                $this->initTags['__hostname'] = (string) $pinbaData['hostname'];
             }
             if (isset($pinbaData['server_name'])) {
-                $this->initTags['__server_name'] = $pinbaData['server_name'];
+                $this->initTags['__server_name'] = (string) $pinbaData['server_name'];
             }
         }
     }

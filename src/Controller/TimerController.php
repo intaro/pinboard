@@ -40,6 +40,9 @@ class TimerController extends AbstractController
 
         $request['script_name'] = Utils::urlDecode($request['script_name']);
         $request = Utils::parseRequestTags($request);
+        if (!is_array($request)) {
+            throw $this->createNotFoundException("Request #$requestId not found.");
+        }
 
         $request['timers'] = $this->getTimers($type, $requestId, $date);
 
@@ -201,7 +204,12 @@ class TimerController extends AbstractController
         }
 
         $f = current($timers);
-        $tags = array_keys($f['tags']);
+        if (!is_array($f['tags'])) {
+            return [];
+        }
+        /** @var array<string, mixed> $tagsMap */
+        $tagsMap = $f['tags'];
+        $tags = array_keys($tagsMap);
 
         foreach ($timers as $timer) {
             foreach ($tags as $index => $tag) {
@@ -220,7 +228,7 @@ class TimerController extends AbstractController
             }
         }
 
-        return $tags;
+        return array_values($tags);
     }
 
     /**
