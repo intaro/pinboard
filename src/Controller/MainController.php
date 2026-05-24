@@ -46,8 +46,6 @@ class MainController extends AbstractController
         }
 
         $result['total'] = $total;
-        $result['base_url'] = '/';
-        // Временно нижняя строка, тест
         $result['menu'] = (new BeforeController($this->entityManager))->actionBefore($hostsRegexp);
 
         return $this->render('index.html.twig', $result);
