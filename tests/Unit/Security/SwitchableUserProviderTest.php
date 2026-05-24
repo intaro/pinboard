@@ -32,7 +32,7 @@ final class SwitchableUserProviderTest extends TestCase
         $storage->upsertUser('admin@example.com', 'hashed-password', ['ROLE_ADMIN'], '.*');
 
         $provider = new SwitchableUserProvider(
-            $this->createMock(UserRepository::class),
+            $this->createStub(UserRepository::class),
             $storage,
             'file'
         );
@@ -75,7 +75,7 @@ final class SwitchableUserProviderTest extends TestCase
         $storage->upsertUser('admin@example.com', 'old-password', ['ROLE_ADMIN']);
 
         $provider = new SwitchableUserProvider(
-            $this->createMock(UserRepository::class),
+            $this->createStub(UserRepository::class),
             $storage,
             'file'
         );
