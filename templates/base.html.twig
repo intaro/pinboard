@@ -16,6 +16,21 @@
                 <img src="{{ base_url }}img/intaropinboard_logo.png"/>
             </a>
             {% include '_menu.html.twig' %}
+            {% if app.user is not null %}
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle link-secondary" href="#" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ app.user.userIdentifier }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ path('app_logout') }}">Sign out</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            {% endif %}
         </div>
     </nav>
     <main id="main-content" class="{% block body_classes %}container{% endblock %}">
