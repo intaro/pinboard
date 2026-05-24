@@ -2,6 +2,8 @@
 
 A web admin panel for [Pinba](https://github.com/tony2001/pinba_engine) — a MySQL storage engine that collects real-time performance statistics from PHP applications.
 
+![Pinboard screenshots](docs/images/screenshot.png)
+
 ## What is this?
 
 **Pinba** is a system for passive performance monitoring of PHP sites:
