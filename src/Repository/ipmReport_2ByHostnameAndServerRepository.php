@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\ipmReport_2ByHostnameAndServer;
@@ -20,29 +22,4 @@ class ipmReport_2ByHostnameAndServerRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ipmReport_2ByHostnameAndServer::class);
     }
-
-//    /**
-//     * @return ipmReport_2ByHostnameAndServer[] Returns an array of ipmReport_2ByHostnameAndServer objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('i.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?ipmReport_2ByHostnameAndServer
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

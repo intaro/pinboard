@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\IpmPinbaTagInfoCategoryServerServerNameHostname;
@@ -20,29 +22,4 @@ class IpmPinbaTagInfoCategoryServerServerNameHostnameRepository extends ServiceE
     {
         parent::__construct($registry, IpmPinbaTagInfoCategoryServerServerNameHostname::class);
     }
-
-//    /**
-//     * @return IpmPinbaTagInfoCategoryServerServerNameHostname[] Returns an array of IpmPinbaTagInfoCategoryServerServerNameHostname objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('i.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?IpmPinbaTagInfoCategoryServerServerNameHostname
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

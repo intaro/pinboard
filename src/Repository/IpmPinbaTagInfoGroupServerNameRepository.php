@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\IpmPinbaTagInfoGroupServerName;
@@ -20,29 +22,4 @@ class IpmPinbaTagInfoGroupServerNameRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, IpmPinbaTagInfoGroupServerName::class);
     }
-
-//    /**
-//     * @return IpmPinbaTagInfoGroupServerName[] Returns an array of IpmPinbaTagInfoGroupServerName objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('i.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?IpmPinbaTagInfoGroupServerName
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

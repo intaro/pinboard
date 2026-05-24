@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\IpmPinbaReportByHostname_90_95_99;
@@ -20,29 +22,4 @@ class IpmPinbaReportByHostname_90_95_99Repository extends ServiceEntityRepositor
     {
         parent::__construct($registry, IpmPinbaReportByHostname_90_95_99::class);
     }
-
-//    /**
-//     * @return IpmPinbaReportByHostname_90_95_99[] Returns an array of IpmPinbaReportByHostname_90_95_99 objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('i.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?IpmPinbaReportByHostname_90_95_99
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }

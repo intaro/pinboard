@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\IpmReqTimeDetails;
@@ -20,29 +22,4 @@ class IpmReqTimeDetailsRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, IpmReqTimeDetails::class);
     }
-
-//    /**
-//     * @return IpmReqTimeDetails[] Returns an array of IpmReqTimeDetails objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('i.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
-
-//    public function findOneBySomeField($value): ?IpmReqTimeDetails
-//    {
-//        return $this->createQueryBuilder('i')
-//            ->andWhere('i.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
 }
