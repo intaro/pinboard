@@ -7,6 +7,7 @@ namespace App\Stopwatch;
 class Stopwatch
 {
     private bool $enabled = false;
+    /** @var array<string, string> */
     private array $initTags = [];
 
     public function __construct()
@@ -28,6 +29,7 @@ class Stopwatch
         }
     }
 
+    /** @param array<string, string> $tags */
     public function start(array $tags): StopwatchEvent
     {
         if ($this->enabled) {
@@ -41,6 +43,7 @@ class Stopwatch
         return new StopwatchEvent($this->enabled ? pinba_timer_start($tags) : null);
     }
 
+    /** @param array<string, string> $tags */
     public function add(array $tags, int|float $time): void
     {
         if (!$this->enabled) {

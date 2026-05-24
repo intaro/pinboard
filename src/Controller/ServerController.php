@@ -22,6 +22,7 @@ class ServerController extends AbstractController
 
     private readonly int $rowPerPage;
 
+    /** @var list<string> */
     private array $allowedPeriods = ['1 day', '3 days', '1 week', '1 month'];
 
     public function __construct(
@@ -48,10 +49,10 @@ class ServerController extends AbstractController
         }
 
         $result = [];
-        $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
-        $result['req'] = $this->getRequestReview($this->entityManager, $serverName, $hostName, $period);
-        $result['req_per_sec'] = $this->getRequestPerSecReview($this->entityManager, $serverName, $hostName, $period);
-        $result['statuses'] = $this->getStatusesReview($this->entityManager, $serverName, $hostName, $period);
+        $result['hosts'] = $this->getHosts($serverName);
+        $result['req'] = $this->getRequestReview($serverName, $hostName, $period);
+        $result['req_per_sec'] = $this->getRequestPerSecReview($serverName, $hostName, $period);
+        $result['statuses'] = $this->getStatusesReview($serverName, $hostName, $period);
 
         if ($format === 'html') {
             $result['server_name'] = $serverName;
@@ -134,7 +135,7 @@ class ServerController extends AbstractController
         $serverFilter = $serverFilter === 'on';
 
         $result = [
-            'hosts' => $this->getHosts($this->entityManager, $serverName),
+            'hosts' => $this->getHosts($serverName),
             'title' => $serverName,
             'periods' => $this->allowedPeriods,
             'period' => $period,
@@ -160,14 +161,14 @@ class ServerController extends AbstractController
                     'title' => 'Hit count',
                     'field' => 'hit_count',
                     'unit' => '',
-                    'data' => $this->getTimersList($this->entityManager, $serverName, $hostName, 'hit_count', $period, $serverFilter),
+                    'data' => $this->getTimersList($serverName, $hostName, 'hit_count', $period, $serverFilter),
                 ],
                 'timer_value' => [
                     'title' => 'Timer value',
                     'subtitle' => 'total',
                     'field' => 'timer_value',
                     'unit' => ' s',
-                    'data' => $this->getTimersList($this->entityManager, $serverName, $hostName, 'timer_value', $period, $serverFilter),
+                    'data' => $this->getTimersList($serverName, $hostName, 'timer_value', $period, $serverFilter),
                 ],
             ],
             'request_graphs' => [
@@ -205,7 +206,7 @@ class ServerController extends AbstractController
 
         $result['rowPerPage'] = $this->rowPerPage;
 
-        $rowCount = $this->getErrorPagesCount($this->entityManager, $serverName, $hostName);
+        $rowCount = $this->getErrorPagesCount($serverName, $hostName);
         $result['rowCount'] = $rowCount;
 
         $pageCount = ceil($rowCount / $this->rowPerPage);
@@ -218,8 +219,8 @@ class ServerController extends AbstractController
         }
 
         $startPos = ($pageNum - 1) * $this->rowPerPage;
-        $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
-        $result['statuses'] = $this->getErrorPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
+        $result['hosts'] = $this->getHosts($serverName);
+        $result['statuses'] = $this->getErrorPages($serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
         $result['menu'] = $this->buildMenu();
 
@@ -243,7 +244,7 @@ class ServerController extends AbstractController
 
         $result['rowPerPage'] = $this->rowPerPage;
 
-        $rowCount = $this->getSlowPagesCount($this->entityManager, $serverName, $hostName);
+        $rowCount = $this->getSlowPagesCount($serverName, $hostName);
         $result['rowCount'] = $rowCount;
 
         $pageCount = ceil($rowCount / $this->rowPerPage);
@@ -255,8 +256,8 @@ class ServerController extends AbstractController
         }
         $startPos = ($pageNum - 1) * $this->rowPerPage;
 
-        $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
-        $result['pages'] = $this->getSlowPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
+        $result['hosts'] = $this->getHosts($serverName);
+        $result['pages'] = $this->getSlowPages($serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
         $result['menu'] = $this->buildMenu();
 
@@ -280,7 +281,7 @@ class ServerController extends AbstractController
 
         $result['rowPerPage'] = $this->rowPerPage;
 
-        $rowCount = $this->getHeavyPagesCount($this->entityManager, $serverName, $hostName);
+        $rowCount = $this->getHeavyPagesCount($serverName, $hostName);
         $result['rowCount'] = $rowCount;
 
         $pageCount = ceil($rowCount / $this->rowPerPage);
@@ -292,8 +293,8 @@ class ServerController extends AbstractController
         }
         $startPos = ($pageNum - 1) * $this->rowPerPage;
 
-        $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
-        $result['pages'] = $this->getHeavyPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
+        $result['hosts'] = $this->getHosts($serverName);
+        $result['pages'] = $this->getHeavyPages($serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
         $result['menu'] = $this->buildMenu();
 
@@ -317,7 +318,7 @@ class ServerController extends AbstractController
 
         $result['rowPerPage'] = $this->rowPerPage;
 
-        $rowCount = $this->getCPUPagesCount($this->entityManager, $serverName, $hostName);
+        $rowCount = $this->getCPUPagesCount($serverName, $hostName);
         $result['rowCount'] = $rowCount;
 
         $pageCount = ceil($rowCount / $this->rowPerPage);
@@ -329,8 +330,8 @@ class ServerController extends AbstractController
         }
         $startPos = ($pageNum - 1) * $this->rowPerPage;
 
-        $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
-        $result['pages'] = $this->getCPUPages($this->entityManager, $serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
+        $result['hosts'] = $this->getHosts($serverName);
+        $result['pages'] = $this->getCPUPages($serverName, $hostName, $startPos, $this->rowPerPage, $colOrder, $colDir);
 
         $result['menu'] = $this->buildMenu();
 
@@ -338,7 +339,7 @@ class ServerController extends AbstractController
     }
 
     #[Route('/{serverName}/{hostName}/live', name: 'server_live', methods: ['GET', 'POST'])]
-    public function actionLive(Request $request, $serverName, $hostName)
+    public function actionLive(Request $request, string $serverName, string $hostName): Response
     {
         $this->assertServerAccess($serverName);
         $session = $request->hasSession() ? $request->getSession() : null;
@@ -386,13 +387,13 @@ class ServerController extends AbstractController
             }
         }
 
-        $result['pages'] = $this->getLivePages($this->entityManager, $serverName, $hostName, $liveFilter[$serverName], $result['limit']);
+        $result['pages'] = $this->getLivePages($serverName, $hostName, $liveFilter[$serverName], $result['limit']);
 
         $ids = [];
         foreach ($result['pages'] as $item) {
             $ids[] = $item['id'];
         }
-        $addData = $this->getTagsTimersForIds($this->entityManager, $ids);
+        $addData = $this->getTagsTimersForIds($ids);
 
         $tagsFilter = [];
         if (isset($liveFilter[$serverName]['tags'])) {
@@ -430,7 +431,7 @@ class ServerController extends AbstractController
         if ($request->isXmlHttpRequest()) {
             return new JsonResponse($result);
         } else {
-            $result['hosts'] = $this->getHosts($this->entityManager, $serverName);
+            $result['hosts'] = $this->getHosts($serverName);
             $result['last_id'] = count($result['pages']) ? $result['pages'][0]['id'] : 0;
             $result['last_timestamp'] = count($result['pages']) ? $result['pages'][0]['timestamp'] : 0;
             $result['menu'] = $this->buildMenu();
@@ -448,6 +449,7 @@ class ServerController extends AbstractController
     }
 
 
+    /** @return array<string, mixed> */
     private function buildMenu(): array
     {
         $hostsRegexp = Utils::getUserHostsRegexp($this->getUser());
@@ -459,7 +461,8 @@ class ServerController extends AbstractController
         return AggregateCommand::DEFAULT_REQ_TIME_BORDER;
     }
 
-    public function getHosts($conn, $serverName)
+    /** @return list<string> */
+    private function getHosts(string $serverName): array
     {
         $sql = '
             SELECT
@@ -472,12 +475,13 @@ class ServerController extends AbstractController
                 hostname
         ';
 
-        $hosts = $conn->getConnection()->executeQuery($sql, ['server_name' => $serverName])->fetchAllAssociative();
+        $hosts = $this->entityManager->getConnection()->executeQuery($sql, ['server_name' => $serverName])->fetchAllAssociative();
 
         return array_map(static fn (array $row): string => (string) $row['hostname'], $hosts);
     }
 
-    public function getStatusesReview($conn, $serverName, $hostName, $period)
+    /** @return array{data: list<array<string, mixed>>, codes: array<string, string>} */
+    private function getStatusesReview(string $serverName, string $hostName, string $period): array
     {
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
@@ -506,7 +510,7 @@ class ServerController extends AbstractController
                 created_at
         ';
 
-        $stmt = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $stmt = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         $statuses = [
             'data' => [],
@@ -534,7 +538,8 @@ class ServerController extends AbstractController
         return $statuses;
     }
 
-    public function getRequestPerSecReview($conn, $serverName, $hostName, $period)
+    /** @return array{data: array<string, list<array<string, mixed>>>, hosts: array<string, array<string, string>>} */
+    private function getRequestPerSecReview(string $serverName, string $hostName, string $period): array
     {
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
@@ -563,7 +568,7 @@ class ServerController extends AbstractController
                 created_at
         ';
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         $rpqData = [
             'data' => [],
@@ -606,7 +611,7 @@ class ServerController extends AbstractController
                     created_at
             ';
 
-            $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+            $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
             $rpqData['hosts']['_']['color'] = Utils::generateColor();
             $rpqData['hosts']['_']['host'] = '_';
 
@@ -629,7 +634,8 @@ class ServerController extends AbstractController
         return $rpqData;
     }
 
-    public function getRequestReview($conn, $serverName, $hostName, $period)
+    /** @return list<array<string, mixed>> */
+    private function getRequestReview(string $serverName, string $hostName, string $period): array
     {
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
@@ -669,7 +675,7 @@ class ServerController extends AbstractController
                 created_at
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $t = strtotime($item['created_at']);
@@ -689,7 +695,8 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function getTimersList($conn, $serverName, $hostName, $valueField, $period, $serverFilter)
+    /** @return array{timers: list<string>, values: array<string, array<string, mixed>>} */
+    private function getTimersList(string $serverName, string $hostName, string $valueField, string $period, bool $serverFilter): array
     {
         $params = [
             'server_name' => $serverName,
@@ -745,7 +752,7 @@ class ServerController extends AbstractController
                     created_at ASC
             ";
 
-            $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+            $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
             foreach ($data as $item) {
                 $t = strtotime($item['created_at']);
@@ -792,7 +799,7 @@ class ServerController extends AbstractController
                 created_at ASC, $valueField DESC
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $t = strtotime($item['created_at']);
@@ -832,7 +839,8 @@ class ServerController extends AbstractController
         ];
     }
 
-    public function getErrorPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir)
+    /** @return list<array<string, mixed>> */
+    private function getErrorPages(string $serverName, string $hostName, int $startPos, int $rowCount, ?string $colOrder, string $colDir): array
     {
         $params = [
             'server_name' => $serverName,
@@ -871,7 +879,7 @@ class ServerController extends AbstractController
                 $startPos, $rowCount
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
@@ -881,7 +889,7 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function getSlowPagesCount($conn, $serverName, $hostName)
+    private function getSlowPagesCount(string $serverName, string $hostName): int
     {
         $params = [
             'server_name' => $serverName,
@@ -905,12 +913,13 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         return (int)$data[0]['COUNT(*)'];
     }
 
-    public function getSlowPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir)
+    /** @return list<array<string, mixed>> */
+    private function getSlowPages(string $serverName, string $hostName, int $startPos, int $rowCount, ?string $colOrder, string $colDir): array
     {
         $params = [
             'server_name' => $serverName,
@@ -943,7 +952,7 @@ class ServerController extends AbstractController
                 $startPos, $rowCount
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
@@ -954,7 +963,7 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function getHeavyPagesCount($conn, $serverName, $hostName)
+    private function getHeavyPagesCount(string $serverName, string $hostName): int
     {
         $params = [
             'server_name' => $serverName,
@@ -978,12 +987,12 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         return (int)$data[0]['cnt'];
     }
 
-    public function getCPUPagesCount($conn, $serverName, $hostName)
+    private function getCPUPagesCount(string $serverName, string $hostName): int
     {
         $params = [
             'server_name' => $serverName,
@@ -1007,12 +1016,13 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         return (int)$data[0]['cnt'];
     }
 
-    public function getCPUPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir)
+    /** @return list<array<string, mixed>> */
+    private function getCPUPages(string $serverName, string $hostName, int $startPos, int $rowCount, ?string $colOrder, string $colDir): array
     {
         $params = [
             'server_name' => $serverName,
@@ -1045,7 +1055,7 @@ class ServerController extends AbstractController
                 $startPos, $rowCount
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
@@ -1056,7 +1066,8 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function getHeavyPages($conn, $serverName, $hostName, $startPos, $rowCount, $colOrder, $colDir)
+    /** @return list<array<string, mixed>> */
+    private function getHeavyPages(string $serverName, string $hostName, int $startPos, int $rowCount, ?string $colOrder, string $colDir): array
     {
         $params = [
             'server_name' => $serverName,
@@ -1095,7 +1106,7 @@ class ServerController extends AbstractController
                 $startPos, $rowCount
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as &$item) {
             $item['script_name'] = Utils::urlDecode($item['script_name']);
@@ -1106,7 +1117,11 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function getTagsTimersForIds($conn, $ids)
+    /**
+     * @param list<string|int> $ids
+     * @return list<array<string, mixed>>
+     */
+    private function getTagsTimersForIds(array $ids): array
     {
         if (empty($ids)) {
             return [];
@@ -1123,11 +1138,15 @@ class ServerController extends AbstractController
                 id IN ($ids)
         ";
 
-        return $conn->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->entityManager->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
 
-    public function getLivePages($conn, $serverName, $hostName, array $filter, $limit = 50)
+    /**
+     * @param array<string, mixed> $filter
+     * @return list<array<string, mixed>>
+     */
+    private function getLivePages(string $serverName, string $hostName, array $filter, int $limit = 50): array
     {
         $params = [
             'server_name' => $serverName
@@ -1180,7 +1199,7 @@ class ServerController extends AbstractController
                 $limit
         ";
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         foreach ($data as $k => &$item) {
             if (!empty($filter['last_id']) && $filter['last_id'] > 0) {
@@ -1204,7 +1223,7 @@ class ServerController extends AbstractController
         return $data;
     }
 
-    public function generateOrderBy($colOrder, $colDir, $table)
+    private function generateOrderBy(?string $colOrder, string $colDir, string $table): string
     {
         $orderBy = 'created_at DESC';
 
@@ -1239,7 +1258,7 @@ class ServerController extends AbstractController
         return $orderBy;
     }
 
-    public function getErrorPagesCount($conn, $serverName, $hostName)
+    private function getErrorPagesCount(string $serverName, string $hostName): int
     {
         $params = [
             'server_name' => $serverName,
@@ -1263,7 +1282,7 @@ class ServerController extends AbstractController
             AND created_at > :created_at
     ';
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         return (int)$data[0]['COUNT(*)'];
     }

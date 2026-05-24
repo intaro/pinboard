@@ -15,6 +15,7 @@ class BeforeController extends AbstractController
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function actionBefore(string $hostsRegexp = '.*'): array
     {
         $result = [

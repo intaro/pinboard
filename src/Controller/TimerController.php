@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class TimerController extends AbstractController
 {
+    /** @var list<string> */
     private array $requestTypes = ['live', 'req_time'];
 
     public function __construct(
@@ -21,7 +22,7 @@ class TimerController extends AbstractController
 
     #[Route('/timers/{type}/{requestId}/{grouping}', name: 'timers_show', methods: ['GET'], defaults: ['grouping' => ''], requirements: ['type' => 'live|req_time'])]
     #[Route('/{type}/{requestId}/{grouping}', name: 'timer_legacy', methods: ['GET'], defaults: ['grouping' => ''], requirements: ['type' => 'live|req_time'])]
-    public function actionTimer($type, $requestId, $grouping): Response
+    public function actionTimer(string $type, string $requestId, string $grouping): Response
     {
         if (!in_array($type, $this->requestTypes)) {
             throw $this->createNotFoundException("Type $type not allowed. Allowed types: " . implode(', ', $this->requestTypes));
@@ -32,7 +33,7 @@ class TimerController extends AbstractController
             list($requestId, $date) = explode('::', $requestId);
         }
 
-        $request = $this->getRequestById($this->entityManager, $type, $requestId, $date);
+        $request = $this->getRequestById($type, $requestId, $date);
         if (!$request) {
             throw $this->createNotFoundException("Request #$requestId not found.");
         }
@@ -40,7 +41,7 @@ class TimerController extends AbstractController
         $request['script_name'] = Utils::urlDecode($request['script_name']);
         $request = Utils::parseRequestTags($request);
 
-        $request['timers'] = $this->getTimers($this->entityManager, $type, $requestId, $date);
+        $request['timers'] = $this->getTimers($type, $requestId, $date);
 
         $groupingTags = $this->findGroupingTags($request['timers']);
 
@@ -84,7 +85,8 @@ class TimerController extends AbstractController
         return $this->render('timer.html.twig', $result);
     }
 
-    public function getRequestById($conn, $type, $id, $date = null)
+    /** @return array<string, mixed>|null */
+    private function getRequestById(string $type, string $id, ?string $date = null): ?array
     {
         if ($type === 'live') {
             $params = [
@@ -114,7 +116,7 @@ class TimerController extends AbstractController
         ';
         }
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (count($data)) {
             return $data[0];
@@ -123,7 +125,8 @@ class TimerController extends AbstractController
         return null;
     }
 
-    public function getTimers($conn, $type, $id, $date = null)
+    /** @return array<string|int, array<string, mixed>> */
+    private function getTimers(string $type, string $id, ?string $date = null): array
     {
         if ($type === 'live') {
             $params = [
@@ -159,7 +162,7 @@ class TimerController extends AbstractController
         ';
         }
 
-        $data = $conn->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
         if (!count($data)) {
             return [];
@@ -187,7 +190,11 @@ class TimerController extends AbstractController
     }
 
     // Search tags which exist in all timers
-    public function findGroupingTags($timers)
+    /**
+     * @param array<string|int, array<string, mixed>> $timers
+     * @return list<string>
+     */
+    private function findGroupingTags(array $timers): array
     {
         if (!count($timers)) {
             return [];
@@ -216,7 +223,11 @@ class TimerController extends AbstractController
         return $tags;
     }
 
-    public function groupTimers($timers, $groupingTag)
+    /**
+     * @param array<string|int, array<string, mixed>> $timers
+     * @return array<string, mixed>
+     */
+    private function groupTimers(array $timers, string $groupingTag): array
     {
         $data = [];
 
@@ -254,7 +265,11 @@ class TimerController extends AbstractController
         return $data;
     }
 
-    public function formatRequestTimes($r)
+    /**
+     * @param array<string, mixed> $r
+     * @return array<string, mixed>
+     */
+    private function formatRequestTimes(array $r): array
     {
         $r['req_time'] = (int) (((float) $r['req_time']) * 1000);
         $r['req_time_format'] = number_format($r['req_time'], 0, '.', ',');
@@ -287,6 +302,7 @@ class TimerController extends AbstractController
         return $r;
     }
 
+    /** @return array<string, mixed> */
     private function buildMenu(): array
     {
         return (new BeforeController($this->entityManager))->actionBefore(Utils::getUserHostsRegexp($this->getUser()));

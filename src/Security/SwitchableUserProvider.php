@@ -13,6 +13,7 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
+/** @implements UserProviderInterface<FileUser|User> */
 class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderInterface
 {
     public function __construct(

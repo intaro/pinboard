@@ -20,6 +20,7 @@ class FileUserStorage
         return $this->resolvedFilePath;
     }
 
+    /** @return array<string, mixed> */
     public function loadUsers(): array
     {
         $data = $this->loadRawConfig();
@@ -34,6 +35,7 @@ class FileUserStorage
         return \is_array($users) ? $users : [];
     }
 
+    /** @param list<string> $roles */
     public function upsertUser(string $identifier, string $hashedPassword, array $roles = ['ROLE_USER'], ?string $hosts = null): void
     {
         $data = $this->loadRawConfig();
@@ -61,6 +63,7 @@ class FileUserStorage
         $this->saveRawConfig($data);
     }
 
+    /** @param array<string, mixed> $users */
     public function replaceUsers(array $users): void
     {
         $data = $this->loadRawConfig();
@@ -72,6 +75,7 @@ class FileUserStorage
         $this->saveRawConfig($data);
     }
 
+    /** @return array<string, mixed> */
     private function loadRawConfig(): array
     {
         if (!\is_file($this->resolvedFilePath)) {
@@ -83,6 +87,7 @@ class FileUserStorage
         return \is_array($data) ? $data : [];
     }
 
+    /** @param array<string, mixed> $data */
     private function saveRawConfig(array $data): void
     {
         $dir = \dirname($this->resolvedFilePath);

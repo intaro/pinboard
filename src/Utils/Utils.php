@@ -52,7 +52,12 @@ class Utils
         return str_pad(dechex(random_int(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
     }
 
-    public static function parseRequestTags(array $request, array $tagsFilter = []): array|bool
+    /**
+     * @param array<string, mixed>  $request
+     * @param array<string, string> $tagsFilter
+     * @return array<string, mixed>|false
+     */
+    public static function parseRequestTags(array $request, array $tagsFilter = []): array|false
     {
         //request tags matches the tags' filter
         if (count($tagsFilter)) {

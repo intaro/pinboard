@@ -18,6 +18,7 @@ use Twig\Environment;
 #[AsCommand(name: 'aggregate', description: 'Aggregate data from source tables and save to report tables')]
 class AggregateCommand extends Command
 {
+    /** @var array<string, mixed> */
     private array $params = [];
     private string $projectDir;
 
@@ -42,6 +43,7 @@ class AggregateCommand extends Command
         $this->setDescription('Aggregate data from source tables and save to report tables');
     }
 
+    /** @return array<string, mixed> */
     private function loadParams(): array
     {
         $longReqMap = $this->envJson('APP_LOGGING_LONG_REQUEST_TIME_MAP', []);
@@ -124,6 +126,7 @@ class AggregateCommand extends Command
         return $value > 0 ? $value : $default;
     }
 
+    /** @return list<string> */
     private function envCsv(string $name): array
     {
         $raw = $this->envString($name, '');
@@ -150,6 +153,7 @@ class AggregateCommand extends Command
         return $this->params['notification']['sender'] ?? 'noreply@pinboard';
     }
 
+    /** @param string|list<string> $to */
     private function sendEmail(string|array $to, string $subject, string $html): void
     {
         $email = (new Email())
@@ -166,7 +170,7 @@ class AggregateCommand extends Command
         $this->mailer->send($email);
     }
 
-    private function isNotIgnore($host): bool
+    private function isNotIgnore(string $host): bool
     {
         $notIgnore = true;
         if (!empty($this->params['notification']['ignore'])) {
@@ -181,6 +185,10 @@ class AggregateCommand extends Command
         return $notIgnore;
     }
 
+    /**
+     * @param array<string, list<array<string, mixed>>> $pages
+     * @param string|list<string> $address
+     */
     private function sendErrorPages(array $pages, string|array $address): void
     {
         if (count($pages) > 0) {
@@ -189,6 +197,7 @@ class AggregateCommand extends Command
         }
     }
 
+    /** @param list<array<string, mixed>> $errorPages */
     private function sendErrorEmails(array $errorPages): void
     {
         if (!empty($this->params['notification']['global_email'])) {
@@ -704,7 +713,11 @@ class AggregateCommand extends Command
     }
 
 
-    protected function getBorderOutValues($db, $servers)
+    /**
+     * @param list<array<string, mixed>> $servers
+     * @return array<string, mixed>
+     */
+    protected function getBorderOutValues(Connection $db, array $servers): array
     {
         $d = new \DateTime();
         $di = new \DateInterval(
@@ -803,6 +816,10 @@ class AggregateCommand extends Command
         return $result;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @param string|list<string> $address
+     */
     private function sendBorderOutEmail(array $data, string $subject, string|array $address): void
     {
         if (count($data) > 0) {
@@ -811,6 +828,7 @@ class AggregateCommand extends Command
         }
     }
 
+    /** @param array<string, mixed> $data */
     private function sendBorderOutEmails(array $data): void
     {
         $subject = 'Intaro Pinboard has detected a drawdown of indicators';

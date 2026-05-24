@@ -9,6 +9,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class FileUser implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    /**
+     * @param list<string> $roles
+     */
     public function __construct(
         private string $identifier,
         private string $password,
@@ -32,6 +35,7 @@ class FileUser implements UserInterface, PasswordAuthenticatedUserInterface
         $this->password = $password;
     }
 
+    /** @return list<string> */
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -40,6 +44,7 @@ class FileUser implements UserInterface, PasswordAuthenticatedUserInterface
         return array_values(array_unique($roles));
     }
 
+    /** @param list<string> $roles */
     public function setRoles(array $roles): void
     {
         $this->roles = $roles;
