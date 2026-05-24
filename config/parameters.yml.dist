@@ -1,0 +1,13 @@
+secure:
+    enable: true
+    users:
+        admin:
+            # Optional: email address associated with this account (used for notifications)
+            email: admin@example.com
+            # Password hash — generate with: php bin/console add-user <login> <password>
+            password: ~
+            roles:
+                - ROLE_ADMIN
+                - ROLE_USER
+            # Regexp of server names this user can see ('.*' = all)
+            hosts: '.*'

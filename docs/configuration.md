@@ -2,9 +2,21 @@
 
 ## Files
 
-- `.env` — default values committed to the repository.
-- `.env.local` — local overrides and secrets; never committed.
-- `.env.test` — test environment settings.
+| File | In git | Purpose |
+|---|---|---|
+| `.env` | ✅ | Default / documentation values for all variables |
+| `.env.local` | ❌ | Local overrides and secrets (passwords, DSNs) |
+| `.env.test` | ✅ | Test environment settings |
+| `config/parameters.yml.dist` | ✅ | Template for file-based user auth |
+| `config/parameters.yml` | ❌ | Actual user list with password hashes |
+
+When setting up a new instance, copy the templates and fill in real values:
+
+```bash
+cp .env .env.local
+# when using file-based auth (APP_AUTH_USER_SOURCE=file):
+cp config/parameters.yml.dist config/parameters.yml
+```
 
 ## Variables
 

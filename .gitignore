@@ -4,7 +4,6 @@
 /.env.local.php
 /.env.*.local
 /config/parameters.yml
-/config/parameters.yml.dist
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
