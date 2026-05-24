@@ -36,6 +36,23 @@ pnpm build
 
 This runs aggregation every 15 minutes and writes output to a log file. Adjust paths to match your environment.
 
+## Data visibility timeline
+
+After you connect a PHP application and start sending Pinba data, information appears in Pinboard in two stages:
+
+| Time elapsed | What becomes visible |
+|---|---|
+| ~15 min (1st aggregation) | Server appears on the **main dashboard** (`/`) with request counts and timing |
+| ~2.5 h (10th aggregation) | Server appears in the **navigation menu** |
+
+The navigation menu filters out servers with fewer than 10 aggregation records to avoid showing one-off or test traffic. During the warm-up period you can reach a server's detail pages directly from the main dashboard.
+
+To trigger an aggregation immediately (useful during initial setup):
+
+```bash
+php bin/console aggregate
+```
+
 ## Updating from version 1.x
 
 If you have an existing Pinboard 1.x installation and want to upgrade to 2.x:

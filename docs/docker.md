@@ -71,7 +71,7 @@ pinba.enabled = 1
 pinba.server  = <docker-host-ip>:30002
 ```
 
-Restart PHP-FPM. Data appears in Pinboard after the next aggregation (every 15 minutes). To aggregate immediately:
+Restart PHP-FPM. Data appears in Pinboard in two stages — see [Data visibility timeline](deployment.md#data-visibility-timeline) for details. To trigger the first aggregation immediately instead of waiting 15 minutes:
 
 ```bash
 docker exec pinboard-aggregate php bin/console aggregate --no-interaction

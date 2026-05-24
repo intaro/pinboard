@@ -51,7 +51,25 @@ pinba.server  = <docker-host-ip>:30002
 ; use PINBA_UDP_PORT from .env if you changed it from the default
 ```
 
-Restart PHP-FPM. Make a few requests on your site — data appears in Pinboard after the next aggregation cycle (every 15 minutes by default, or run `docker exec pinboard-aggregate php bin/console aggregate` to trigger immediately).
+Restart PHP-FPM and make a few requests on your site.
+
+> **When will data appear?**
+>
+> Pinboard aggregates raw Pinba data on a 15-minute schedule. There is a two-stage warm-up:
+>
+> | Time after first request | What becomes visible |
+> |---|---|
+> | ~15 min (1 aggregation) | Server appears on the **main dashboard** (`/`) with basic request stats |
+> | ~2.5 h (10 aggregations) | Server appears in the **navigation menu** on the left |
+>
+> The navigation menu requires at least 10 aggregation cycles to filter out one-off or test traffic.
+> To see data immediately without waiting, trigger aggregation manually:
+>
+> ```bash
+> docker exec pinboard-aggregate php bin/console aggregate
+> ```
+>
+> Even after a manual run the navigation menu will remain empty until 10 cycles have accumulated. Use the main dashboard link directly in the meantime.
 
 ### Docker images used
 
