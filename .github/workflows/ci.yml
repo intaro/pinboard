@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  cs-fixer:
+    name: PHP CS Fixer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_mysql
+          coverage: none
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-8.4-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.4-
+
+      - run: composer install --no-interaction --prefer-dist --no-scripts
+
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_mysql
+          coverage: none
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-8.4-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.4-
+
+      - run: composer install --no-interaction --prefer-dist --no-scripts
+
+      # phpstan-symfony reads the compiled DI container to resolve service types
+      - name: Warm up Symfony dev container
+        env:
+          APP_ENV: dev
+          APP_DEBUG: '1'
+          DATABASE_URL: mysql://pinba:pinba@127.0.0.1:3306/pinba?serverVersion=8.4.0
+        run: php bin/console cache:warmup
+
+      - uses: actions/cache@v4
+        with:
+          path: var/phpstan
+          key: phpstan-${{ hashFiles('phpstan.neon', 'composer.lock') }}
+          restore-keys: phpstan-
+
+      - run: vendor/bin/phpstan analyse --no-progress
+
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, pdo_mysql
+          coverage: none
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php }}-
+
+      - run: composer install --no-interaction --prefer-dist --no-scripts
+
+      - name: Run test suite
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://pinba:pinba@127.0.0.1:3306/pinba?serverVersion=8.4.0
+        run: vendor/bin/phpunit --no-progress

@@ -48,6 +48,21 @@ PHPStan runs at level 10. All violations must be fixed with real engineering sol
 - Annotate repository methods with typed PHPDoc array shapes, e.g. `@return list<array{id: int, name: string}>`, and cast at the boundary.
 - For `Yaml::parseFile()` and session `get()` returning `mixed`, validate with `is_array()` and iterate to enforce string keys.
 
+## Development Workflow
+
+All changes enter `master` exclusively via pull request — direct pushes are blocked.
+
+**Branch → PR → CI → squash merge → master → Release Please → GitHub Release → Docker Hub**
+
+- Branch names: `fix/description`, `feat/description`, `chore/description`, etc.
+- Commit titles must follow Conventional Commits (see `docs/contributing.md`).
+- CI runs three mandatory jobs: `PHP CS Fixer`, `PHPStan`, `PHPUnit (8.4 + 8.5)`.
+- After a PR merges, Release Please automatically opens or updates a Release PR.
+- Merging the Release PR creates a `vX.Y.Z` tag and GitHub Release.
+- The Docker workflow fires on the published release and pushes `xolegator/pinboard:<version>` and `xolegator/pinboard:latest` to Docker Hub.
+
+Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (release process).
+
 ## Commit Messages
 
 - Use Conventional Commits style.
