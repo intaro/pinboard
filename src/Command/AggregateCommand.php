@@ -26,6 +26,7 @@ class AggregateCommand extends Command
     public const int DEFAULT_HEAVY_PAGE_MEMORY = 30000;
     public const int DEFAULT_HEAVY_PAGE_CPU = 1;
     public const int DEFAULT_LOCK_TTL_SECONDS = 900;
+    public const int DEFAULT_MIN_ERROR_CODE = 500;
 
     public function __construct(
         private readonly Connection $db,
@@ -72,6 +73,7 @@ class AggregateCommand extends Command
                 (string) static::DEFAULT_REQ_TIME_BORDER,
                 'APP_NOTIFICATION_REQ_TIME_BORDER_MAP'
             ),
+            minErrorCode: $this->envInt('APP_MIN_ERROR_CODE', static::DEFAULT_MIN_ERROR_CODE),
         );
     }
 
@@ -343,7 +345,7 @@ class AggregateCommand extends Command
                 FROM
                     request
                 WHERE
-                    status >= 500
+                    status >= ' . $this->config->minErrorCode . '
                 GROUP BY
                     server_name, script_name, status
             ';
@@ -581,7 +583,7 @@ class AggregateCommand extends Command
             FROM
                 request
             WHERE
-                status >= 500
+                status >= ' . $this->config->minErrorCode . '
             GROUP BY
                 server_name, hostname, script_name, status
             LIMIT
