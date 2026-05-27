@@ -32,14 +32,21 @@ class InitCommand extends Command
         }
 
         $question = new Question('Frequency (in minutes, default "15"): ', '15');
-        $question->setValidator(function ($answer) {
-            if ((int)$answer <= 0) {
+        $question->setValidator(function (mixed $answer): int {
+            if (!is_numeric($answer)) {
                 throw new RuntimeException('You must enter positive integer value');
             }
-
-            return (int)$answer;
+            $intAnswer = (int) $answer;
+            if ($intAnswer <= 0) {
+                throw new RuntimeException('You must enter positive integer value');
+            }
+            return $intAnswer;
         });
-        $frequency = (int)$helper->ask($input, $output, $question);
+        $frequencyRaw = $helper->ask($input, $output, $question);
+        if (!is_int($frequencyRaw)) {
+            throw new RuntimeException('Unexpected frequency value from validator.');
+        }
+        $frequency = $frequencyRaw;
 
         $process = new Process(['crontab', '-l']);
         $process->setTimeout(20);

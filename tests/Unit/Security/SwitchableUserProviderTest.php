@@ -82,7 +82,12 @@ final class SwitchableUserProviderTest extends TestCase
 
         $provider->upgradePassword(new FileUser('admin@example.com', 'old-password', ['ROLE_ADMIN']), 'new-password');
 
-        self::assertSame('new-password', $storage->loadUsers()['admin@example.com']['password']);
+        $users = $storage->loadUsers();
+        $userRecord = $users['admin@example.com'] ?? null;
+        if (!is_array($userRecord)) {
+            self::fail('Expected admin@example.com to be persisted as an array record.');
+        }
+        self::assertSame('new-password', $userRecord['password']);
     }
 
     public function testUpgradePasswordPersistsToDatabase(): void
@@ -118,6 +123,9 @@ final class SwitchableUserProviderTest extends TestCase
         );
 
         foreach ($items as $item) {
+            if (!$item instanceof \SplFileInfo) {
+                continue;
+            }
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

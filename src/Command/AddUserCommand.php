@@ -57,9 +57,18 @@ class AddUserCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $email = (string)$input->getArgument('username');
-        $password = (string)$input->getArgument('password');
-        $rolesRaw = (string)$input->getArgument('roles');
+        $emailArg = $input->getArgument('username');
+        $passwordArg = $input->getArgument('password');
+        if (!is_string($emailArg) || $emailArg === '') {
+            throw new \InvalidArgumentException('Argument "username" must be a non-empty string.');
+        }
+        if (!is_string($passwordArg) || $passwordArg === '') {
+            throw new \InvalidArgumentException('Argument "password" must be a non-empty string.');
+        }
+        $email = $emailArg;
+        $password = $passwordArg;
+        $rolesRawArg = $input->getArgument('roles');
+        $rolesRaw = is_string($rolesRawArg) ? $rolesRawArg : '';
 
         $roles = array_values(array_filter(array_map('trim', explode(',', $rolesRaw))));
         if (count($roles) === 0) {

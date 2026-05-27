@@ -7,7 +7,7 @@ namespace App\Stopwatch;
 class StopwatchEvent
 {
     public function __construct(
-        private readonly mixed $pinbaTimer = null
+        private readonly \PinbaTimerHandle|null $pinbaTimer = null
     ) {
     }
 

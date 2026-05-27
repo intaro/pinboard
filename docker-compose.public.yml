@@ -22,7 +22,7 @@ services:
 
   # ── MySQL 8.4 LTS + Pinba storage engine ────────────────────────────────────
   pinba-db:
-    image: xolegator/pinba-engine:8.4-lts
+    image: xolegator/pinba-engine:8.4-lts-v2.0.0
     container_name: pinboard-pinba-db
     restart: unless-stopped
     environment:

@@ -37,7 +37,7 @@ class UsersMigrateFileToDbCommand extends Command
         $updated = 0;
 
         foreach ($users as $identifier => $row) {
-            if (!is_array($row) || !isset($row['password'])) {
+            if (!is_array($row) || !isset($row['password']) || !is_string($row['password'])) {
                 continue;
             }
             $email = isset($row['email']) && is_string($row['email']) && trim($row['email']) !== ''
@@ -62,7 +62,7 @@ class UsersMigrateFileToDbCommand extends Command
             }
 
             $user->setRoles($roles);
-            $user->setPassword((string)$row['password']);
+            $user->setPassword($row['password']);
             $this->entityManager->persist($user);
         }
 

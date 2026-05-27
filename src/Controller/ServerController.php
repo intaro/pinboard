@@ -344,14 +344,7 @@ class ServerController extends AbstractController
         $this->assertServerAccess($serverName);
         $session = $request->hasSession() ? $request->getSession() : null;
 
-        // filter from session
-        $liveFilter = $session?->get('filter_params');
-        if (!$liveFilter) {
-            $liveFilter = [];
-        }
-        if (!isset($liveFilter[$serverName])) {
-            $liveFilter[$serverName] = [];
-        }
+        $serverFilter = $this->loadServerFilter($session?->get('filter_params'), $serverName);
 
         $result = [
             'server_name' => $serverName,
@@ -360,53 +353,52 @@ class ServerController extends AbstractController
             'limit' => 100
         ];
 
-        // save filter in session
-        foreach (['req_time', 'script_name', 'tags'] as $item) {
-            $liveFilter[$serverName][$item] = $request->request->get($item);
+        foreach (['req_time', 'script_name', 'tags'] as $key) {
+            $serverFilter[$key] = $request->request->get($key);
         }
 
         if ($request->isXmlHttpRequest()) {
             $result['limit'] = 50;
 
-            $session?->set('filter_params', $liveFilter);
+            $allFilters = $this->loadAllFilters($session?->get('filter_params'));
+            $allFilters[$serverName] = $serverFilter;
+            $session?->set('filter_params', $allFilters);
 
-            $liveFilter[$serverName]['last_id'] = $request->request->get('last_id');
-            $liveFilter[$serverName]['last_timestamp'] = $request->request->get('last_timestamp');
+            $serverFilter['last_id'] = $request->request->get('last_id');
+            $serverFilter['last_timestamp'] = $request->request->get('last_timestamp');
         } else {
-            $result['filter'] = $liveFilter[$serverName];
+            $result['filter'] = $serverFilter;
             $result['show_filter'] = false;
 
-            if (count($result['filter'])) {
-                foreach ($result['filter'] as $item) {
-                    if ($item) {
-                        $result['show_filter'] = true;
-
-                        break;
-                    }
+            foreach ($serverFilter as $item) {
+                if ($item) {
+                    $result['show_filter'] = true;
+                    break;
                 }
             }
         }
 
-        $result['pages'] = $this->getLivePages($serverName, $hostName, $liveFilter[$serverName], $result['limit']);
+        $result['pages'] = $this->getLivePages($serverName, $hostName, $serverFilter, $result['limit']);
 
         $ids = [];
         foreach ($result['pages'] as $item) {
-            $ids[] = $item['id'];
+            $id = $item['id'];
+            if (is_string($id) || is_int($id)) {
+                $ids[] = $id;
+            }
         }
         $addData = $this->getTagsTimersForIds($ids);
 
         $tagsFilter = [];
-        if (isset($liveFilter[$serverName]['tags'])) {
-            if (preg_match_all(
-                '/([\w\:-_]+)\s*?\=\s*?([\w\:-_]+)/',
-                $liveFilter[$serverName]['tags'],
-                $matches,
-                PREG_SET_ORDER
-            )
-            ) {
-                foreach ($matches as $match) {
-                    $tagsFilter[$match[1]] = $match[2];
-                }
+        $tagsRaw = $serverFilter['tags'] ?? null;
+        if (is_string($tagsRaw) && preg_match_all(
+            '/([\w\:-_]+)\s*?\=\s*?([\w\:-_]+)/',
+            $tagsRaw,
+            $matches,
+            PREG_SET_ORDER
+        )) {
+            foreach ($matches as $match) {
+                $tagsFilter[$match[1]] = $match[2];
             }
         }
 
@@ -477,7 +469,7 @@ class ServerController extends AbstractController
 
         $hosts = $this->entityManager->getConnection()->executeQuery($sql, ['server_name' => $serverName])->fetchAllAssociative();
 
-        return array_map(static fn (array $row): string => (string) $row['hostname'], $hosts);
+        return array_map(static fn (array $row): string => is_string($row['hostname']) ? $row['hostname'] : '', $hosts);
     }
 
     /** @return array{data: list<array<string, mixed>>, codes: array<string, string>} */
@@ -512,30 +504,29 @@ class ServerController extends AbstractController
 
         $stmt = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        $statuses = [
-            'data' => [],
-            'codes' => []
-        ];
+        $data = [];
+        $codes = [];
 
-        foreach ($stmt as $data) {
-            $t = strtotime($data['created_at']);
+        foreach ($stmt as $row) {
+            $createdAt = is_string($row['created_at']) ? $row['created_at'] : '';
+            $statusCode = is_string($row['status']) ? $row['status'] : (is_int($row['status']) ? (string) $row['status'] : '');
+            $t = strtotime($createdAt) ?: 0;
             $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
-            $statuses['data'][] = [
-                'created_at' => $data['created_at'],
+            $data[] = [
+                'created_at' => $createdAt,
                 'date' => $date,
-                'error_code' => $data['status'],
-                'error_count' => $data['cnt']
+                'error_code' => $statusCode,
+                'error_count' => $row['cnt'],
             ];
 
-            if (!isset($statuses['codes'][$data['status']])) {
-                // Set color
-                $statuses['codes'][$data['status']] = Utils::generateColor();
+            if (!isset($codes[$statusCode])) {
+                $codes[$statusCode] = Utils::generateColor();
             }
         }
-        ksort($statuses['codes']);
+        ksort($codes);
 
-        return $statuses;
+        return ['data' => $data, 'codes' => $codes];
     }
 
     /** @return array{data: array<string, list<array<string, mixed>>>, hosts: array<string, array<string, string>>} */
@@ -570,28 +561,30 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        $rpqData = [
-            'data' => [],
-            'hosts' => []
-        ];
+        $rpqData = [];
+        $rpqHosts = [];
         $hostCount = 0;
 
-        foreach ($data as &$item) {
-            $t = strtotime($item['created_at']);
+        foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $hostname = is_string($item['hostname']) ? $item['hostname'] : '';
+            $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
+            $t = strtotime($createdAt) ?: 0;
             $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
-            $parsedHostname = '_' . preg_replace('/\W/', '_', $item['hostname']);
+            $parsedHostname = '_' . preg_replace('/\W/', '_', $hostname);
 
-            $rpqData['data'][$date][] = [
-                'created_at' => $item['created_at'],
-                // 'date' => $date,
-                'hostname' => $item['hostname'],
+            $rpqData[$date][] = [
+                'created_at' => $createdAt,
+                'hostname' => $hostname,
                 'parsed_hostname' => $parsedHostname,
-                'req_per_sec' => number_format((float) $item['req_per_sec'], 2, '.', '')
+                'req_per_sec' => number_format($reqPerSec, 2, '.', ''),
             ];
 
-            if (!isset($rpqData['hosts'][$parsedHostname])) {
-                $rpqData['hosts'][$parsedHostname]['color'] = Utils::generateColor();
-                $rpqData['hosts'][$parsedHostname]['host'] = $item['hostname'];
+            if (!isset($rpqHosts[$parsedHostname])) {
+                $rpqHosts[$parsedHostname] = [
+                    'color' => Utils::generateColor(),
+                    'host' => $hostname,
+                ];
                 $hostCount++;
             }
         }
@@ -612,26 +605,26 @@ class ServerController extends AbstractController
             ';
 
             $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
-            $rpqData['hosts']['_']['color'] = Utils::generateColor();
-            $rpqData['hosts']['_']['host'] = '_';
+            $rpqHosts['_'] = ['color' => Utils::generateColor(), 'host' => '_'];
 
-            foreach ($data as &$item) {
-                $t = strtotime($item['created_at']);
+            foreach ($data as $item) {
+                $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+                $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
+                $t = strtotime($createdAt) ?: 0;
                 $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
-                $rpqData['data'][$date][] = [
-                    'created_at' => $item['created_at'],
-                    //'date' => $date,
+                $rpqData[$date][] = [
+                    'created_at' => $createdAt,
                     'hostname' => '_',
                     'parsed_hostname' => '_',
-                    'req_per_sec' => number_format((float) $item['req_per_sec'], 2, '.', '')
+                    'req_per_sec' => number_format($reqPerSec, 2, '.', ''),
                 ];
             }
         }
 
-        ksort($rpqData['hosts']);
+        ksort($rpqHosts);
 
-        return $rpqData;
+        return ['data' => $rpqData, 'hosts' => $rpqHosts];
     }
 
     /** @return list<array<string, mixed>> */
@@ -677,22 +670,28 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $t = strtotime($item['created_at']);
-            $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        $result = [];
+        foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $t = strtotime($createdAt) ?: 0;
+            $row = ['created_at' => $createdAt, 'date' => date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t)];
 
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['req_time_' . $percent] = number_format((float) $item['req_time_' . $percent] * 1000, 0, '.', '');
+                $raw = $item['req_time_' . $percent] ?? null;
+                $row['req_time_' . $percent] = number_format(is_numeric($raw) ? (float) $raw * 1000 : 0.0, 0, '.', '');
             }
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['mem_peak_usage_' . $percent] = number_format((float) $item['mem_peak_usage_' . $percent], 0, '.', '');
+                $raw = $item['mem_peak_usage_' . $percent] ?? null;
+                $row['mem_peak_usage_' . $percent] = number_format(is_numeric($raw) ? (float) $raw : 0.0, 0, '.', '');
             }
             foreach (['90', '95', '99', '100'] as $percent) {
-                $item['cpu_peak_usage_' . $percent] = number_format((float) $item['cpu_peak_usage_' . $percent], 3, '.', ',');
+                $raw = $item['cpu_peak_usage_' . $percent] ?? null;
+                $row['cpu_peak_usage_' . $percent] = number_format(is_numeric($raw) ? (float) $raw : 0.0, 3, '.', ',');
             }
+            $result[] = $row;
         }
 
-        return $data;
+        return $result;
     }
 
     /** @return array{timers: list<string>, values: array<string, array<string, mixed>>} */
@@ -754,28 +753,26 @@ class ServerController extends AbstractController
 
             $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
+            $reqField = $aggregation[$valueField]['req_field'];
             foreach ($data as $item) {
-                $t = strtotime($item['created_at']);
-                $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+                $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+                $t = strtotime($createdAt) ?: 0;
+                $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+                $raw = isset($item[$reqField]) && is_numeric($item[$reqField]) ? (float) $item[$reqField] : 0.0;
 
-                if (isset($item['req_time_median'])) {
-                    $item['req_time_median'] = number_format((float) $item['req_time_median'] * 1000, 3, '.', '');
-                }
-                if (isset($item['req_time_p95'])) {
-                    $item['req_time_p95'] = number_format((float) $item['req_time_p95'] * 1000, 3, '.', '');
-                }
-                if (isset($item['req_time_total'])) {
-                    $item['req_time_total'] = number_format((float) $item['req_time_total'], 3, '.', '');
-                }
+                $formatted = match ($reqField) {
+                    'req_time_median', 'req_time_p95' => number_format($raw * 1000, 3, '.', ''),
+                    default => number_format($raw, 3, '.', ''),
+                };
 
-                if (!isset($result[$item['date']])) {
-                    $result[$item['date']] = [];
+                if (!isset($result[$date])) {
+                    $result[$date] = [];
                 }
 
-                $result[$item['date']][$aggregation[$valueField]['req_field']] = $item[$aggregation[$valueField]['req_field']];
+                $result[$date][$reqField] = $formatted;
             }
 
-            $timers[] = $aggregation[$valueField]['req_field'];
+            $timers[] = $reqField;
         }
 
         $isServerFilter = $serverFilter ? 'server,' : '';
@@ -801,36 +798,39 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $t = strtotime($item['created_at']);
-            $item['date'] = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+        foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $t = strtotime($createdAt) ?: 0;
+            $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
-            if (isset($item['timer_median'])) {
+            if (isset($item['timer_median']) && is_numeric($item['timer_median'])) {
                 $item['timer_median'] = number_format((float) $item['timer_median'] * 1000, 3, '.', '');
             }
-            if (isset($item['timer_p95'])) {
+            if (isset($item['timer_p95']) && is_numeric($item['timer_p95'])) {
                 $item['timer_p95'] = number_format((float) $item['timer_p95'] * 1000, 3, '.', '');
             }
-            if (isset($item['timer_value'])) {
+            if (isset($item['timer_value']) && is_numeric($item['timer_value'])) {
                 $item['timer_value'] = number_format((float) $item['timer_value'], 3, '.', '');
             }
-            if (isset($item['hit_count'])) {
+            if (isset($item['hit_count']) && is_numeric($item['hit_count'])) {
                 $item['hit_count'] = number_format((float) $item['hit_count'], 0, '.', '');
             }
 
-            $key = $item['category'];
-            if ($serverFilter && strlen($item['server'])) {
-                $key .= " ({$item['server']})";
+            $category = is_string($item['category']) ? $item['category'] : '';
+            $server = is_string($item['server'] ?? null) ? $item['server'] : '';
+            $key = $category;
+            if ($serverFilter && strlen($server)) {
+                $key .= " ($server)";
             }
 
             if (!in_array($key, $timers)) {
                 $timers[] = $key;
             }
 
-            if (!isset($result[$item['date']])) {
-                $result[$item['date']] = [];
+            if (!isset($result[$date])) {
+                $result[$date] = [];
             }
-            $result[$item['date']][$key] = $item[$valueField];
+            $result[$date][$key] = $item[$valueField];
         }
 
         return [
@@ -881,15 +881,14 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $item['script_name'] = Utils::urlDecode($item['script_name']);
+        $rows = [];
+        foreach ($data as $item) {
+            $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $parsed = Utils::parseRequestTags($item);
-            if (is_array($parsed)) {
-                $item = $parsed;
-            }
+            $rows[] = is_array($parsed) ? $parsed : $item;
         }
 
-        return $data;
+        return $rows;
     }
 
     private function getSlowPagesCount(string $serverName, string $hostName): int
@@ -916,9 +915,9 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $count = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchOne();
 
-        return (int)$data[0]['COUNT(*)'];
+        return is_numeric($count) ? (int) $count : 0;
     }
 
     /** @return list<array<string, mixed>> */
@@ -957,16 +956,15 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['req_time'] = number_format((float) $item['req_time'] * 1000, 0, '.', ',');
+        $rows = [];
+        foreach ($data as $item) {
+            $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
+            $item['req_time'] = number_format(is_numeric($item['req_time']) ? (float) $item['req_time'] * 1000 : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);
-            if (is_array($parsed)) {
-                $item = $parsed;
-            }
+            $rows[] = is_array($parsed) ? $parsed : $item;
         }
 
-        return $data;
+        return $rows;
     }
 
     private function getHeavyPagesCount(string $serverName, string $hostName): int
@@ -993,9 +991,9 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $count = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchOne();
 
-        return (int)$data[0]['cnt'];
+        return is_numeric($count) ? (int) $count : 0;
     }
 
     private function getCPUPagesCount(string $serverName, string $hostName): int
@@ -1022,9 +1020,9 @@ class ServerController extends AbstractController
                 AND created_at > :created_at
         ";
 
-        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $count = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchOne();
 
-        return (int)$data[0]['cnt'];
+        return is_numeric($count) ? (int) $count : 0;
     }
 
     /** @return list<array<string, mixed>> */
@@ -1063,16 +1061,15 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['cpu_peak_usage'] = number_format((float) $item['cpu_peak_usage'], 3);
+        $rows = [];
+        foreach ($data as $item) {
+            $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
+            $item['cpu_peak_usage'] = number_format(is_numeric($item['cpu_peak_usage']) ? (float) $item['cpu_peak_usage'] : 0.0, 3);
             $parsed = Utils::parseRequestTags($item);
-            if (is_array($parsed)) {
-                $item = $parsed;
-            }
+            $rows[] = is_array($parsed) ? $parsed : $item;
         }
 
-        return $data;
+        return $rows;
     }
 
     /** @return list<array<string, mixed>> */
@@ -1117,16 +1114,15 @@ class ServerController extends AbstractController
 
         $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as &$item) {
-            $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['mem_peak_usage'] = number_format((float) $item['mem_peak_usage'], 0, '.', ',');
+        $rows = [];
+        foreach ($data as $item) {
+            $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
+            $item['mem_peak_usage'] = number_format(is_numeric($item['mem_peak_usage']) ? (float) $item['mem_peak_usage'] : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);
-            if (is_array($parsed)) {
-                $item = $parsed;
-            }
+            $rows[] = is_array($parsed) ? $parsed : $item;
         }
 
-        return $data;
+        return $rows;
     }
 
     /**
@@ -1172,19 +1168,22 @@ class ServerController extends AbstractController
             $hostCondition .= ' AND hostname = :hostname';
         }
 
-        if (isset($filter['last_id']) && $filter['last_id'] > 0) {
-            $params['last_id'] = $filter['last_id'];
-            $params['last_timestamp'] = $filter['last_timestamp'];
+        $lastId = isset($filter['last_id']) && is_numeric($filter['last_id']) ? (int) $filter['last_id'] : 0;
+        $lastTimestamp = isset($filter['last_timestamp']) && is_numeric($filter['last_timestamp']) ? (int) $filter['last_timestamp'] : 0;
+        if ($lastId > 0) {
+            $params['last_id'] = $lastId;
+            $params['last_timestamp'] = $lastTimestamp;
             $idCondition .= ' AND id <> :last_id AND timestamp >= :last_timestamp';
         }
 
-        if (isset($filter['req_time']) && $filter['req_time']) {
-            $params['req_time'] = $filter['req_time'] / 1000;
+        if (isset($filter['req_time']) && is_numeric($filter['req_time']) && (float) $filter['req_time'] > 0) {
+            $params['req_time'] = (float) $filter['req_time'] / 1000;
             $idCondition .= ' AND req_time >= :req_time';
         }
 
-        if (isset($filter['script_name']) && $filter['script_name']) {
-            $params['script_name'] = $filter['script_name'] . '%';
+        $scriptName = isset($filter['script_name']) && is_string($filter['script_name']) ? $filter['script_name'] : '';
+        if ($scriptName !== '') {
+            $params['script_name'] = $scriptName . '%';
             $idCondition .= ' AND script_name LIKE :script_name';
         }
 
@@ -1211,28 +1210,68 @@ class ServerController extends AbstractController
                 $limit
         ";
 
-        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $rows = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
 
-        foreach ($data as $k => &$item) {
-            if (!empty($filter['last_id']) && $filter['last_id'] > 0) {
-                if (
-                    $item['timestamp'] === $filter['last_timestamp']
-                    && $item['id'] >= $filter['last_id'] - 10000
-                ) {
-                    unset($data[$k]);
-
+        $data = [];
+        foreach ($rows as $item) {
+            $itemId = is_numeric($item['id']) ? (int) $item['id'] : 0;
+            $itemTimestamp = is_numeric($item['timestamp']) ? (int) $item['timestamp'] : 0;
+            if ($lastId > 0) {
+                if ($itemTimestamp === $lastTimestamp && $itemId >= $lastId - 10000) {
                     continue;
                 }
             }
 
-            $item['script_name'] = Utils::urlDecode($item['script_name']);
-            $item['req_time'] = $item['req_time'] * 1000;
-            $item['req_time_format'] = number_format((float) $item['req_time']);
-            $item['mem_peak_usage_format'] = number_format((float) $item['mem_peak_usage']);
-            $item['timestamp_format'] = date('H:i:s', $item['timestamp']);
+            $reqTime = is_numeric($item['req_time']) ? (float) $item['req_time'] * 1000 : 0.0;
+            $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
+            $item['req_time'] = $reqTime;
+            $item['req_time_format'] = number_format($reqTime);
+            $item['mem_peak_usage_format'] = number_format(is_numeric($item['mem_peak_usage']) ? (float) $item['mem_peak_usage'] : 0.0);
+            $item['timestamp_format'] = date('H:i:s', $itemTimestamp);
+            $data[] = $item;
         }
 
-        return array_values($data);
+        return $data;
+    }
+
+    /** @return array<string, mixed> */
+    private function loadServerFilter(mixed $raw, string $serverName): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $entry = $raw[$serverName] ?? [];
+        if (!is_array($entry)) {
+            return [];
+        }
+        $result = [];
+        foreach ($entry as $k => $v) {
+            if (is_string($k)) {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private function loadAllFilters(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $result = [];
+        foreach ($raw as $serverName => $filter) {
+            if (is_string($serverName) && is_array($filter)) {
+                $serverResult = [];
+                foreach ($filter as $k => $v) {
+                    if (is_string($k)) {
+                        $serverResult[$k] = $v;
+                    }
+                }
+                $result[$serverName] = $serverResult;
+            }
+        }
+        return $result;
     }
 
     private function generateOrderBy(?string $colOrder, string $colDir, string $table): string
@@ -1294,8 +1333,8 @@ class ServerController extends AbstractController
             AND created_at > :created_at
     ';
 
-        $data = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $count = $this->entityManager->getConnection()->executeQuery($sql, $params)->fetchOne();
 
-        return (int)$data[0]['COUNT(*)'];
+        return is_numeric($count) ? (int) $count : 0;
     }
 }

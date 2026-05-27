@@ -34,16 +34,24 @@ class MainController extends AbstractController
             'error_count' => 0
         ];
 
-        foreach ($result['servers'] as &$item) {
-            if (stripos($item['server_name'], 'xn--') !== false) {
-                $item['server_name'] = $idn->convertUrl($item['server_name']);
+        $viewServers = [];
+        foreach ($result['servers'] as $serverRow) {
+            $serverName = $serverRow['server_name'];
+            if (stripos($serverName, 'xn--') !== false) {
+                $serverName = $idn->convertUrl($serverName);
             }
 
-            $item['req_per_sec'] = number_format($item['req_per_sec'], 3, ',', '');
+            $total['req_count'] += $serverRow['req_count'];
+            $total['error_count'] += $serverRow['error_count'];
 
-            $total['req_count'] += $item['req_count'];
-            $total['error_count'] += $item['error_count'];
+            $viewServers[] = [
+                'server_name' => $serverName,
+                'req_per_sec' => number_format($serverRow['req_per_sec'], 3, ',', ''),
+                'req_count'   => $serverRow['req_count'],
+                'error_count' => $serverRow['error_count'],
+            ];
         }
+        $result['servers'] = $viewServers;
 
         $result['total'] = $total;
         $result['menu'] = (new BeforeController($this->entityManager))->actionBefore($hostsRegexp);

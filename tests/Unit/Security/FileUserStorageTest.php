@@ -79,6 +79,9 @@ final class FileUserStorageTest extends TestCase
         );
 
         foreach ($items as $item) {
+            if (!$item instanceof \SplFileInfo) {
+                continue;
+            }
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

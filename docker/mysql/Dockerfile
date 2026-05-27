@@ -1,6 +1,6 @@
 # Pinba MySQL image is maintained in the dedicated pinba_engine project.
 # This wrapper keeps compatibility for local `docker build` workflows.
-ARG PINBA_IMAGE=xolegator/pinba-engine:8.0
+ARG PINBA_IMAGE=xolegator/pinba-engine:8.4-lts-v2.0.0
 FROM ${PINBA_IMAGE}
 
 COPY ./docker/mysql-init/20-create-pinboard-user.sh /docker-entrypoint-initdb.d/20-create-pinboard-user.sh

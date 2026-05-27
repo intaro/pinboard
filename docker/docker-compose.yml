@@ -52,7 +52,7 @@ services:
       - ./../:/var/www
 
   nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.30-alpine
     container_name: ${COMPOSE_PROJECT_NAME}-nginx
     restart: unless-stopped
     depends_on:

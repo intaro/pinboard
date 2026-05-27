@@ -46,8 +46,14 @@ final class UtilsTest extends TestCase
 
         $parsed = Utils::parseRequestTags($request, ['foo' => 'bar']);
 
-        self::assertIsArray($parsed);
-        self::assertSame('bar', $parsed['tags']['foo']);
+        if (!is_array($parsed)) {
+            self::fail('Expected parseRequestTags to return an array for matching filter.');
+        }
+        $tags = $parsed['tags'];
+        if (!is_array($tags)) {
+            self::fail('Expected tags to be an array after parsing.');
+        }
+        self::assertSame('bar', $tags['foo']);
     }
 
     public function testParseRequestTagsReturnsFalseForMismatchedFilter(): void

@@ -18,15 +18,14 @@ use Twig\Environment;
 #[AsCommand(name: 'aggregate', description: 'Aggregate data from source tables and save to report tables')]
 class AggregateCommand extends Command
 {
-    /** @var array<string, mixed> */
-    private array $params = [];
+    private AggregateConfig $config;
     private string $projectDir;
 
-    public const DEFAULT_REQ_TIME_BORDER = 1.5;
-    public const DEFAULT_SLOW_REQ_TIME = 1.5;
-    public const DEFAULT_HEAVY_PAGE_MEMORY = 30000;
-    public const DEFAULT_HEAVY_PAGE_CPU = 1;
-    public const DEFAULT_LOCK_TTL_SECONDS = 900;
+    public const float DEFAULT_REQ_TIME_BORDER = 1.5;
+    public const float DEFAULT_SLOW_REQ_TIME = 1.5;
+    public const int DEFAULT_HEAVY_PAGE_MEMORY = 30000;
+    public const int DEFAULT_HEAVY_PAGE_CPU = 1;
+    public const int DEFAULT_LOCK_TTL_SECONDS = 900;
 
     public function __construct(
         private readonly Connection $db,
@@ -43,47 +42,74 @@ class AggregateCommand extends Command
         $this->setDescription('Aggregate data from source tables and save to report tables');
     }
 
-    /** @return array<string, mixed> */
-    private function loadParams(): array
+    private function buildConfig(): AggregateConfig
     {
-        $longReqMap = $this->envJson('APP_LOGGING_LONG_REQUEST_TIME_MAP', []);
-        $heavyReqMap = $this->envJson('APP_LOGGING_HEAVY_REQUEST_MAP', []);
-        $heavyCpuMap = $this->envJson('APP_LOGGING_HEAVY_CPU_REQUEST_MAP', []);
-        $notificationList = $this->envJson('APP_NOTIFICATION_LIST_JSON', []);
-        $notificationBorderMap = $this->envJson('APP_NOTIFICATION_REQ_TIME_BORDER_MAP', []);
-        $notificationIgnore = $this->envCsv('APP_NOTIFICATION_IGNORE');
+        return new AggregateConfig(
+            recordsLifetime: $this->envString('APP_RECORDS_LIFETIME', 'P1M'),
+            aggregationPeriod: $this->envString('APP_AGGREGATION_PERIOD', 'PT15M'),
+            longRequestTime: $this->buildFloatMap(
+                'APP_LOGGING_LONG_REQUEST_TIME_GLOBAL',
+                (string) static::DEFAULT_SLOW_REQ_TIME,
+                'APP_LOGGING_LONG_REQUEST_TIME_MAP'
+            ),
+            heavyRequest: $this->buildFloatMap(
+                'APP_LOGGING_HEAVY_REQUEST_GLOBAL',
+                (string) static::DEFAULT_HEAVY_PAGE_MEMORY,
+                'APP_LOGGING_HEAVY_REQUEST_MAP'
+            ),
+            heavyCpuRequest: $this->buildFloatMap(
+                'APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL',
+                (string) static::DEFAULT_HEAVY_PAGE_CPU,
+                'APP_LOGGING_HEAVY_CPU_REQUEST_MAP'
+            ),
+            notificationEnable: $this->envBool('APP_NOTIFICATION_ENABLE', false),
+            notificationSender: $this->envString('APP_NOTIFICATION_SENDER', 'noreply@pinboard'),
+            notificationGlobalEmail: $this->envString('APP_NOTIFICATION_GLOBAL_EMAIL', ''),
+            notificationIgnore: $this->envCsv('APP_NOTIFICATION_IGNORE'),
+            notificationList: $this->buildNotificationList('APP_NOTIFICATION_LIST_JSON'),
+            reqTimeBorder: $this->buildFloatMap(
+                'APP_NOTIFICATION_REQ_TIME_BORDER_GLOBAL',
+                (string) static::DEFAULT_REQ_TIME_BORDER,
+                'APP_NOTIFICATION_REQ_TIME_BORDER_MAP'
+            ),
+        );
+    }
 
-        return [
-            'records_lifetime' => $this->envString('APP_RECORDS_LIFETIME', 'P1M'),
-            'aggregation_period' => $this->envString('APP_AGGREGATION_PERIOD', 'PT15M'),
-            'logging' => [
-                'long_request_time' => array_merge(
-                    ['global' => (float)$this->envString('APP_LOGGING_LONG_REQUEST_TIME_GLOBAL', (string)static::DEFAULT_SLOW_REQ_TIME)],
-                    is_array($longReqMap) ? $longReqMap : []
-                ),
-                'heavy_request' => array_merge(
-                    ['global' => (float)$this->envString('APP_LOGGING_HEAVY_REQUEST_GLOBAL', (string)static::DEFAULT_HEAVY_PAGE_MEMORY)],
-                    is_array($heavyReqMap) ? $heavyReqMap : []
-                ),
-                'heavy_cpu_request' => array_merge(
-                    ['global' => (float)$this->envString('APP_LOGGING_HEAVY_CPU_REQUEST_GLOBAL', (string)static::DEFAULT_HEAVY_PAGE_CPU)],
-                    is_array($heavyCpuMap) ? $heavyCpuMap : []
-                ),
-            ],
-            'notification' => [
-                'enable' => $this->envBool('APP_NOTIFICATION_ENABLE', false),
-                'sender' => $this->envString('APP_NOTIFICATION_SENDER', 'noreply@pinboard'),
-                'global_email' => $this->envString('APP_NOTIFICATION_GLOBAL_EMAIL', ''),
-                'ignore' => $notificationIgnore,
-                'list' => is_array($notificationList) ? $notificationList : [],
-                'border' => [
-                    'req_time' => array_merge(
-                        ['global' => (float)$this->envString('APP_NOTIFICATION_REQ_TIME_BORDER_GLOBAL', (string)static::DEFAULT_REQ_TIME_BORDER)],
-                        is_array($notificationBorderMap) ? $notificationBorderMap : []
-                    ),
-                ],
-            ],
-        ];
+    /** @return array<string, float> */
+    private function buildFloatMap(string $globalEnv, string $globalDefault, string $mapEnv): array
+    {
+        $result = ['global' => (float) $this->envString($globalEnv, $globalDefault)];
+        $raw = $this->envJson($mapEnv, []);
+        if (is_array($raw)) {
+            foreach ($raw as $k => $v) {
+                if (is_string($k) && is_numeric($v)) {
+                    $result[$k] = (float) $v;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /** @return list<array{hosts: string, email: string}> */
+    private function buildNotificationList(string $envVar): array
+    {
+        $raw = $this->envJson($envVar, []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        $result = [];
+        foreach ($raw as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $hosts = $item['hosts'] ?? null;
+            $email = $item['email'] ?? null;
+            if (!is_string($hosts) || !is_string($email)) {
+                continue;
+            }
+            $result[] = ['hosts' => $hosts, 'email' => $email];
+        }
+        return $result;
     }
 
     private function envString(string $name, string $default = ''): string
@@ -150,7 +176,7 @@ class AggregateCommand extends Command
 
     private function sender(): string
     {
-        return $this->params['notification']['sender'] ?? 'noreply@pinboard';
+        return $this->config->notificationSender;
     }
 
     /** @param string|list<string> $to */
@@ -172,17 +198,13 @@ class AggregateCommand extends Command
 
     private function isNotIgnore(string $host): bool
     {
-        $notIgnore = true;
-        if (!empty($this->params['notification']['ignore'])) {
-            foreach ($this->params['notification']['ignore'] as $hostToIgnore) {
-                if (preg_match('#' . $hostToIgnore . '#', $host)) {
-                    $notIgnore = false;
-                    break;
-                }
+        foreach ($this->config->notificationIgnore as $hostToIgnore) {
+            if (preg_match('#' . $hostToIgnore . '#', $host)) {
+                return false;
             }
         }
 
-        return $notIgnore;
+        return true;
     }
 
     /**
@@ -200,32 +222,32 @@ class AggregateCommand extends Command
     /** @param list<array<string, mixed>> $errorPages */
     private function sendErrorEmails(array $errorPages): void
     {
-        if (!empty($this->params['notification']['global_email'])) {
+        if ($this->config->notificationGlobalEmail !== '') {
             $pages = [];
             foreach ($errorPages as $page) {
-                if ($this->isNotIgnore($page['server_name'])) {
-                    $pages[$page['server_name']][] = $page;
+                $serverName = is_string($page['server_name']) ? $page['server_name'] : '';
+                if ($serverName !== '' && $this->isNotIgnore($serverName)) {
+                    $pages[$serverName][] = $page;
                 }
             }
-            $this->sendErrorPages($pages, $this->params['notification']['global_email']);
+            $this->sendErrorPages($pages, $this->config->notificationGlobalEmail);
         }
 
-        if (!empty($this->params['notification']['list'])) {
-            foreach ($this->params['notification']['list'] as $item) {
-                $pages = [];
-                foreach ($errorPages as $page) {
-                    if (preg_match('/' . $item['hosts'] . '/', $page['server_name']) && $this->isNotIgnore($page['server_name'])) {
-                        $pages[$page['server_name']][] = $page;
-                    }
+        foreach ($this->config->notificationList as $item) {
+            $pages = [];
+            foreach ($errorPages as $page) {
+                $serverName = is_string($page['server_name']) ? $page['server_name'] : '';
+                if ($serverName !== '' && preg_match('/' . $item['hosts'] . '/', $serverName) && $this->isNotIgnore($serverName)) {
+                    $pages[$serverName][] = $page;
                 }
-                $this->sendErrorPages($pages, $item['email']);
             }
+            $this->sendErrorPages($pages, $item['email']);
         }
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->params = $this->loadParams();
+        $this->config = $this->buildConfig();
 
         $db = $this->db;
 
@@ -262,10 +284,10 @@ class AggregateCommand extends Command
         if (file_exists($lockFile)) {
             $output->writeln('<error>Cannot run data aggregation: another instance is already executing. Otherwise, remove ' . $lockFile . '</error>');
 
-            if (!empty($this->params['notification']['global_email'])) {
+            if ($this->config->notificationGlobalEmail !== '') {
                 try {
                     $body = $this->twig->render('lock_notification.html.twig');
-                    $this->sendEmail($this->params['notification']['global_email'], 'Intaro Pinboard can\'t run data aggregation', $body);
+                    $this->sendEmail($this->config->notificationGlobalEmail, 'Intaro Pinboard can\'t run data aggregation', $body);
                 } catch (Exception $e) {
                     $output->writeln('<error>Failed to send lock notification: ' . $e->getMessage() . '</error>');
                 }
@@ -281,7 +303,7 @@ class AggregateCommand extends Command
         $now = new \DateTime();
         $now = $now->format('Y-m-d H:i:s');
 
-        $delta = new \DateInterval(!empty($this->params['records_lifetime']) ? $this->params['records_lifetime'] : 'P1M');
+        $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
         $date = new \DateTime();
         $date->sub($delta);
 
@@ -314,7 +336,7 @@ class AggregateCommand extends Command
         }
         $db->executeStatement($sql, $params);
 
-        if (!empty($this->params['notification']['enable'])) {
+        if ($this->config->notificationEnable) {
             $sql = '
                 SELECT
                     server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
@@ -368,8 +390,14 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
-            $serverName = addslashes((string)$server['server_name']);
-            $hostName = addslashes((string)$server['hostname']);
+            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+            $cnt = is_numeric($server['cnt']) ? (int) $server['cnt'] : 0;
+            if ($serverName === '' || $hostName === '' || $cnt === 0) {
+                continue;
+            }
+            $serverNameEsc = addslashes($serverName);
+            $hostNameEsc = addslashes($hostName);
             $sql .= '
                 INSERT INTO ipm_report_2_by_hostname_and_server
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
@@ -377,29 +405,29 @@ class AggregateCommand extends Command
                      cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100,
                      doc_size_90, doc_size_95, doc_size_99, doc_size_100, created_at)
                 SELECT
-                    "' . $serverName . '" AS server_name,
-                    "' . $hostName . '" AS hostname,
-                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.90), 'req_time_90') . ',
-                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.95), 'req_time_95') . ',
-                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $server['cnt'] * (1 - 0.99), 'req_time_99') . ',
+                    "' . $serverNameEsc . '" AS server_name,
+                    "' . $hostNameEsc . '" AS hostname,
+                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.90), 'req_time_90') . ',
+                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.95), 'req_time_95') . ',
+                    ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.99), 'req_time_99') . ',
                     max(req_time) as req_time_100,
-                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.90), 'mem_peak_usage_90') . ',
-                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.95), 'mem_peak_usage_95') . ',
-                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $server['cnt'] * (1 - 0.99), 'mem_peak_usage_99') . ',
+                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $cnt * (1 - 0.90), 'mem_peak_usage_90') . ',
+                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $cnt * (1 - 0.95), 'mem_peak_usage_95') . ',
+                    ' . sprintf($subselectTemplate, 'mem_peak_usage', 'mem_peak_usage', $cnt * (1 - 0.99), 'mem_peak_usage_99') . ',
                     max(mem_peak_usage) as mem_peak_usage_100,
-                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.90), 'cpu_peak_usage_90') . ',
-                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.95), 'cpu_peak_usage_95') . ',
-                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $server['cnt'] * (1 - 0.99), 'cpu_peak_usage_99') . ',
+                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $cnt * (1 - 0.90), 'cpu_peak_usage_90') . ',
+                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $cnt * (1 - 0.95), 'cpu_peak_usage_95') . ',
+                    ' . sprintf($subselectTemplate, 'ru_utime', 'ru_utime', $cnt * (1 - 0.99), 'cpu_peak_usage_99') . ',
                     max(ru_utime) as cpu_peak_usage_100,
-                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.90), 'doc_size_90') . ',
-                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.95), 'doc_size_95') . ',
-                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $server['cnt'] * (1 - 0.99), 'doc_size_99') . ',
+                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $cnt * (1 - 0.90), 'doc_size_90') . ',
+                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $cnt * (1 - 0.95), 'doc_size_95') . ',
+                    ' . sprintf($subselectTemplate, 'doc_size', 'doc_size', $cnt * (1 - 0.99), 'doc_size_99') . ',
                     max(doc_size) as doc_size_100,
                     \'' . $now . '\'
                 FROM
                     request r2
                 WHERE
-                    r2.server_name = "' . $serverName . '" and r2.hostname = "' . $hostName . '"
+                    r2.server_name = "' . $serverNameEsc . '" and r2.hostname = "' . $hostNameEsc . '"
             ;';
         }
         if ($sql !== '') {
@@ -565,14 +593,16 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
-            $serverName = addslashes((string)$server['server_name']);
-            $hostName = addslashes((string)$server['hostname']);
-            $maxReqTime = static::DEFAULT_SLOW_REQ_TIME;
-            if (!empty($this->params['logging']['long_request_time']['global'])) {
-                $maxReqTime = $this->params['logging']['long_request_time']['global'];
+            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+            if ($serverName === '' || $hostName === '') {
+                continue;
             }
-            if (!empty($this->params['logging']['long_request_time'][$server['server_name']])) {
-                $maxReqTime = $this->params['logging']['long_request_time'][$server['server_name']];
+            $serverNameEsc = addslashes($serverName);
+            $hostNameEsc = addslashes($hostName);
+            $maxReqTime = $this->config->longRequestTime['global'] ?? static::DEFAULT_SLOW_REQ_TIME;
+            if (isset($this->config->longRequestTime[$serverName])) {
+                $maxReqTime = $this->config->longRequestTime[$serverName];
             }
             $sql .= '
                 INSERT INTO ipm_req_time_details
@@ -582,7 +612,7 @@ class AggregateCommand extends Command
                 FROM
                     request
                 WHERE
-                    server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND req_time > ' . (float)$maxReqTime . '
+                    server_name = "' . $serverNameEsc . '" AND hostname = "' . $hostNameEsc . '" AND req_time > ' . $maxReqTime . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
@@ -607,7 +637,12 @@ class AggregateCommand extends Command
 
             $ids = [];
             foreach ($data as $item) {
-                $ids[] = $item['request_id'];
+                $reqId = $item['request_id'];
+                if (is_int($reqId)) {
+                    $ids[] = (string) $reqId;
+                } elseif (is_string($reqId) && $reqId !== '') {
+                    $ids[] = $reqId;
+                }
             }
             unset($data);
 
@@ -635,14 +670,16 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
-            $serverName = addslashes((string)$server['server_name']);
-            $hostName = addslashes((string)$server['hostname']);
-            $maxMemoryUsage = static::DEFAULT_HEAVY_PAGE_MEMORY;
-            if (!empty($this->params['logging']['heavy_request']['global'])) {
-                $maxMemoryUsage = $this->params['logging']['heavy_request']['global'];
+            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+            if ($serverName === '' || $hostName === '') {
+                continue;
             }
-            if (!empty($this->params['logging']['heavy_request'][$server['server_name']])) {
-                $maxMemoryUsage = $this->params['logging']['heavy_request'][$server['server_name']];
+            $serverNameEsc = addslashes($serverName);
+            $hostNameEsc = addslashes($hostName);
+            $maxMemoryUsage = $this->config->heavyRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_MEMORY;
+            if (isset($this->config->heavyRequest[$serverName])) {
+                $maxMemoryUsage = $this->config->heavyRequest[$serverName];
             }
 
             $sql .= '
@@ -653,7 +690,7 @@ class AggregateCommand extends Command
                 FROM
                     request
                 WHERE
-                    server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND mem_peak_usage > ' . (int)$maxMemoryUsage . '
+                    server_name = "' . $serverNameEsc . '" AND hostname = "' . $hostNameEsc . '" AND mem_peak_usage > ' . (int) $maxMemoryUsage . '
                 GROUP BY
                     server_name, hostname, script_name
                 ORDER BY
@@ -668,14 +705,16 @@ class AggregateCommand extends Command
 
         $sql = '';
         foreach ($servers as $server) {
-            $serverName = addslashes((string)$server['server_name']);
-            $hostName = addslashes((string)$server['hostname']);
-            $maxCPUUsage = static::DEFAULT_HEAVY_PAGE_CPU;
-            if (!empty($this->params['logging']['heavy_cpu_request']['global'])) {
-                $maxCPUUsage = $this->params['logging']['heavy_cpu_request']['global'];
+            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+            if ($serverName === '' || $hostName === '') {
+                continue;
             }
-            if (!empty($this->params['logging']['heavy_cpu_request'][$server['server_name']])) {
-                $maxCPUUsage = $this->params['logging']['heavy_cpu_request'][$server['server_name']];
+            $serverNameEsc = addslashes($serverName);
+            $hostNameEsc = addslashes($hostName);
+            $maxCPUUsage = $this->config->heavyCpuRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_CPU;
+            if (isset($this->config->heavyCpuRequest[$serverName])) {
+                $maxCPUUsage = $this->config->heavyCpuRequest[$serverName];
             }
 
             $sql .= '
@@ -686,7 +725,7 @@ class AggregateCommand extends Command
                   FROM
                       request
                   WHERE
-                      server_name = "' . $serverName . '" AND hostname = "' . $hostName . '" AND ru_utime > ' . (int)$maxCPUUsage . '
+                      server_name = "' . $serverNameEsc . '" AND hostname = "' . $hostNameEsc . '" AND ru_utime > ' . (int) $maxCPUUsage . '
                   GROUP BY
                       server_name, hostname, script_name
                   ORDER BY
@@ -715,26 +754,37 @@ class AggregateCommand extends Command
 
     /**
      * @param list<array<string, mixed>> $servers
-     * @return array<string, mixed>
+     * @return array<string, array<string, list<array{
+     *   status: string,
+     *   hostname: string,
+     *   current: float,
+     *   prev: float,
+     *   current_formatted: string,
+     *   prev_formatted: string,
+     *   current_date: string,
+     *   prev_date: string,
+     *   border: string,
+     * }>>>
      */
     protected function getBorderOutValues(Connection $db, array $servers): array
     {
         $d = new \DateTime();
-        $di = new \DateInterval(
-            !empty($this->params['aggregation_period']) ? $this->params['aggregation_period'] : 'P15M'
-        );
+        $aggregationPeriod = $this->config->aggregationPeriod !== '' ? $this->config->aggregationPeriod : 'PT15M';
+        $di = new \DateInterval($aggregationPeriod);
         //2 aggregations ago
         $d->sub($di);
         $d->sub($di);
 
-        $result = [];
+        $reqPerSec = [];
         foreach ($servers as $server) {
-            if (empty($result[$server['server_name']])) {
-                $result[$server['server_name']] = [
-                    'req_per_sec' => $server['cnt'] / ($di->format('%i') ?: 15) / 60,
-                ];
+            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+            $cnt = is_numeric($server['cnt']) ? (int) $server['cnt'] : 0;
+            if ($serverName !== '' && !isset($reqPerSec[$serverName])) {
+                $reqPerSec[$serverName] = $cnt / ($di->format('%i') ?: 15) / 60;
             }
         }
+
+        $result = [];
 
         //req_time
         foreach (['95', '90'] as $perc) {
@@ -758,29 +808,31 @@ class AggregateCommand extends Command
 
             $finalData = [];
             foreach ($data as $row) {
-                if (!empty($result[$row['server_name']])) {
-                    $finalData[$row['server_name']][$row['hostname']][] = [
-                        'value' => $row['req_time_' . $perc],
-                        'created_at' => $row['created_at'],
-                    ];
+                $rowServerName = is_string($row['server_name']) ? $row['server_name'] : '';
+                $rowHostName = is_string($row['hostname']) ? $row['hostname'] : '';
+                if ($rowServerName === '' || $rowHostName === '' || !isset($reqPerSec[$rowServerName])) {
+                    continue;
                 }
+                $reqTimeRaw = $row['req_time_' . $perc];
+                $reqTimeVal = is_numeric($reqTimeRaw) ? (float) $reqTimeRaw : 0.0;
+                $createdAt = is_string($row['created_at']) ? $row['created_at'] : '';
+                $finalData[$rowServerName][$rowHostName][] = [
+                    'value' => $reqTimeVal,
+                    'created_at' => $createdAt,
+                ];
             }
 
             unset($data);
 
-            $defaultBorder = !empty($this->params['notification']['border']['req_time']['global'])
-                ? (float)$this->params['notification']['border']['req_time']['global']
-                : static::DEFAULT_REQ_TIME_BORDER;
+            $defaultBorder = $this->config->reqTimeBorder['global'] ?? static::DEFAULT_REQ_TIME_BORDER;
 
             foreach ($finalData as $server => $hosts) {
-                $border = !empty($this->params['notification']['border']['req_time'][$server])
-                    ? (float)$this->params['notification']['border']['req_time'][$server]
-                    : $defaultBorder;
+                $border = $this->config->reqTimeBorder[$server] ?? $defaultBorder;
 
                 foreach ($hosts as $host => $values) {
                     if (count($values) > 1) {
                         if (
-                            $result[$server]['req_per_sec'] >= 0.2 &&
+                            ($reqPerSec[$server] ?? 0.0) >= 0.2 &&
                             (
                                 $values[0]['value'] >= $border && $values[1]['value'] < $border ||
                                 $values[0]['value'] < $border && $values[1]['value'] >= $border
@@ -805,19 +857,11 @@ class AggregateCommand extends Command
             unset($finalData);
         }
 
-        foreach ($result as $server => $values) {
-            if (count($values) < 2) {
-                unset($result[$server]);
-            } else {
-                unset($result[$server]['req_per_sec']);
-            }
-        }
-
         return $result;
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array<string, array<string, list<array{status: string, hostname: string, current: float, prev: float, current_formatted: string, prev_formatted: string, current_date: string, prev_date: string, border: string}>>> $data
      * @param string|list<string> $address
      */
     private function sendBorderOutEmail(array $data, string $subject, string|array $address): void
@@ -828,12 +872,12 @@ class AggregateCommand extends Command
         }
     }
 
-    /** @param array<string, mixed> $data */
+    /** @param array<string, array<string, list<array{status: string, hostname: string, current: float, prev: float, current_formatted: string, prev_formatted: string, current_date: string, prev_date: string, border: string}>>> $data */
     private function sendBorderOutEmails(array $data): void
     {
         $subject = 'Intaro Pinboard has detected a drawdown of indicators';
 
-        if (!empty($this->params['notification']['global_email'])) {
+        if ($this->config->notificationGlobalEmail !== '') {
             $status = [];
             $d = [];
 
@@ -851,35 +895,33 @@ class AggregateCommand extends Command
             $status = array_unique($status);
             $mailSubject = '[' . implode(', ', $status) . "] $subject";
 
-            $this->sendBorderOutEmail($d, $mailSubject, $this->params['notification']['global_email']);
+            $this->sendBorderOutEmail($d, $mailSubject, $this->config->notificationGlobalEmail);
 
             unset($d);
         }
 
-        if (!empty($this->params['notification']['list'])) {
-            foreach ($this->params['notification']['list'] as $item) {
-                $status = [];
-                $d = [];
+        foreach ($this->config->notificationList as $item) {
+            $status = [];
+            $d = [];
 
-                foreach ($data as $server => $values) {
-                    if ($this->isNotIgnore($server) && preg_match("/{$item['hosts']}/", $server)) {
-                        $d[$server] = $values;
+            foreach ($data as $server => $values) {
+                if ($this->isNotIgnore($server) && preg_match("/{$item['hosts']}/", $server)) {
+                    $d[$server] = $values;
 
-                        foreach ($values as $indicator) {
-                            foreach ($indicator as $host) {
-                                $status[] = $host['status'];
-                            }
+                    foreach ($values as $indicator) {
+                        foreach ($indicator as $host) {
+                            $status[] = $host['status'];
                         }
                     }
                 }
-
-                $status = array_unique($status);
-                $mailSubject = '[' . implode(', ', $status) . '] ' . $subject;
-
-                $this->sendBorderOutEmail($d, $mailSubject, $item['email']);
-
-                unset($d);
             }
+
+            $status = array_unique($status);
+            $mailSubject = '[' . implode(', ', $status) . '] ' . $subject;
+
+            $this->sendBorderOutEmail($d, $mailSubject, $item['email']);
+
+            unset($d);
         }
     }
 }

@@ -1,5 +1,19 @@
 <?php
 
+class PinbaTimerHandle
+{
+    public int $timer_id;
+    /** @var array<string, string|int|float|bool> */
+    public array $tags;
+
+    /** @param array<string, string|int|float|bool> $tags */
+    public function __construct(int $timer_id, array $tags)
+    {
+        $this->timer_id = $timer_id;
+        $this->tags = $tags;
+    }
+}
+
 /**
  * @return array<string, string|int|float|bool|null>
  */
@@ -13,7 +27,7 @@ function pinba_get_info(): array
 /**
  * @param array<string, string|int|float|bool> $tags
  */
-function pinba_timer_start(array $tags): mixed
+function pinba_timer_start(array $tags): PinbaTimerHandle
 {
     $state = $GLOBALS['__pinba_test_state'] ?? [];
     $timerId = ($state['timer_id'] ?? 0) + 1;
@@ -24,7 +38,7 @@ function pinba_timer_start(array $tags): mixed
         'tags' => $tags,
     ];
 
-    return (object) ['timer_id' => $timerId, 'tags' => $tags];
+    return new PinbaTimerHandle($timerId, $tags);
 }
 
 /**
@@ -63,7 +77,13 @@ function pinba_test_set_info(array $info): void
 }
 
 /**
- * @return array<string, mixed>
+ * @return array{
+ *   info: array<string, string|int|float|bool|null>,
+ *   timer_id: int,
+ *   starts: list<array{timer_id: int, tags: array<string, string|int|float|bool>}>,
+ *   adds: list<array{tags: array<string, string|int|float|bool>, time: float|int}>,
+ *   stops: list<PinbaTimerHandle>
+ * }
  */
 function pinba_test_state(): array
 {

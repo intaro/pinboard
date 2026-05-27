@@ -30,9 +30,7 @@ class FileUserStorage
             return [];
         }
 
-        $users = $secure['users'] ?? [];
-
-        return \is_array($users) ? $users : [];
+        return self::asStringKeyedArray($secure['users'] ?? null);
     }
 
     /** @param list<string> $roles */
@@ -82,9 +80,22 @@ class FileUserStorage
             return [];
         }
 
-        $data = Yaml::parseFile($this->resolvedFilePath);
+        return self::asStringKeyedArray(Yaml::parseFile($this->resolvedFilePath));
+    }
 
-        return \is_array($data) ? $data : [];
+    /** @return array<string, mixed> */
+    private static function asStringKeyedArray(mixed $value): array
+    {
+        if (!\is_array($value)) {
+            return [];
+        }
+        $result = [];
+        foreach ($value as $k => $v) {
+            if (\is_string($k)) {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
     }
 
     /** @param array<string, mixed> $data */

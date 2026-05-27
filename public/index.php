@@ -5,7 +5,8 @@ use App\Kernel;
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
 return function (array $context) {
-    $env = (string)($context['APP_ENV'] ?? 'dev');
+    $envRaw = $context['APP_ENV'] ?? 'dev';
+    $env = is_string($envRaw) ? $envRaw : 'dev';
     if (!in_array($env, ['dev', 'test', 'prod'], true)) {
         $env = 'dev';
     }

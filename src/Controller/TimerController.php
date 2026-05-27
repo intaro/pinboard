@@ -38,7 +38,7 @@ class TimerController extends AbstractController
             throw $this->createNotFoundException("Request #$requestId not found.");
         }
 
-        $request['script_name'] = Utils::urlDecode($request['script_name']);
+        $request['script_name'] = Utils::urlDecode(is_string($request['script_name']) ? $request['script_name'] : '');
         $request = Utils::parseRequestTags($request);
         if (!is_array($request)) {
             throw $this->createNotFoundException("Request #$requestId not found.");
@@ -128,7 +128,7 @@ class TimerController extends AbstractController
         return null;
     }
 
-    /** @return array<string|int, array<string, mixed>> */
+    /** @return array<int|string, array{id: int|string, hit_count: int|float, value: int|float, tags: array<string, mixed>}> */
     private function getTimers(string $type, string $id, ?string $date = null): array
     {
         if ($type === 'live') {
@@ -173,17 +173,19 @@ class TimerController extends AbstractController
 
         $timers = [];
         foreach ($data as $timer) {
-            if (!isset($timers[$timer['id']])) {
-                $timers[$timer['id']] = [
-                    'id' => $timer['id'],
-                    'hit_count' => $timer['hit_count'],
-                    'value' => $timer['value'],
+            $timerId = is_int($timer['id']) ? $timer['id'] : (is_string($timer['id']) ? $timer['id'] : '');
+            $tagName = is_string($timer['tag_name']) ? $timer['tag_name'] : '';
+            if (!isset($timers[$timerId])) {
+                $timers[$timerId] = [
+                    'id' => $timerId,
+                    'hit_count' => is_numeric($timer['hit_count']) ? (float) $timer['hit_count'] : 0.0,
+                    'value' => is_numeric($timer['value']) ? (float) $timer['value'] : 0.0,
                     'tags' => [],
                 ];
             }
 
-            if (!in_array($timer['tag_name'], ['__hostname', '__server_name'])) {
-                $timers[$timer['id']]['tags'][$timer['tag_name']] = $timer['tag_value'];
+            if ($tagName !== '' && !in_array($tagName, ['__hostname', '__server_name'])) {
+                $timers[$timerId]['tags'][$tagName] = $timer['tag_value'];
             }
         }
 
@@ -194,7 +196,7 @@ class TimerController extends AbstractController
 
     // Search tags which exist in all timers
     /**
-     * @param array<string|int, array<string, mixed>> $timers
+     * @param array<int|string, array{id: int|string, hit_count: int|float, value: int|float, tags: array<string, mixed>}> $timers
      * @return list<string>
      */
     private function findGroupingTags(array $timers): array
@@ -204,12 +206,7 @@ class TimerController extends AbstractController
         }
 
         $f = current($timers);
-        if (!is_array($f['tags'])) {
-            return [];
-        }
-        /** @var array<string, mixed> $tagsMap */
-        $tagsMap = $f['tags'];
-        $tags = array_keys($tagsMap);
+        $tags = array_keys($f['tags']);
 
         foreach ($timers as $timer) {
             foreach ($tags as $index => $tag) {
@@ -232,15 +229,16 @@ class TimerController extends AbstractController
     }
 
     /**
-     * @param array<string|int, array<string, mixed>> $timers
-     * @return array<string, mixed>
+     * @param array<int|string, array{id: int|string, hit_count: int|float, value: int|float, tags: array<string, mixed>}> $timers
+     * @return array<string, array{value: int|float, hit_count: int|float, timers: list<array<string, mixed>>}>
      */
     private function groupTimers(array $timers, string $groupingTag): array
     {
         $data = [];
 
         foreach ($timers as $timer) {
-            $v = $timer['tags'][$groupingTag];
+            $tagVal = $timer['tags'][$groupingTag] ?? null;
+            $v = is_string($tagVal) ? $tagVal : '';
             $isComposite = false;
 
             if (preg_match('/(.+)\:\:(.*)/', $v, $matches)) {
@@ -251,7 +249,8 @@ class TimerController extends AbstractController
             if (!isset($data[$v])) {
                 $data[$v] = [
                     'value' => 0,
-                    'hit_count' => 0
+                    'hit_count' => 0,
+                    'timers' => [],
                 ];
             }
 
@@ -279,32 +278,47 @@ class TimerController extends AbstractController
      */
     private function formatRequestTimes(array $r): array
     {
-        $r['req_time'] = (int) (((float) $r['req_time']) * 1000);
-        $r['req_time_format'] = number_format($r['req_time'], 0, '.', ',');
-        if (isset($r['mem_peak_usage'])) {
+        $reqTime = (int) ((is_numeric($r['req_time']) ? (float) $r['req_time'] : 0.0) * 1000);
+        $r['req_time'] = $reqTime;
+        $r['req_time_format'] = number_format($reqTime, 0, '.', ',');
+        if (isset($r['mem_peak_usage']) && is_numeric($r['mem_peak_usage'])) {
             $r['mem_peak_usage_format'] = number_format((float) $r['mem_peak_usage'], 0, '.', ',');
         }
 
         $v = 0;
-        foreach ($r['timers'] as &$group) {
-            $group['value'] = (int) (((float) $group['value']) * 1000);
-            $v += $group['value'];
-            $group['value_format'] = number_format($group['value'], 0, '.', ',');
-            $group['value_percent'] = number_format($r['req_time'] > 0 ? $group['value'] / $r['req_time'] * 100 : 0, 2, '.', ',');
+        $timers = is_array($r['timers']) ? $r['timers'] : [];
+        foreach ($timers as $k => $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            $groupValue = (int) ((is_numeric($group['value'] ?? null) ? (float) $group['value'] : 0.0) * 1000);
+            $v += $groupValue;
+            $group['value'] = $groupValue;
+            $group['value_format'] = number_format($groupValue, 0, '.', ',');
+            $group['value_percent'] = number_format($reqTime > 0 ? $groupValue / $reqTime * 100 : 0, 2, '.', ',');
 
-            if (isset($group['timers'])) {
-                foreach ($group['timers'] as &$timer) {
-                    $timer['value'] = (int) (((float) $timer['value']) * 1000);
-                    $timer['value_format'] = number_format($timer['value'], 0, '.', ',');
-                    $timer['value_percent'] = number_format($r['req_time'] > 0 ? $timer['value'] / $r['req_time'] * 100 : 0, 2, '.', ',');
+            if (isset($group['timers']) && is_array($group['timers'])) {
+                foreach ($group['timers'] as $tk => $timer) {
+                    if (!is_array($timer)) {
+                        continue;
+                    }
+                    $timerValue = (int) ((is_numeric($timer['value'] ?? null) ? (float) $timer['value'] : 0.0) * 1000);
+                    $timer['value'] = $timerValue;
+                    $timer['value_format'] = number_format($timerValue, 0, '.', ',');
+                    $timer['value_percent'] = number_format($reqTime > 0 ? $timerValue / $reqTime * 100 : 0, 2, '.', ',');
+                    $group['timers'][$tk] = $timer;
                 }
             }
-        }
 
-        if ($r['req_time'] - $v >= 0) {
-            $r['req_time_other'] = $r['req_time'] - $v;
-            $r['req_time_other_format'] = number_format($r['req_time_other'], 0, '.', ',');
-            $r['req_time_other_percent'] = number_format($r['req_time'] > 0 ? $r['req_time_other'] / $r['req_time'] * 100 : 0, 2, '.', ',');
+            $timers[$k] = $group;
+        }
+        $r['timers'] = $timers;
+
+        if ($reqTime - $v >= 0) {
+            $other = $reqTime - $v;
+            $r['req_time_other'] = $other;
+            $r['req_time_other_format'] = number_format($other, 0, '.', ',');
+            $r['req_time_other_percent'] = number_format($reqTime > 0 ? $other / $reqTime * 100 : 0, 2, '.', ',');
         }
 
         return $r;

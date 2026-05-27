@@ -24,7 +24,8 @@ class RedirectUserListener
     public function onKernelRequest(RequestEvent $event): void
     {
         if ($this->isUserLogged() && $event->isMainRequest()) {
-            $currentRoute = $event->getRequest()->attributes->get('_route');
+            $routeRaw = $event->getRequest()->attributes->get('_route');
+            $currentRoute = is_string($routeRaw) ? $routeRaw : null;
 
             if ($this->isAuthenticatedUserOnAnonymousPage($currentRoute)) {
                 $response = new RedirectResponse($this->router->generate('homepage'));

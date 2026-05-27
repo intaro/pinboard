@@ -72,6 +72,9 @@ final class KernelWiringTest extends KernelTestCase
         );
 
         foreach ($items as $item) {
+            if (!$item instanceof \SplFileInfo) {
+                continue;
+            }
             if ($item->isDir()) {
                 rmdir($item->getPathname());
             } else {

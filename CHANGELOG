@@ -1,7 +1,7 @@
 CHANGELOG / Intaro Pinboard
 ===========================
 
-* 2.0 (2026)
+* 2.0 (2026-05-26)
 
  * Complete rewrite on Symfony 8 / PHP 8.4 (replaces legacy Silex 1.x / PHP 5.3 stack)
  * Replaced Twig 1.x + Silex with Symfony 8 framework, Twig 3, Webpack Encore, Bootstrap 5

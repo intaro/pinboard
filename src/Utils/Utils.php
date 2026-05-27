@@ -65,15 +65,23 @@ class Utils
                 return false;
             }
 
+            $tagsRaw = $request['tags'];
+            if (!is_string($tagsRaw)) {
+                return false;
+            }
             foreach ($tagsFilter as $tagName => $tagValue) {
-                if (stripos($request['tags'], "$tagName=$tagValue") === false) {
+                if (stripos($tagsRaw, "$tagName=$tagValue") === false) {
                     return false;
                 }
             }
         }
 
         if ($request['tags_cnt']) {
-            $r = explode(',', $request['tags']);
+            $tagsStr = $request['tags'];
+            if (!is_string($tagsStr)) {
+                return $request;
+            }
+            $r = explode(',', $tagsStr);
             $request['tags'] = [];
 
             foreach ($r as $k) {

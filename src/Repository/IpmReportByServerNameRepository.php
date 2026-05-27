@@ -23,6 +23,9 @@ class IpmReportByServerNameRepository extends ServiceEntityRepository
         parent::__construct($registry, IpmReportByServerName::class);
     }
 
+    /**
+     * @return list<array{server_name: string, req_count: int, req_per_sec: float, error_count: int}>
+     */
     public function findAllServers(string $hostsRegexp = '.*'): array
     {
         $params = ['created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))];
@@ -45,6 +48,13 @@ class IpmReportByServerNameRepository extends ServiceEntityRepository
             ORDER BY server_name
         ";
 
-        return $this->getEntityManager()->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+        $rows = $this->getEntityManager()->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
+
+        return array_map(static fn (array $row): array => [
+            'server_name' => is_string($row['server_name']) ? $row['server_name'] : '',
+            'req_count'   => is_numeric($row['req_count']) ? (int) $row['req_count'] : 0,
+            'req_per_sec' => is_numeric($row['req_per_sec']) ? (float) $row['req_per_sec'] : 0.0,
+            'error_count' => is_numeric($row['error_count']) ? (int) $row['error_count'] : 0,
+        ], $rows);
     }
 }

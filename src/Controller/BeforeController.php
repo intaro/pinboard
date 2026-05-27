@@ -56,20 +56,25 @@ class BeforeController extends AbstractController
 
         $ips = [];
         foreach ($list as $data) {
-            if (stripos($data['server_name'], 'xn--') !== false) {
-                $data['server_name'] = $idn->convertUrl($data['server_name']);
+            $serverName = $data['server_name'];
+            if (!is_string($serverName) || $serverName === '') {
+                continue;
             }
 
-            if (preg_match('/\d+\.\d+\.\d+\.\d+/', $data['server_name'])) {
-                $ips[$data['server_name']] = $data;
+            if (stripos($serverName, 'xn--') !== false) {
+                $serverName = $idn->convertUrl($serverName);
+            }
+
+            if (preg_match('/\d+\.\d+\.\d+\.\d+/', $serverName)) {
+                $ips[$serverName] = $data;
             } else {
-                $domainParts = explode('.', $data['server_name']);
+                $domainParts = explode('.', $serverName);
                 if (count($domainParts) > 1) {
                     $baseDomain = $domainParts[count($domainParts) - 2] . '.' . $domainParts[count($domainParts) - 1];
                 } else {
-                    $baseDomain = $data['server_name'];
+                    $baseDomain = $serverName;
                 }
-                $result['servers'][$baseDomain][$data['server_name']] = $data;
+                $result['servers'][$baseDomain][$serverName] = $data;
             }
         }
 

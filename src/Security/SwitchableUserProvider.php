@@ -64,7 +64,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
             }
         }
 
-        if (!\is_array($row) || !isset($row['password'])) {
+        if (!\is_array($row) || !isset($row['password']) || !\is_string($row['password'])) {
             $e = new UserNotFoundException(\sprintf('User "%s" not found in file storage.', $identifier));
             $e->setUserIdentifier($identifier);
             throw $e;
@@ -80,7 +80,12 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
 
         $hosts = isset($row['hosts']) && \is_string($row['hosts']) ? $row['hosts'] : null;
 
-        return new FileUser($storageKey, (string)$row['password'], array_values(array_map('strval', $roles)), $hosts);
+        return new FileUser(
+            $storageKey,
+            $row['password'],
+            array_values(array_map(static fn (mixed $role): string => is_string($role) ? $role : '', $roles)),
+            $hosts
+        );
     }
 
     public function refreshUser(UserInterface $user): UserInterface
