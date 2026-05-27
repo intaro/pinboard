@@ -26,6 +26,7 @@ readonly class AggregateConfig
         public array $notificationIgnore,
         public array $notificationList,
         public array $reqTimeBorder,
+        public int $minErrorCode,
     ) {
     }
 }
