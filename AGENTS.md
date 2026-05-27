@@ -23,9 +23,30 @@
 ## Testing
 
 - Backend sanity checks: `php -l` for touched PHP files and `php bin/console lint:twig` for touched Twig files.
-- PHP quality checks: `vendor/bin/phpunit`, `vendor/bin/phpstan analyse -c phpstan.neon`, `vendor/bin/php-cs-fixer fix --dry-run --diff --sequential --using-cache=no`.
+- PHP unit and functional tests: `vendor/bin/phpunit`.
+- PHP style: `vendor/bin/php-cs-fixer fix --dry-run --diff` — fix violations with `vendor/bin/php-cs-fixer fix`.
+- PHP static analysis: `vendor/bin/phpstan analyse --no-progress` — runs at **level 10** (maximum).
 - Frontend rebuild: `pnpm build`.
 - Prefer focused verification over broad test runs unless the change spans multiple layers.
+
+## PHP Static Analysis Rules
+
+PHPStan runs at level 10. All violations must be fixed with real engineering solutions.
+
+**Forbidden shortcuts:**
+- No `@phpstan-ignore` or `@phpstan-ignore-next-line` comments.
+- No inline `@var` PHPDoc to override inferred types.
+- No `assert()` to satisfy the type checker.
+- No widening parameter or return types just to silence an error.
+- No casts (`(string)`, `(float)`, `(int)`) applied directly to `mixed` — they are not allowed at level 10.
+
+**Correct patterns:**
+- Narrow `mixed` with guards before use: `is_string($x)`, `is_numeric($x)`, `is_array($x)`.
+- At DB boundaries (`fetchAllAssociative()`, `fetchOne()`), extract typed locals from each row explicitly.
+- Use `fetchOne()` for scalar queries (COUNT, single-column); never index `fetchAllAssociative()[0]['col']`.
+- Declare PHP 8.3 typed class constants (`public const int X = 1`) to prevent `static::CONST` resolving to `mixed`.
+- Annotate repository methods with typed PHPDoc array shapes, e.g. `@return list<array{id: int, name: string}>`, and cast at the boundary.
+- For `Yaml::parseFile()` and session `get()` returning `mixed`, validate with `is_array()` and iterate to enforce string keys.
 
 ## Commit Messages
 
