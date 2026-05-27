@@ -1,0 +1,15 @@
+parameters:
+    env(REDIS_URL): 'redis://localhost'
+
+framework:
+    cache:
+        # Filesystem adapter works out of the box — no extra services needed.
+        # To switch, change the `app:` line and set REDIS_URL in .env.local if needed:
+        #
+        #   Redis:  app: cache.adapter.redis
+        #   APCu:   app: cache.adapter.apcu
+        #
+        # Note: the adapter is a compile-time service reference and cannot be
+        # set via an environment variable — editing this file is intentional.
+        app: cache.adapter.filesystem
+        default_redis_provider: '%env(REDIS_URL)%'

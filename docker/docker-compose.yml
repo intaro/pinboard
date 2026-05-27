@@ -1,0 +1,96 @@
+services:
+  mysql-pinba:
+    image: ${COMPOSE_PROJECT_NAME}-mysql-pinba:local
+    build:
+      context: ./../
+      dockerfile: ./docker/mysql/Dockerfile
+      args:
+        PINBA_IMAGE: ${PINBA_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql-pinba
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      TZ: ${TZ}
+    ports:
+      - "${MYSQL_PORT}:3306"
+      - "${PINBA_UDP_PORT}:30002/udp"
+    volumes:
+      - pinba-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  php-fpm:
+    container_name: ${COMPOSE_PROJECT_NAME}-php-fpm
+    build:
+      context: ./../
+      dockerfile: ./docker/php-fpm/Dockerfile
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG}
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: mysql-pinba
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SERVER_VERSION: ${DB_SERVER_VERSION}
+      TZ: ${TZ}
+    depends_on:
+      mysql-pinba:
+        condition: service_healthy
+    volumes:
+      - ./../:/var/www
+
+  nginx:
+    image: nginx:1.30-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    restart: unless-stopped
+    depends_on:
+      - php-fpm
+    ports:
+      - "${NGINX_HOST_HTTP_PORT}:80"
+    volumes:
+      - ./../:/var/www:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  aggregate:
+    container_name: ${COMPOSE_PROJECT_NAME}-aggregate
+    build:
+      context: ./../
+      dockerfile: ./docker/php-fpm/Dockerfile
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
+        INSTALL_XDEBUG: ${INSTALL_XDEBUG}
+    restart: unless-stopped
+    depends_on:
+      mysql-pinba:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: mysql-pinba
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SERVER_VERSION: ${DB_SERVER_VERSION}
+      TZ: ${TZ}
+    volumes:
+      - ./../:/var/www
+      - ./php-fpm/aggregate.cron:/etc/crontabs/aggregate.cron:ro
+    command: ["supercronic", "/etc/crontabs/aggregate.cron"]
+
+volumes:
+  pinba-mysql-data:

@@ -1,0 +1,68 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — {{ parent() }}{% endblock %}
+{% block content %}
+    {% include '_server_menu.html.twig' with { title: title, server_name: server_name, hostname: hostname, hosts: hosts } %}
+
+    <ul class="nav nav-pills small period float-end">
+        <li class="nav-item">
+            <a class="nav-link {{ server_filter ? '' :  'active' }}" href="{{ path('server_timers', { serverName: server_name, hostName: hostname, period: period, server: 'off' }) }}">
+                w/o server details
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ server_filter ? 'active' : '' }}" href="{{ path('server_timers', { serverName: server_name, hostName: hostname, period: period, server: 'on' }) }}">
+                with server details
+            </a>
+        </li>
+    </ul>
+    {% include '_timers_period_menu.html.twig' with { server_name: server_name, hostname: hostname, period: period, periods: periods, server_filter: server_filter } %}
+
+    <div class="row">
+        {% if charts|length > 0 %}
+            {% for chart_key, chart in charts %}
+                <div class="col-12">
+                    <h2>{{ chart.title }} {{ chart.subtitle is defined ? ('<small>(' ~ chart.subtitle ~ ')</small>')|raw : '' }}</h2>
+                    {% if chart.data.timers|length > 0 %}
+                        <div style="height: 250px;">
+                            <canvas id="{{ chart.field }}-chart"></canvas>
+                        </div>
+                        <script type="text/javascript">
+                            document.addEventListener('DOMContentLoaded', () => {
+                            const {{ chart.field }}ChartData = [];
+                            {% for date, item in chart.data.values %}
+                            {{ chart.field }}ChartData.push({
+                                x: new Date({{ date }})
+                                {% for timer in chart.data.timers %}
+                                , '{{ timer }}': {{ item[timer] is defined and item[timer] > 0 ? item[timer] : 0 }}
+                                {% endfor %}
+                            });
+                            {% endfor %}
+
+                            const {{ chart.field }}Chart = window.PinboardCharts.renderTimeSeriesChart('{{ chart.field }}-chart', {
+                                stacked: true,
+                                series: [
+                                    {% for timer in chart.data.timers %}
+                                    {
+                                        label: "{{ request_graphs[timer] is defined ? request_graphs[timer]['title'] : timer }}",
+                                        color: "{{ request_graphs[timer] is defined ? '#39A3B9' : '#729462' }}",
+                                        fill: true,
+                                        data: {{ chart.field }}ChartData.map((point) => ({x: point.x, y: point['{{ timer }}'] ?? 0})),
+                                    }{{ not loop.last ? ',' : '' }}
+                                    {% endfor %}
+                                ],
+                            });
+                            });
+                        </script>
+                    {% else %}
+                        <p>No data for chart.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <p class="text-center lead">No data for timers</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sign in — Pinboard{% endblock %}
+
+{% block body_classes %}login-page{% endblock %}
+
+{% block content %}
+<div class="login-card card shadow-sm border-0">
+    <div class="card-body p-4 p-sm-5">
+        <h1 class="h5 mb-4 text-center fw-semibold">Sign in to Pinboard</h1>
+
+        {% if error %}
+            <div class="alert alert-danger py-2 small" role="alert">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        {% if app.user %}
+            <div class="alert alert-info py-2 small">
+                Signed in as <strong>{{ app.user.userIdentifier }}</strong>.
+                <a href="{{ path('app_logout') }}" class="alert-link">Sign out</a>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            <div class="mb-3">
+                <label for="inputEmail" class="form-label">Login or email</label>
+                <input type="text" value="{{ last_username }}" name="email" id="inputEmail"
+                       class="form-control" autocomplete="username" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label for="inputPassword" class="form-label">Password</label>
+                <input type="password" name="password" id="inputPassword"
+                       class="form-control" autocomplete="current-password" required>
+            </div>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button class="btn btn-primary w-100" type="submit">Sign in</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

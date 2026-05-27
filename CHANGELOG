@@ -1,45 +1,61 @@
 CHANGELOG / Intaro Pinboard
 ===========================
 
+* 2.0 (2026-05-26)
+
+ * Complete rewrite on Symfony 8 / PHP 8.4 (replaces legacy Silex 1.x / PHP 5.3 stack)
+ * Replaced Twig 1.x + Silex with Symfony 8 framework, Twig 3, Webpack Encore, Bootstrap 5
+ * Replaced SwiftMailer with Symfony Mailer; SMTP configured via MAILER_DSN
+ * Replaced Doctrine DBAL 2 with Doctrine ORM 3 / DBAL 4 / Doctrine Migrations 4
+ * Added two-source authentication: file-based (parameters.yml) and DB-backed users
+ * Added console commands: add-user, users:migrate-file-to-db, users:migrate-db-to-file
+ * All SQL migrations rewritten as Doctrine Migrations classes with up/down support
+ * Added Docker-based development stack and pre-built Docker Hub images
+ * Added PHPStan level-max static analysis and PHP-CS-Fixer formatting
+ * Added PHPUnit test suite skeleton
+ * Replaced legacy jQuery + Highcharts with Chart.js on vanilla JS ES2024+
+ * Added AGENTS.md, code standards documentation, and full Docker guide
+ * Updated all PINBA storage-engine virtual tables to use ENGINE=PINBA with correct COMMENT
+   metadata so the pinba_engine 1.1+ plugin recognises them as live aggregate views
+
 * 1.5 (2014-03-02)
 
-*
-* feature #102 The supporting of timestamp of pinba_engine 1.1 in Pinboard
-* feature #101 Responsive layout of Pinboard
-* feature #100 Downgrade version of symfony/console
-* feature #99 Allow to use timers with special chars in name
-* bug #98 Wrong timer chart for request in some cases
-* bug #74 Sometimes Live tab doesn't load new requests on ajax
+ * feature #102 The supporting of timestamp of pinba_engine 1.1 in Pinboard
+ * feature #101 Responsive layout of Pinboard
+ * feature #100 Downgrade version of symfony/console
+ * feature #99 Allow to use timers with special chars in name
+ * bug #98 Wrong timer chart for request in some cases
+ * bug #74 Sometimes Live tab doesn't load new requests on ajax
 
 * 1.4 (2014-11-30)
 
-* feature #5 Add tag support
-* feature #96 Add "request time" and "tag" filter on Live page
+ * feature #5 Add tag support
+ * feature #96 Add "request time" and "tag" filter on Live page
 
 * 1.3 (2014-10-04)
 
-* bug #88 Slow query on Overview tab of the server
-* feature Add base_url for static urls
-* bug #81 Diagram Req/sec is broken when hostname contains non-word symbols
-* bug #80 Fix order link on statuses page
-* bug #77 Slow query on main page
-* bug #72 Wrong aggregate locking after smtp exception
-* feature #73 Total values on the homepage
-* feature #71 Display hostname next to error pages in email notifications
-* feature #70 Sort domains in top menu alphabetically
-* feature #68 Add play/pause in Live tab
-* Increased limits in Live tab
+ * bug #88 Slow query on Overview tab of the server
+ * feature Add base_url for static urls
+ * bug #81 Diagram Req/sec is broken when hostname contains non-word symbols
+ * bug #80 Fix order link on statuses page
+ * bug #77 Slow query on main page
+ * bug #72 Wrong aggregate locking after smtp exception
+ * feature #73 Total values on the homepage
+ * feature #71 Display hostname next to error pages in email notifications
+ * feature #70 Sort domains in top menu alphabetically
+ * feature #68 Add play/pause in Live tab
+ * Increased limits in Live tab
 
 * 1.2 (2014-03-2)
 
-* feature #64 Add notification about increasing of 90th and 95th percentiles of request time higher than a border value
-* feature #63 Settings for MySQL non-standart port connecting
-* feature #47 Display the data for a 1 day, 3 days, 1 week and 1 month
-* bug #58 Fix condition to order cpu column in grid
-* bug #60 Don't show in menu the servers with empty server name
-* bug #61 Fix aggregating stopping because wrong .lock-file creating
-* bug #65 Duplicate records in "CPU peak usage" tab
-* bug #66 Wrong chart rendering in "Overview" tab for servers with several hosts
+ * feature #64 Add notification about increasing of 90th and 95th percentiles of request time higher than a border value
+ * feature #63 Settings for MySQL non-standart port connecting
+ * feature #47 Display the data for a 1 day, 3 days, 1 week and 1 month
+ * bug #58 Fix condition to order cpu column in grid
+ * bug #60 Don't show in menu the servers with empty server name
+ * bug #61 Fix aggregating stopping because wrong .lock-file creating
+ * bug #65 Duplicate records in "CPU peak usage" tab
+ * bug #66 Wrong chart rendering in "Overview" tab for servers with several hosts
 
 * 1.1 (2013-12-16)
 

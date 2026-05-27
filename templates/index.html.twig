@@ -1,0 +1,99 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+    <h1>Overview <small>for a last day</small></h1>
+    {% if servers|length > 0 %}
+        <table id="sortedTable" class="table table-bordered table-hover table-striped sortable">
+            <thead>
+            <tr>
+                <th class="sortable">Server Name</th>
+                <th class="sortable" data-sort-type="number">Requests Count</th>
+                <th class="sortable" data-sort-type="number">Requests / Sec</th>
+                <th class="sortable" data-sort-type="number">Pages with errors</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="{{ total.error_count > 0 ? 'error' : '' }}">
+                <td><b><i>Total</i></b></td>
+                <td><b><i>{{ total.req_count }}</i></b></td>
+                <td><b><i>–</i></b></td>
+                <td><b><i>{{ total.error_count }}</i></b></td>
+            </tr>
+            {% for server in servers%}
+                {% if server.server_name is not empty %}
+                <tr class="{{ server.error_count > 0 ? 'error' : '' }}">
+                    <td>
+                        <a href="{{ path('server', { serverName: server.server_name, hostName: 'all', format: 'html' }) }}"
+                           title="">
+                            {{ server.server_name }}
+                        </a>
+                    </td>
+                    <td>{{ server.req_count }}</td>
+                    <td>{{ server.req_per_sec }}</td>
+                    <td>{{ server.error_count }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const table = document.getElementById('sortedTable');
+
+            if (!table || !table.tHead || !table.tBodies.length) {
+                return;
+            }
+
+            const tbody = table.tBodies[0];
+            const headers = Array.from(table.tHead.rows[0].cells);
+            const fixedRows = tbody.rows.length > 0 ? [tbody.rows[0]] : [];
+            const dataRows = Array.from(tbody.rows).slice(1);
+
+            const normalizeText = (value) => value.replace(/\s+/g, ' ').trim();
+
+            const compare = (left, right, type, direction) => {
+                if (type === 'number') {
+                    const leftValue = Number.parseFloat(left.replace(',', '.'));
+                    const rightValue = Number.parseFloat(right.replace(',', '.'));
+                    const safeLeft = Number.isNaN(leftValue) ? Number.NEGATIVE_INFINITY : leftValue;
+                    const safeRight = Number.isNaN(rightValue) ? Number.NEGATIVE_INFINITY : rightValue;
+
+                    return direction === 'asc' ? safeLeft - safeRight : safeRight - safeLeft;
+                }
+
+                return direction === 'asc'
+                    ? left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' })
+                    : right.localeCompare(left, undefined, { numeric: true, sensitivity: 'base' });
+            };
+
+            const render = (rows) => {
+                tbody.replaceChildren(...fixedRows, ...rows);
+            };
+
+            headers.forEach((header, index) => {
+                const type = header.dataset.sortType || 'text';
+
+                header.addEventListener('click', function () {
+                    const direction = header.dataset.sortDir === 'asc' ? 'desc' : 'asc';
+
+                    headers.forEach((item) => item.removeAttribute('data-sort-dir'));
+                    header.dataset.sortDir = direction;
+
+                    const sorted = [...dataRows].sort((rowA, rowB) => {
+                        const left = normalizeText(rowA.cells[index]?.textContent || '');
+                        const right = normalizeText(rowB.cells[index]?.textContent || '');
+
+                        return compare(left, right, type, direction);
+                    });
+
+                    render(sorted);
+                });
+            });
+        });
+    </script>
+{% endblock %}

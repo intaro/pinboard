@@ -1,0 +1,60 @@
+{% set labels = {
+    'req_time_95': 'Max time of the 95% fastest requests',
+    'req_time_90': 'Max time of the 90% fastest requests',
+} %}
+<html>
+    <body>
+        <p>Intaro Pinboard has detected a drawdown of indicators.</p>
+        {% for host, info in data %}
+            <h2>{{ host }}</h2>
+            {% for indicator, hosts in info %}
+                {% for values in hosts %}
+                <p>
+                    <b><span style="color: {{ values.prev < values.current ? '#b80814;' : '#0c6813;' }};">
+                        [{{ values.prev < values.current ? 'PROBLEM' : 'OK' }}]
+                        {{ labels[indicator] is defined ? labels[indicator] : indicator }}
+                    </span></b>
+                    {{ values.hostname is defined ? ' (on server "' ~ values.hostname ~ '")' : '' }}
+                </p>
+                <table style="border: 0; border-collapse: collapse; margin: 0px 8px;">
+                    <tr>
+                        <td style="padding: 4px; font-size: 12px;">
+                            Current value:
+                        </td>
+                        <td style="padding: 4px; text-align: right; font-size: 12px;">
+                            {{ values.current_formatted }}
+                        </td>
+                        <td style="padding: 4px; color: #999; font-size: 12px;">
+                            (as of {{ values.current_date|date('Y-m-d H:i') }})
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px; font-size: 12px;">
+                            Previous value:
+                        </td>
+                        <td style="padding: 4px; text-align: right; font-size: 12px;">
+                            {{ values.prev_formatted }}
+                        </td>
+                        <td style="padding: 4px; color: #999; font-size: 12px;">
+                            (as of {{ values.prev_date|date('Y-m-d H:i') }})
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px; font-size: 12px;">
+                            Border value:
+                        </td>
+                        <td style="padding: 4px; text-align: right; font-size: 12px;">
+                            {{ values.border }}
+                        </td>
+                        <td style="padding: 4px; color: #999; font-size: 12px;">
+                            &nbsp;
+                        </td>
+                    </tr>
+                </table>
+                {% endfor %}
+            {% endfor %}
+        {% endfor %}
+
+        {% include '_mail_footer.html.twig' %}
+    </body>
+</html>

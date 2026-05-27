@@ -1,0 +1,136 @@
+# syntax=docker/dockerfile:1.7
+#
+# Pinboard — multi-stage production image
+# Bundles: PHP 8.5-FPM + Nginx + Symfony app + pre-built frontend assets
+#
+# Build:
+#   docker build -t xolegator/pinboard:latest -f Dockerfile.pinboard .
+#
+# Run (single container):
+#   docker compose -f docker-compose.public.yml up -d
+#
+
+###############################################################################
+# Stage 1 — Frontend: build Webpack Encore assets via pnpm
+###############################################################################
+FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS node-builder
+
+WORKDIR /build
+
+# pnpm 9 matches pnpm-lock.yaml lockfileVersion 9.0
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY webpack.config.js ./
+COPY assets/     ./assets/
+COPY public/css/ ./public/css/
+
+RUN pnpm run build
+
+###############################################################################
+# Stage 2 — PHP dependencies: composer install (no dev)
+###############################################################################
+FROM composer:2@sha256:b09bccd91a78fe8a9ab4b33d707b862e8fe54fec17782e32683ad2a69c46867d AS composer-builder
+
+WORKDIR /build
+
+COPY composer.json composer.lock symfony.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-autoloader \
+    --no-scripts \
+    --prefer-dist
+
+# Copy source so dump-autoload can resolve class paths
+COPY src/    ./src/
+COPY config/ ./config/
+
+RUN composer dump-autoload \
+    --no-dev \
+    --classmap-authoritative \
+    --no-scripts
+
+###############################################################################
+# Stage 3 — Runtime: PHP-FPM + Nginx + Supervisord
+###############################################################################
+FROM php:8.5-fpm-alpine@sha256:82dd8cfd2aa93a98b0357e4c810f894c4ca265b5034aef3be654faae5f579487 AS runtime
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+# ── System packages ───────────────────────────────────────────────────────────
+RUN apk add --no-cache \
+    bash=5.3.3-r1 \
+    curl=8.19.0-r0 \
+    icu-dev=76.1-r1 \
+    nginx=1.28.3-r2 \
+    oniguruma-dev=6.9.10-r0 \
+    supervisor=4.3.0-r0 \
+    tzdata=2026b-r0 \
+ && docker-php-ext-install -j"$(nproc)" intl pdo_mysql \
+ && rm -rf /var/cache/apk/*
+
+# ── Supercronic (production-grade cron runner) ────────────────────────────────
+ENV SUPERCRONIC_VERSION=0.2.46 \
+    SUPERCRONIC_SHA1SUM=5bcefed628e32adc08e32634db2d10e9230dbca0
+RUN curl -fsSL \
+    "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/supercronic-linux-amd64" \
+    -o /usr/local/bin/supercronic \
+ && echo "${SUPERCRONIC_SHA1SUM}  /usr/local/bin/supercronic" | sha1sum -c - \
+ && chmod +x /usr/local/bin/supercronic
+
+# ── Nginx (single-container: php-fpm on 127.0.0.1:9000) ─────────────────────
+COPY docker/nginx/nginx.prod.conf   /etc/nginx/nginx.conf
+COPY docker/nginx/default.prod.conf /etc/nginx/conf.d/default.conf
+# Alpine nginx ships a default in http.d/ — remove it to avoid conflicts
+RUN rm -f /etc/nginx/http.d/default.conf \
+ && mkdir -p /var/log/nginx /run/nginx
+
+# ── Supervisor ────────────────────────────────────────────────────────────────
+COPY docker/php-fpm/supervisord.prod.conf /etc/supervisor/pinboard.conf
+
+# ── Aggregate cron ────────────────────────────────────────────────────────────
+COPY docker/php-fpm/aggregate.cron /etc/crontabs/aggregate.cron
+
+# ── App user (www-data, uid 1000) ────────────────────────────────────────────
+RUN addgroup -g 1000 -S www-data 2>/dev/null || true \
+ && adduser  -u 1000 -S -D -G www-data www-data 2>/dev/null || true
+
+# ── Application ──────────────────────────────────────────────────────────────
+WORKDIR /var/www
+
+# PHP vendor (production, no dev, optimized autoloader)
+COPY --from=composer-builder --chown=www-data:www-data /build/vendor ./vendor
+
+# App source — only what runtime needs
+COPY --chown=www-data:www-data bin/         ./bin/
+COPY --chown=www-data:www-data config/      ./config/
+COPY --chown=www-data:www-data migrations/  ./migrations/
+COPY --chown=www-data:www-data public/      ./public/
+COPY --chown=www-data:www-data src/         ./src/
+COPY --chown=www-data:www-data templates/   ./templates/
+COPY --chown=www-data:www-data .env         ./.env
+COPY --chown=www-data:www-data composer.json composer.lock symfony.lock ./
+
+# Pre-built frontend assets from Stage 1 (overrides empty public/build/)
+COPY --from=node-builder --chown=www-data:www-data /build/public/build ./public/build/
+
+# Symfony var/ must be writable at runtime
+RUN mkdir -p var/cache var/log var/sessions \
+ && chown -R www-data:www-data var/
+
+# ── Entrypoint: waits for DB, runs migrations, starts supervisord ─────────────
+COPY docker/php-fpm/entrypoint.prod.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# ── Defaults ─────────────────────────────────────────────────────────────────
+ENV APP_ENV=prod \
+    APP_DEBUG=0
+
+EXPOSE 80
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# Web mode: nginx + php-fpm managed by supervisord
+# Aggregate mode: override CMD with ["supercronic", "/etc/crontabs/aggregate.cron"]
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/pinboard.conf"]

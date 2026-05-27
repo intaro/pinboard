@@ -1,0 +1,9 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    form_themes: ['bootstrap_5_layout.html.twig']
+    globals:
+        base_url: '%env(APP_BASE_URL)%'
+
+when@test:
+    twig:
+        strict_variables: true

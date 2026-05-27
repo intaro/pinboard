@@ -1,0 +1,36 @@
+{
+    "devDependencies": {
+        "@babel/core": "^7.17.0",
+        "@babel/preset-env": "^7.29.2",
+        "@popperjs/core": "^2.11.8",
+        "@symfony/webpack-encore": "^6.0.0",
+        "bootstrap": "^5.3.3",
+        "core-js": "^3.49.0",
+        "regenerator-runtime": "^0.14.1",
+        "sass": "^1.99.0",
+        "sass-loader": "^16.0.7",
+        "webpack": "^5.106.2",
+        "webpack-cli": "^6.0.1",
+        "webpack-notifier": "^1.15.0"
+    },
+    "license": "UNLICENSED",
+    "private": true,
+    "browserslist": [
+        "last 2 Chrome versions",
+        "last 2 Edge versions",
+        "last 2 Firefox versions",
+        "last 2 Safari versions"
+    ],
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production --progress"
+    },
+    "dependencies": {
+        "bootstrap-icons": "^1.11.3",
+        "chart.js": "^4.5.1",
+        "chartjs-adapter-date-fns": "^3.0.0",
+        "date-fns": "^4.1.0"
+    }
+}

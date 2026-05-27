@@ -1,0 +1,10 @@
+<ul class="nav nav-pills small period mb-0">
+    {% for label in periods %}
+        <li class="nav-item">
+            <a class="nav-link {{ period == label ? 'active' : '' }}"
+               href="{{ path('server_timers', { serverName: server_name, hostName: hostname, period: label, server: server_filter }) }}">
+                {{ label }}
+            </a>
+        </li>
+    {% endfor %}
+</ul>

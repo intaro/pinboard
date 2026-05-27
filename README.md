@@ -1,117 +1,188 @@
-Intaro Pinboard
-=============================
+# Pinboard
 
-[Intaro Pinboard][1] (Pinba Board) is a realtime PHP monitoring system which aggregates and displays [pinba][2] data.
+A web admin panel for **Pinba** — a MySQL storage engine that collects real-time performance statistics from PHP applications.
 
-![Intaro Pinboard](http://intaro.github.io/pinboard/img/main-img.png)
+Pinba was originally developed by [@tony2001](https://github.com/tony2001/pinba_engine) for MySQL ≤ 5.6 and is no longer maintained. This project ships with the [@XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine) fork, which adds MySQL 8.0 and 8.4 support. Pinboard itself is agnostic to which engine build you use.
 
+![Pinboard screenshots](docs/images/screenshot.png)
 
-Developed on [Silex][3] framework and works with PHP 5.3.3 or later.
+## What is this?
 
-## Installation
+**Pinba** is a system for passive performance monitoring of PHP sites:
 
-Before Pinboard installation you should already be installed [pinba][2]. 
-Since the version `1.5` Intaro Pinboard requires Pinba `1.1` or higher.
+1. **PHP extension** (`pinba`) — embedded in each PHP process, collects request timing, memory usage, CPU time, and custom timer groups. Sends a UDP packet to a Pinba server at the end of every request.
+2. **Pinba MySQL engine** (`pinba_engine`) — a MySQL plugin that receives those UDP packets and stores them as virtual tables. Acts as the "server" that listens on UDP port 30002.
+3. **Pinboard** (this project) — a Symfony web app that reads data from the Pinba MySQL engine, aggregates it on a 15-minute schedule, and displays dashboards with request-time histograms, memory usage graphs, error rates, and slow-request logs.
 
-1. Download application:
+```
+PHP app  ──UDP──▶  MySQL + pinba_engine  ──SQL──▶  Pinboard web UI
+(pinba ext)           (collects stats)              (aggregates & shows)
+```
 
-        $ git clone git://github.com/intaro/pinboard.git --branch=v1.5.2
+## Quick start (Docker Hub — recommended)
 
-2. Download [composer](http://getcomposer.org):
+The fastest way to run the full stack. No build step needed.
 
-        $ curl -sS https://getcomposer.org/installer | php
+**Prerequisites:** Docker Engine + Docker Compose v2.
 
-3. Install dependency libraries through composer (and enter the parameters of connection to Pinba database):
+```bash
+# 1. Copy the example env file and fill in the required values
+cp .env.public.example .env
 
-        $ php composer.phar install
+# Edit .env — set APP_SECRET (openssl rand -hex 32) and passwords
+nano .env
 
-4. Initialize app (command will create additional tables and define crontab task):
+# 2. Start the stack
+docker compose -f docker-compose.public.yml up -d
 
-        $ ./console migrations:migrate
-        $ ./console register-crontab
+# 3. Create the first admin user (run once)
+docker exec pinboard-web php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+```
 
-5. Point the document root of your webserver or virtual host to the web/ directory. Read more in [Silex documentation][4]. Example for nginx + php-fpm:
+Open **http://localhost:8080** (or `PINBOARD_HTTP_PORT` from your `.env`).
 
-        server {
-            listen 80;
-            server_name pinboard.site.ru;
-            root /var/www/pinboard/web;
+### Sending stats from your PHP app
 
-            #site root is redirected to the app boot script
-            location = / {
-                try_files @site @site;
-            }
+Add to your PHP configuration (`php.ini` or pool config):
 
-            #all other locations try other files first and go to our front controller if none of them exists
-            location / {
-                try_files $uri $uri/ @site;
-            }
+```ini
+pinba.enabled = 1
+pinba.server  = <docker-host-ip>:30002
+; use PINBA_UDP_PORT from .env if you changed it from the default
+```
 
-            #return 404 for all php files as we do have a front controller
-            location ~ \.php$ {
-               return 404;
-            }
+Restart PHP-FPM and make a few requests on your site.
 
-            location @site {
-                fastcgi_pass unix:/tmp/php-fpm.sock;
-                include fastcgi_params;
-                fastcgi_param  SCRIPT_FILENAME $document_root/index.php;
-                fastcgi_param HTTPS $https if_not_empty;
-            }
+> **When will data appear?**
+>
+> Pinboard aggregates raw Pinba data on a 15-minute schedule. There is a two-stage warm-up:
+>
+> | Time after first request | What becomes visible |
+> |---|---|
+> | ~15 min (1 aggregation) | Server appears on the **main dashboard** (`/`) with basic request stats |
+> | ~2.5 h (10 aggregations) | Server appears in the **navigation menu** on the left |
+>
+> The navigation menu requires at least 10 aggregation cycles to filter out one-off or test traffic.
+> To see data immediately without waiting, trigger aggregation manually:
+>
+> ```bash
+> docker exec pinboard-aggregate php bin/console aggregate
+> ```
+>
+> Even after a manual run the navigation menu will remain empty until 10 cycles have accumulated. Use the main dashboard link directly in the meantime.
 
-            location ~ /\.(ht|svn|git) {
-                deny  all;
-            }
-        }
+### Docker images used
 
-More details in section [Installation](http://github.com/intaro/pinboard/wiki/Installation) of the documentation.
+| Image | Description |
+|---|---|
+| `xolegator/pinba-engine:8.4-lts` | MySQL 8.4 LTS with Pinba storage engine plugin |
+| `xolegator/pinboard:latest` | Pinboard web UI + aggregate worker |
 
-## Update
+The MySQL image bundles the [XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine) plugin — a fork of the original [tony2001/pinba_engine](https://github.com/tony2001/pinba_engine) with MySQL 8.0/8.4 support added.
 
-### Update from 0.1 to 1.0
+## Developer setup (run on host)
 
-Branch 1.0 brings migrations machinery which allows to update Pinboard easy when it requires database schema transformation.
+For local development without Docker.
 
-Switch to branch 1.0
+**Requirements:** PHP ≥ 8.5, MySQL 8.x with `pinba_engine` plugin, Node.js ≥ 22, pnpm ≥ 9.
 
-    $ git fetch
-    $ git checkout v1.0
+```bash
+# PHP dependencies
+composer install
 
-Update vendors
+# Frontend dependencies and build
+pnpm install
+pnpm build
 
-    $ php composer.phar update
+# App configuration
+cp .env .env.local
+# Edit .env.local — set DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-Register migration
+# Database migrations
+php bin/console doctrine:migrations:migrate
 
-    $ ./console migrations:version --add 20131013132150
+# Create first user
+php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
 
-### Update between 1.x versions
+# Start a web server (e.g. Symfony CLI or nginx + php-fpm)
+symfony serve
+```
 
-Switch to branch 1.x
+## Developer setup (Docker — dev stack)
 
-    $ git fetch
-    $ git checkout v1.x
+For development with Docker, using source-mounted volumes and Xdebug support:
 
-Update vendors
+```bash
+# Start dev stack (MySQL 8.4 LTS by default)
+make up
 
-    $ php composer.phar update
+# Or explicitly choose MySQL version:
+make up84   # MySQL 8.4 LTS (same as default)
+make up80   # MySQL 8.0 (for compatibility testing)
 
-Apply changes to database
+# Run migrations and create a user
+make db_migrate
+docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml \
+  exec -u www-data php-fpm php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+```
 
-    $ ./console migrations:migrate
+See [docs/docker.md](docs/docker.md) for full details on both the dev stack and the public image stack.
 
-Add to `parameters.yml` new options from `parameters.yml.dist`.
+## Console commands
 
-## More Information
+| Command | Description |
+|---|---|
+| `php bin/console aggregate` | Run the aggregation pipeline (normally runs via cron every 15 min) |
+| `php bin/console add-user <email> <password> [ROLE] [hosts_regexp]` | Create or update a user |
+| `php bin/console users:migrate-file-to-db` | Migrate users from file-based auth to DB |
+| `php bin/console users:migrate-db-to-file` | Migrate users from DB auth to file |
+| `php bin/console register-crontab` | Print a crontab entry for the aggregation job |
 
-Documentation in [Wiki][5].
+## Configuration
+
+Key environment variables (set in `.env.local` or as Docker env):
+
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `127.0.0.1` | MySQL host |
+| `DB_PORT` | `3306` | MySQL port |
+| `DB_NAME` | `pinba` | Database name |
+| `DB_USER` | — | Database user |
+| `DB_PASSWORD` | — | Database password |
+| `DB_SERVER_VERSION` | `8.4.0` | MySQL server version (for Doctrine) |
+| `APP_AUTH_USER_SOURCE` | `file` | User storage: `file` or `db` |
+| `APP_RECORDS_LIFETIME` | `P1M` | How long to keep raw data (ISO 8601 duration) |
+| `APP_AGGREGATION_PERIOD` | `PT15M` | Aggregation window size |
+| `APP_LOGGING_LONG_REQUEST_TIME_GLOBAL` | `1.5` | Slow request threshold (seconds) |
+| `APP_NOTIFICATION_ENABLE` | `0` | Enable email notifications |
+
+Full variable reference: [docs/configuration.md](docs/configuration.md)
+
+## Related projects
+
+- **[XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine)** — MySQL 8.0/8.4 port of the Pinba storage engine (fork of the original [tony2001/pinba_engine](https://github.com/tony2001/pinba_engine), which supported MySQL ≤ 5.6 and is no longer maintained).
+- **[PHP Pinba extension](https://github.com/tony2001/pinba_extension)** — the PHP extension that sends UDP packets. Available for PHP 7/8 via PECL or package managers.
+
+## Documentation
+
+- [Configuration reference](docs/configuration.md)
+- [Docker: quick-start & dev stack](docs/docker.md)
+- [Deployment & operations](docs/deployment.md)
+- [Testing](docs/testing.md)
+- [Code standards](docs/standards.md)
+
+## Upgrading from 1.x
+
+If you have an existing Pinboard 1.x (Silex-based) installation:
+
+1. Back up the database.
+2. Check out this branch / the new release.
+3. Run `composer install && pnpm install && pnpm build`.
+4. Copy your old `config/parameters.yml` — file-based auth settings are preserved.
+5. Run `php bin/console doctrine:migrations:migrate`.
+
+See [docs/deployment.md](docs/deployment.md) for the full upgrade guide.
 
 ## License
 
-Intaro Pinboard is licensed under the MIT license.
-
-[1]: http://intaro.github.io/pinboard/
-[2]: http://pinba.org
-[3]: http://silex.sensiolabs.org
-[4]: http://silex.sensiolabs.org/doc/web_servers.html
-[5]: https://github.com/intaro/pinboard/wiki
+MIT — see [LICENSE](LICENSE).
