@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/intaro/pinboard/compare/v2.1.0...v2.1.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* **ci:** set explicit component to match release tag format ([#156](https://github.com/intaro/pinboard/issues/156)) ([4bec55f](https://github.com/intaro/pinboard/commit/4bec55f5de1aa7547ab3b031086fd7677c890fb4))
+
 ## [2.1.0](https://github.com/intaro/pinboard/compare/v2.0.0...v2.1.0) (2026-05-27)
 
 
