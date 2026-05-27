@@ -36,7 +36,7 @@ final class Version20260309173000 extends AbstractMigration
         );
 
         if ($alreadyPinba) {
-            $this->note('ipm_pinba_* tables already use PINBA engine — skipping repair.');
+            $this->write('ipm_pinba_* tables already use PINBA engine — skipping repair.');
             return;
         }
 
