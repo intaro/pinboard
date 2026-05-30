@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/intaro/pinboard/compare/v2.1.1...v2.1.2) (2026-05-30)
+
+
+### Bug Fixes
+
+* **ui:** align request time pagination count ([#158](https://github.com/intaro/pinboard/issues/158)) ([54e1fc6](https://github.com/intaro/pinboard/commit/54e1fc6e30b13de25d233d466a9ccb6cf64940ec))
+
 ## [2.1.1](https://github.com/intaro/pinboard/compare/v2.1.0...v2.1.1) (2026-05-27)
 
 
