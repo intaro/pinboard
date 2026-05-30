@@ -611,15 +611,33 @@ class AggregateCommand extends Command
                 INSERT INTO ipm_req_time_details
                     (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
-                    max(id), server_name, hostname, script_name, max(req_time), max(mem_peak_usage), max(tags), max(tags_cnt), max(timers_cnt), FROM_UNIXTIME(max(timestamp))
+                    request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at
                 FROM
-                    request
+                    (
+                        SELECT
+                            r.id AS request_id,
+                            r.server_name,
+                            r.hostname,
+                            r.script_name,
+                            r.req_time,
+                            r.mem_peak_usage,
+                            r.tags,
+                            r.tags_cnt,
+                            r.timers_cnt,
+                            FROM_UNIXTIME(r.timestamp) AS created_at,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY r.server_name, r.hostname, r.script_name
+                                ORDER BY r.req_time DESC, r.timestamp DESC, r.id DESC
+                            ) AS rn
+                        FROM
+                            request r
+                        WHERE
+                            r.server_name = "' . $serverNameEsc . '" AND r.hostname = "' . $hostNameEsc . '" AND r.req_time > ' . $maxReqTime . '
+                    ) ranked_request
                 WHERE
-                    server_name = "' . $serverNameEsc . '" AND hostname = "' . $hostNameEsc . '" AND req_time > ' . $maxReqTime . '
-                GROUP BY
-                    server_name, hostname, script_name
+                    rn = 1
                 ORDER BY
-                    max(req_time) DESC
+                    req_time DESC
                 LIMIT
                     10
             ;';
