@@ -205,41 +205,6 @@
 {% endblock %}
 {% block javascripts %}
     {{ parent() }}
-    <script type="text/html" id="row_tpl">
-        <% for (var i = 0; i < pages.length; i++) { %>
-        <tr style="display: none;">
-            <td class="host"><%=pages[i].hostname%></a></td>
-            <td class="script-name">
-                <a class="script-name" href="http://<%=pages[i].server_name%><%=pages[i].script_name%>"
-                   title="<%=pages[i].script_name%>"><%=pages[i].script_name%></a>
-                <% for (k in pages[i].tags) { %>
-                <div class="text-body-secondary"><small><%=k%> = <%=pages[i].tags[k]%></small></div>
-                <% } %>
-                <% if (pages[i].timers_cnt > 0) { %>
-                <div>
-                    <a href="<%=timersPath.replace('00000', pages[i].id)%>"><small><i class="bi bi-clock"></i> timers
-                            details</small></a>
-                </div>
-                <% } %>
-            </td>
-            <td>
-                <div class="text-end"><%=pages[i].req_time_format%></div>
-            </td>
-            <td>
-                <div class="text-end"><%=pages[i].status%></div>
-            </td>
-            <td>
-                <div class="text-end"><%=pages[i].mem_peak_usage_format%></div>
-            </td>
-            <td>
-                <div class="text-end"><%=pages[i].ru_utime%></div>
-            </td>
-            <td>
-                <div class="text-end"><%=pages[i].timestamp_format%></div>
-            </td>
-        </tr>
-        <% } %>
-    </script>
     <script type="text/javascript">
         const liveState = {
             active: true,
@@ -258,9 +223,83 @@
         const filterButton = document.querySelector('.live-controls button.filter');
         const lastIdInput = filterForm.querySelector('input[name="last_id"]');
         const lastTimestampInput = filterForm.querySelector('input[name="last_timestamp"]');
+        const tableHeader = tableData.querySelector('#table-header');
 
         lastIdInput.value = {{ last_id }};
         lastTimestampInput.value = {{ last_timestamp }};
+
+        function createTagLine(tagName, tagValue) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'text-body-secondary';
+
+            const small = document.createElement('small');
+            small.textContent = `${tagName} = ${tagValue ?? ''}`;
+
+            wrapper.appendChild(small);
+
+            return wrapper;
+        }
+
+        function createTimersLink(page, timersPath) {
+            const wrapper = document.createElement('div');
+            const link = document.createElement('a');
+            link.href = timersPath.replace('00000', String(page.id));
+
+            const small = document.createElement('small');
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-clock';
+            icon.setAttribute('aria-hidden', 'true');
+            small.appendChild(icon);
+            small.appendChild(document.createTextNode(' timers details'));
+
+            link.appendChild(small);
+            wrapper.appendChild(link);
+
+            return wrapper;
+        }
+
+        function createTextCell(text, className = '') {
+            const td = document.createElement('td');
+            if (className !== '') {
+                td.className = className;
+            }
+            td.textContent = text;
+            return td;
+        }
+
+        function createLiveRow(page, timersPath) {
+            const tr = document.createElement('tr');
+
+            tr.appendChild(createTextCell(page.hostname ?? '', 'host'));
+
+            const scriptCell = document.createElement('td');
+            scriptCell.className = 'script-name';
+
+            const scriptLink = document.createElement('a');
+            scriptLink.className = 'script-name';
+            scriptLink.href = `http://${page.server_name ?? ''}${page.script_name ?? ''}`;
+            scriptLink.title = page.script_name ?? '';
+            scriptLink.textContent = page.script_name ?? '';
+            scriptCell.appendChild(scriptLink);
+
+            const tags = page.tags && typeof page.tags === 'object' ? page.tags : {};
+            Object.entries(tags).forEach(([tagName, tagValue]) => {
+                scriptCell.appendChild(createTagLine(tagName, tagValue));
+            });
+
+            if (Number(page.timers_cnt) > 0) {
+                scriptCell.appendChild(createTimersLink(page, timersPath));
+            }
+
+            tr.appendChild(scriptCell);
+            tr.appendChild(createTextCell(page.req_time_format ?? '', 'text-end'));
+            tr.appendChild(createTextCell(page.status ?? '', 'text-end'));
+            tr.appendChild(createTextCell(page.mem_peak_usage_format ?? '', 'text-end'));
+            tr.appendChild(createTextCell(page.ru_utime ?? '', 'text-end'));
+            tr.appendChild(createTextCell(page.timestamp_format ?? '', 'text-end'));
+
+            return tr;
+        }
 
         function setControlState() {
             pauseButton.classList.toggle('disabled', !liveState.active);
@@ -309,11 +348,11 @@
                 const data = await response.json();
 
                 if (Array.isArray(data.pages) && data.pages.length > 0) {
-                    const resHtml = tmpl('row_tpl', { pages: data.pages, timersPath: liveState.timersPath });
-                    tableData.querySelector('#table-header').insertAdjacentHTML('afterend', resHtml);
-                    tableData.querySelectorAll('tr[style*="display: none"]').forEach((row) => {
-                        row.style.display = '';
+                    const fragment = document.createDocumentFragment();
+                    data.pages.forEach((page) => {
+                        fragment.appendChild(createLiveRow(page, liveState.timersPath));
                     });
+                    tableHeader.parentNode.insertBefore(fragment, tableHeader.nextSibling);
                     Array.from(tableData.querySelectorAll('tr')).slice(liveState.limit + 1).forEach((row) => {
                         row.remove();
                     });
