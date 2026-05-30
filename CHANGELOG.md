@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.4](https://github.com/intaro/pinboard/compare/v2.1.3...v2.1.4) (2026-05-30)
+
+
+### Bug Fixes
+
+* **ui:** harden live page rendering ([#163](https://github.com/intaro/pinboard/issues/163)) ([a7a71b1](https://github.com/intaro/pinboard/commit/a7a71b17a04cc0e9c3653cd5b570d8abd26630ce))
+
 ## [2.1.3](https://github.com/intaro/pinboard/compare/v2.1.2...v2.1.3) (2026-05-30)
 
 
