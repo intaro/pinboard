@@ -109,13 +109,19 @@ class TimerController extends AbstractController
                 'id' => $id,
             ];
 
+            $dateCondition = '';
+            if ($date !== null && $date !== '') {
+                $params['date'] = $date;
+                $dateCondition = ' AND created_at = :date';
+            }
+
             $sql = '
             SELECT
                 *
             FROM
                 ipm_req_time_details
             WHERE
-                request_id = :id
+                request_id = :id' . $dateCondition . '
         ';
         }
 
