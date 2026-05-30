@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.3](https://github.com/intaro/pinboard/compare/v2.1.2...v2.1.3) (2026-05-30)
+
+
+### Bug Fixes
+
+* **ci:** trigger docker publish from release automation ([#160](https://github.com/intaro/pinboard/issues/160)) ([4aa3e92](https://github.com/intaro/pinboard/commit/4aa3e920ea06a6c774da39c14485649eb2ebc94f))
+* **db:** retain tag info with cleanup ([#162](https://github.com/intaro/pinboard/issues/162)) ([274d671](https://github.com/intaro/pinboard/commit/274d67112c21c936e2d67925e32eba2f8fba5b21))
+
 ## [2.1.2](https://github.com/intaro/pinboard/compare/v2.1.1...v2.1.2) (2026-05-30)
 
 
