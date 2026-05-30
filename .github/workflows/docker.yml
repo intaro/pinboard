@@ -3,6 +3,12 @@ name: Docker
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: 'Release tag to publish, for example v2.1.2. Leave empty to use the current ref.'
+        required: false
+        type: string
 
 jobs:
   build-push:
@@ -10,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.release-tag != '' && inputs.release-tag || github.ref }}
 
       - uses: docker/setup-buildx-action@v3
 
@@ -21,7 +29,7 @@ jobs:
       - name: Extract version from tag
         id: meta
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${{ inputs.release-tag != '' && inputs.release-tag || github.ref_name }}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
