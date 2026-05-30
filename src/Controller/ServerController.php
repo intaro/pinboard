@@ -906,7 +906,7 @@ class ServerController extends AbstractController
 
         $sql = "
             SELECT
-                COUNT(*)
+                COUNT(DISTINCT request_id)
             FROM
                 ipm_req_time_details
             WHERE
