@@ -25,7 +25,6 @@ class AggregateCommand extends Command
     public const float DEFAULT_SLOW_REQ_TIME = 1.5;
     public const int DEFAULT_HEAVY_PAGE_MEMORY = 30000;
     public const int DEFAULT_HEAVY_PAGE_CPU = 1;
-    public const int DEFAULT_LOCK_TTL_SECONDS = 900;
     public const int DEFAULT_MIN_ERROR_CODE = 500;
 
     public function __construct(
@@ -262,111 +261,110 @@ class AggregateCommand extends Command
         }
 
         $lockFile = $this->projectDir . '/var/aggregate.lock';
-        $lockTtlSeconds = $this->envInt('APP_AGGREGATE_LOCK_TTL_SECONDS', self::DEFAULT_LOCK_TTL_SECONDS);
-        if (file_exists($lockFile)) {
-            $mtime = @filemtime($lockFile);
-            if ($mtime !== false && (time() - $mtime) > $lockTtlSeconds) {
-                if (@unlink($lockFile)) {
-                    $output->writeln(sprintf(
-                        '<comment>Removed stale lock file %s (older than %d seconds).</comment>',
-                        $lockFile,
-                        $lockTtlSeconds
-                    ));
-                } else {
-                    $output->writeln(sprintf(
-                        '<error>Found stale lock file %s, but cannot remove it. Please remove it manually.</error>',
-                        $lockFile
-                    ));
+        $lockHandle = @fopen($lockFile, 'c+');
+        if ($lockHandle === false) {
+            $output->writeln('<error>Cannot open lock file ' . $lockFile . '</error>');
 
-                    return Command::FAILURE;
-                }
-            }
+            return Command::FAILURE;
         }
 
-        if (file_exists($lockFile)) {
-            $output->writeln('<error>Cannot run data aggregation: another instance is already executing. Otherwise, remove ' . $lockFile . '</error>');
+        if (!flock($lockHandle, LOCK_EX | LOCK_NB)) {
+            $output->writeln('<error>Cannot run data aggregation: another instance is already executing.</error>');
 
             if ($this->config->notificationGlobalEmail !== '') {
                 try {
                     $body = $this->twig->render('lock_notification.html.twig');
                     $this->sendEmail($this->config->notificationGlobalEmail, 'Intaro Pinboard can\'t run data aggregation', $body);
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     $output->writeln('<error>Failed to send lock notification: ' . $e->getMessage() . '</error>');
                 }
             }
 
+            fclose($lockHandle);
+
             return Command::FAILURE;
         }
 
-        if (!touch($lockFile)) {
-            $output->writeln('<error>Warning: cannot create ' . $lockFile . '</error>');
+        $lockMetadata = sprintf(
+            "pid=%d\nstarted_at=%s\n",
+            getmypid() ?: 0,
+            date(DATE_ATOM)
+        );
+        if (
+            ftruncate($lockHandle, 0) === false ||
+            rewind($lockHandle) === false ||
+            fwrite($lockHandle, $lockMetadata) === false ||
+            fflush($lockHandle) === false
+        ) {
+            $output->writeln('<comment>Warning: failed to write lock metadata to ' . $lockFile . '</comment>');
         }
 
-        $now = new \DateTime();
-        $now = $now->format('Y-m-d H:i:s');
+        try {
+            $now = new \DateTime();
+            $now = $now->format('Y-m-d H:i:s');
 
-        $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
-        $date = new \DateTime();
-        $date->sub($delta);
+            $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
+            $date = new \DateTime();
+            $date->sub($delta);
 
-        $params = [
-            'created_at' => $date->format('Y-m-d H:i:s'),
-        ];
+            $params = [
+                'created_at' => $date->format('Y-m-d H:i:s'),
+            ];
 
-        $tablesForClear = [
-            'ipm_report_2_by_hostname_and_server',
-            'ipm_report_by_hostname',
-            'ipm_report_by_hostname_and_server',
-            'ipm_report_by_server_name',
-            'ipm_req_time_details',
-            'ipm_mem_peak_usage_details',
-            'ipm_status_details',
-            'ipm_cpu_usage_details',
-            'ipm_timer',
-            'ipm_tag_info',
-        ];
+            $tablesForClear = [
+                'ipm_report_2_by_hostname_and_server',
+                'ipm_report_by_hostname',
+                'ipm_report_by_hostname_and_server',
+                'ipm_report_by_server_name',
+                'ipm_req_time_details',
+                'ipm_mem_peak_usage_details',
+                'ipm_status_details',
+                'ipm_cpu_usage_details',
+                'ipm_timer',
+                'ipm_tag_info',
+            ];
 
-        $sql = '';
+            $sql = '';
 
-        foreach ($tablesForClear as $value) {
-            $sql .= '
-            DELETE
-            FROM
-                ' . $value . '
-            WHERE
-                created_at < :created_at
-            ;';
-        }
-        $db->executeStatement($sql, $params);
-
-        if ($this->config->notificationEnable) {
-            $sql = '
-                SELECT
-                    server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
+            foreach ($tablesForClear as $value) {
+                $sql .= '
+                DELETE
                 FROM
-                    request
+                    ' . $value . '
                 WHERE
-                    status >= ' . $this->config->minErrorCode . '
-                GROUP BY
-                    server_name, script_name, status
-            ';
+                    created_at < :created_at
+                ;';
+            }
+            $db->executeStatement($sql, $params);
 
-            $errorPages = $db->executeQuery($sql)->fetchAllAssociative();
+            if ($this->config->notificationEnable) {
+                $sql = '
+                    SELECT
+                        server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
+                    FROM
+                        request
+                    WHERE
+                        status >= ' . $this->config->minErrorCode . '
+                    GROUP BY
+                        server_name, script_name, status
+                ';
 
-            if (count($errorPages) > 0) {
-                try {
-                    $this->sendErrorEmails($errorPages);
-                } catch (Exception $e) {
-                    $output->writeln("<error>Notification sending error\n" . $e->getMessage() . '</error>');
+                $errorPages = $db->executeQuery($sql)->fetchAllAssociative();
+
+                if (count($errorPages) > 0) {
+                    try {
+                        $this->sendErrorEmails($errorPages);
+                    } catch (Exception $e) {
+                        $output->writeln("<error>Notification sending error\n" . $e->getMessage() . '</error>');
+                    }
                 }
+
+                unset($errorPages);
             }
 
-            unset($errorPages);
-        }
+            $db->beginTransaction();
 
-        $db->beginTransaction();
-
-        $sql = '
+            $sql = '
             SELECT
                 server_name, hostname, COUNT(*) AS cnt
             FROM
@@ -375,9 +373,9 @@ class AggregateCommand extends Command
                 server_name, hostname
         ';
 
-        $servers = $db->executeQuery($sql)->fetchAllAssociative();
+            $servers = $db->executeQuery($sql)->fetchAllAssociative();
 
-        $subselectTemplate = '
+            $subselectTemplate = '
             (
                 SELECT
                     r.%s
@@ -391,17 +389,17 @@ class AggregateCommand extends Command
             as %s
         ';
 
-        $sql = '';
-        foreach ($servers as $server) {
-            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
-            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
-            $cnt = is_numeric($server['cnt']) ? (int) $server['cnt'] : 0;
-            if ($serverName === '' || $hostName === '' || $cnt === 0) {
-                continue;
-            }
-            $serverNameEsc = addslashes($serverName);
-            $hostNameEsc = addslashes($hostName);
-            $sql .= '
+            $sql = '';
+            foreach ($servers as $server) {
+                $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+                $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+                $cnt = is_numeric($server['cnt']) ? (int) $server['cnt'] : 0;
+                if ($serverName === '' || $hostName === '' || $cnt === 0) {
+                    continue;
+                }
+                $serverNameEsc = addslashes($serverName);
+                $hostNameEsc = addslashes($hostName);
+                $sql .= '
                 INSERT INTO ipm_report_2_by_hostname_and_server
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
                      mem_peak_usage_90, mem_peak_usage_95, mem_peak_usage_99, mem_peak_usage_100,
@@ -432,14 +430,14 @@ class AggregateCommand extends Command
                 WHERE
                     r2.server_name = "' . $serverNameEsc . '" and r2.hostname = "' . $hostNameEsc . '"
             ;';
-        }
-        if ($sql !== '') {
-            $db->executeStatement($sql);
-        }
+            }
+            if ($sql !== '') {
+                $db->executeStatement($sql);
+            }
 
-        $db->commit();
+            $db->commit();
 
-        $sql = '
+            $sql = '
             INSERT INTO ipm_report_by_hostname
                 (
                     req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
@@ -482,10 +480,10 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
         ';
-        $db->executeStatement($sql);
+            $db->executeStatement($sql);
 
-        //insert timers reports
-        $sql = '
+            //insert timers reports
+            $sql = '
             INSERT INTO ipm_tag_info
                 (
                     `group`, server_name, req_count, req_per_sec, hit_count,
@@ -574,9 +572,9 @@ class AggregateCommand extends Command
             FROM
                 ipm_pinba_tag_info_category_server_server_name_hostname;
         ';
-        $db->executeStatement($sql);
+            $db->executeStatement($sql);
 
-        $sql = '
+            $sql = '
             INSERT INTO
                 ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt, created_at)
             SELECT
@@ -590,24 +588,24 @@ class AggregateCommand extends Command
             LIMIT
                 25
         ';
-        $db->executeStatement($sql);
+            $db->executeStatement($sql);
 
-        $maxReqId = $db->fetchOne('SELECT max(id) FROM ipm_req_time_details');
+            $maxReqId = $db->fetchOne('SELECT max(id) FROM ipm_req_time_details');
 
-        $sql = '';
-        foreach ($servers as $server) {
-            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
-            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
-            if ($serverName === '' || $hostName === '') {
-                continue;
-            }
-            $serverNameEsc = addslashes($serverName);
-            $hostNameEsc = addslashes($hostName);
-            $maxReqTime = $this->config->longRequestTime['global'] ?? static::DEFAULT_SLOW_REQ_TIME;
-            if (isset($this->config->longRequestTime[$serverName])) {
-                $maxReqTime = $this->config->longRequestTime[$serverName];
-            }
-            $sql .= '
+            $sql = '';
+            foreach ($servers as $server) {
+                $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+                $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+                if ($serverName === '' || $hostName === '') {
+                    continue;
+                }
+                $serverNameEsc = addslashes($serverName);
+                $hostNameEsc = addslashes($hostName);
+                $maxReqTime = $this->config->longRequestTime['global'] ?? static::DEFAULT_SLOW_REQ_TIME;
+                if (isset($this->config->longRequestTime[$serverName])) {
+                    $maxReqTime = $this->config->longRequestTime[$serverName];
+                }
+                $sql .= '
                 INSERT INTO ipm_req_time_details
                     (request_id, server_name, hostname, script_name, req_time, mem_peak_usage, tags, tags_cnt, timers_cnt, created_at)
                 SELECT
@@ -641,11 +639,11 @@ class AggregateCommand extends Command
                 LIMIT
                     10
             ;';
-        }
-        if ($sql !== '') {
-            $db->executeStatement($sql);
+            }
+            if ($sql !== '') {
+                $db->executeStatement($sql);
 
-            $sql = '
+                $sql = '
                 SELECT
                     request_id
                 FROM
@@ -654,21 +652,21 @@ class AggregateCommand extends Command
                     id > :max_id
             ';
 
-            $data = $db->executeQuery($sql, ['max_id' => $maxReqId])->fetchAllAssociative();
+                $data = $db->executeQuery($sql, ['max_id' => $maxReqId])->fetchAllAssociative();
 
-            $ids = [];
-            foreach ($data as $item) {
-                $reqId = $item['request_id'];
-                if (is_int($reqId)) {
-                    $ids[] = (string) $reqId;
-                } elseif (is_string($reqId) && $reqId !== '') {
-                    $ids[] = $reqId;
+                $ids = [];
+                foreach ($data as $item) {
+                    $reqId = $item['request_id'];
+                    if (is_int($reqId)) {
+                        $ids[] = (string) $reqId;
+                    } elseif (is_string($reqId) && $reqId !== '') {
+                        $ids[] = $reqId;
+                    }
                 }
-            }
-            unset($data);
+                unset($data);
 
-            if (count($ids)) {
-                $sql = '
+                if (count($ids)) {
+                    $sql = '
                     INSERT INTO ipm_timer
                         (timer_id, request_id, hit_count, value, tag_name, tag_value, created_at)
                     SELECT
@@ -685,25 +683,25 @@ class AggregateCommand extends Command
                         t.request_id IN (' . implode(', ', $ids) . ')
                 ';
 
-                $db->executeStatement($sql);
-            }
-        }
-
-        $sql = '';
-        foreach ($servers as $server) {
-            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
-            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
-            if ($serverName === '' || $hostName === '') {
-                continue;
-            }
-            $serverNameEsc = addslashes($serverName);
-            $hostNameEsc = addslashes($hostName);
-            $maxMemoryUsage = $this->config->heavyRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_MEMORY;
-            if (isset($this->config->heavyRequest[$serverName])) {
-                $maxMemoryUsage = $this->config->heavyRequest[$serverName];
+                    $db->executeStatement($sql);
+                }
             }
 
-            $sql .= '
+            $sql = '';
+            foreach ($servers as $server) {
+                $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+                $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+                if ($serverName === '' || $hostName === '') {
+                    continue;
+                }
+                $serverNameEsc = addslashes($serverName);
+                $hostNameEsc = addslashes($hostName);
+                $maxMemoryUsage = $this->config->heavyRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_MEMORY;
+                if (isset($this->config->heavyRequest[$serverName])) {
+                    $maxMemoryUsage = $this->config->heavyRequest[$serverName];
+                }
+
+                $sql .= '
                 INSERT INTO ipm_mem_peak_usage_details
                     (server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at)
                 SELECT
@@ -719,26 +717,26 @@ class AggregateCommand extends Command
                 LIMIT
                     10
             ;';
-        }
-        if ($sql !== '') {
-            $db->executeStatement($sql);
-        }
-
-        $sql = '';
-        foreach ($servers as $server) {
-            $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
-            $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
-            if ($serverName === '' || $hostName === '') {
-                continue;
             }
-            $serverNameEsc = addslashes($serverName);
-            $hostNameEsc = addslashes($hostName);
-            $maxCPUUsage = $this->config->heavyCpuRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_CPU;
-            if (isset($this->config->heavyCpuRequest[$serverName])) {
-                $maxCPUUsage = $this->config->heavyCpuRequest[$serverName];
+            if ($sql !== '') {
+                $db->executeStatement($sql);
             }
 
-            $sql .= '
+            $sql = '';
+            foreach ($servers as $server) {
+                $serverName = is_string($server['server_name']) ? $server['server_name'] : '';
+                $hostName = is_string($server['hostname']) ? $server['hostname'] : '';
+                if ($serverName === '' || $hostName === '') {
+                    continue;
+                }
+                $serverNameEsc = addslashes($serverName);
+                $hostNameEsc = addslashes($hostName);
+                $maxCPUUsage = $this->config->heavyCpuRequest['global'] ?? static::DEFAULT_HEAVY_PAGE_CPU;
+                if (isset($this->config->heavyCpuRequest[$serverName])) {
+                    $maxCPUUsage = $this->config->heavyCpuRequest[$serverName];
+                }
+
+                $sql .= '
                   INSERT INTO ipm_cpu_usage_details
                       (server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at)
                   SELECT
@@ -754,22 +752,24 @@ class AggregateCommand extends Command
                   LIMIT
                       10
             ;';
+            }
+            if ($sql !== '') {
+                $db->executeStatement($sql);
+            }
+
+            // notification about abrupt drawdown of indicators
+            $values = $this->getBorderOutValues($db, $servers);
+            $this->sendBorderOutEmails($values);
+
+            $output->writeln('<info>Data are aggregated successfully</info>');
+
+            return Command::SUCCESS;
+        } finally {
+            ftruncate($lockHandle, 0);
+            fflush($lockHandle);
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
         }
-        if ($sql !== '') {
-            $db->executeStatement($sql);
-        }
-
-        // notification about abrupt drawdown of indicators
-        $values = $this->getBorderOutValues($db, $servers);
-        $this->sendBorderOutEmails($values);
-
-        $output->writeln('<info>Data are aggregated successfully</info>');
-
-        if (file_exists($lockFile) && !unlink($lockFile)) {
-            $output->writeln('<error>Error: cannot remove ' . $lockFile . ' file, you must remove it manually and check server settings.</error>');
-        }
-
-        return Command::SUCCESS;
     }
 
 

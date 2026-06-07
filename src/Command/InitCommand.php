@@ -59,7 +59,13 @@ class InitCommand extends Command
             $output->writeln('<error>Unable to resolve console path</error>');
             return Command::FAILURE;
         }
-        $command = '*/' . $frequency . ' * * * * ' . $path . ' aggregate';
+        $phpBinary = PHP_BINARY;
+        $command = sprintf(
+            '*/%d * * * * %s %s aggregate --no-interaction',
+            $frequency,
+            escapeshellarg($phpBinary),
+            escapeshellarg($path)
+        );
 
         if (strpos($crontabString, $command) === false) {
             $crontabString .= "\n" . $command . "\n";

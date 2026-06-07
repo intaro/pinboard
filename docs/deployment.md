@@ -31,10 +31,10 @@ pnpm build
 ## Example crontab entry
 
 ```cron
-*/15 * * * * cd /var/www/pinboard/current && php bin/console aggregate --no-interaction >> /var/log/pinboard/aggregate.log 2>&1
+*/15 * * * * cd /var/www/pinboard/current && /usr/bin/php8.4 bin/console aggregate --no-interaction >> /var/log/pinboard/aggregate.log 2>&1
 ```
 
-This runs aggregation every 15 minutes and writes output to a log file. Adjust paths to match your environment.
+This runs aggregation every 15 minutes and writes output to a log file. Adjust paths to match your environment, and use the exact PHP 8.4+ binary configured for this installation rather than relying on cron's `PATH`.
 
 ## Data visibility timeline
 
