@@ -56,6 +56,8 @@ All changes enter `master` exclusively via pull request — direct pushes are bl
 
 - Branch names: `fix/description`, `feat/description`, `chore/description`, etc.
 - Commit titles must follow Conventional Commits (see `docs/contributing.md`).
+- Pull request titles must also follow Conventional Commits.
+- Do not add extra prefixes to pull request titles, for example `[codex]` or similar tooling markers.
 - CI runs three mandatory jobs: `PHP CS Fixer`, `PHPStan`, `PHPUnit (8.4 + 8.5)`.
 - After a PR merges, Release Please automatically opens or updates a Release PR.
 - Merging the Release PR creates a `vX.Y.Z` tag and GitHub Release.
