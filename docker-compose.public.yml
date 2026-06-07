@@ -103,7 +103,6 @@ services:
       APP_NOTIFICATION_ENABLE: ${APP_NOTIFICATION_ENABLE:-0}
       APP_NOTIFICATION_SENDER: ${APP_NOTIFICATION_SENDER:-noreply@pinboard.local}
       APP_NOTIFICATION_GLOBAL_EMAIL: ${APP_NOTIFICATION_GLOBAL_EMAIL:-}
-      APP_AGGREGATE_LOCK_TTL_SECONDS: "900"
     command: ["supercronic", "/etc/crontabs/aggregate.cron"]
     volumes:
       - pinboard-var:/var/www/var

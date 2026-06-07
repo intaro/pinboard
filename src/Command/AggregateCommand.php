@@ -25,7 +25,6 @@ class AggregateCommand extends Command
     public const float DEFAULT_SLOW_REQ_TIME = 1.5;
     public const int DEFAULT_HEAVY_PAGE_MEMORY = 30000;
     public const int DEFAULT_HEAVY_PAGE_CPU = 1;
-    public const int DEFAULT_LOCK_TTL_SECONDS = 900;
     public const int DEFAULT_MIN_ERROR_CODE = 500;
 
     public function __construct(
@@ -262,109 +261,108 @@ class AggregateCommand extends Command
         }
 
         $lockFile = $this->projectDir . '/var/aggregate.lock';
-        $lockTtlSeconds = $this->envInt('APP_AGGREGATE_LOCK_TTL_SECONDS', self::DEFAULT_LOCK_TTL_SECONDS);
-        if (file_exists($lockFile)) {
-            $mtime = @filemtime($lockFile);
-            if ($mtime !== false && (time() - $mtime) > $lockTtlSeconds) {
-                if (@unlink($lockFile)) {
-                    $output->writeln(sprintf(
-                        '<comment>Removed stale lock file %s (older than %d seconds).</comment>',
-                        $lockFile,
-                        $lockTtlSeconds
-                    ));
-                } else {
-                    $output->writeln(sprintf(
-                        '<error>Found stale lock file %s, but cannot remove it. Please remove it manually.</error>',
-                        $lockFile
-                    ));
+        $lockHandle = @fopen($lockFile, 'c+');
+        if ($lockHandle === false) {
+            $output->writeln('<error>Cannot open lock file ' . $lockFile . '</error>');
 
-                    return Command::FAILURE;
-                }
-            }
+            return Command::FAILURE;
         }
 
-        if (file_exists($lockFile)) {
-            $output->writeln('<error>Cannot run data aggregation: another instance is already executing. Otherwise, remove ' . $lockFile . '</error>');
+        if (!flock($lockHandle, LOCK_EX | LOCK_NB)) {
+            $output->writeln('<error>Cannot run data aggregation: another instance is already executing.</error>');
 
             if ($this->config->notificationGlobalEmail !== '') {
                 try {
                     $body = $this->twig->render('lock_notification.html.twig');
                     $this->sendEmail($this->config->notificationGlobalEmail, 'Intaro Pinboard can\'t run data aggregation', $body);
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     $output->writeln('<error>Failed to send lock notification: ' . $e->getMessage() . '</error>');
                 }
             }
 
+            fclose($lockHandle);
+
             return Command::FAILURE;
         }
 
-        if (!touch($lockFile)) {
-            $output->writeln('<error>Warning: cannot create ' . $lockFile . '</error>');
+        $lockMetadata = sprintf(
+            "pid=%d\nstarted_at=%s\n",
+            getmypid() ?: 0,
+            date(DATE_ATOM)
+        );
+        if (
+            ftruncate($lockHandle, 0) === false ||
+            rewind($lockHandle) === false ||
+            fwrite($lockHandle, $lockMetadata) === false ||
+            fflush($lockHandle) === false
+        ) {
+            $output->writeln('<comment>Warning: failed to write lock metadata to ' . $lockFile . '</comment>');
         }
 
-        $now = new \DateTime();
-        $now = $now->format('Y-m-d H:i:s');
+        try {
+            $now = new \DateTime();
+            $now = $now->format('Y-m-d H:i:s');
 
-        $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
-        $date = new \DateTime();
-        $date->sub($delta);
+            $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
+            $date = new \DateTime();
+            $date->sub($delta);
 
-        $params = [
-            'created_at' => $date->format('Y-m-d H:i:s'),
-        ];
+            $params = [
+                'created_at' => $date->format('Y-m-d H:i:s'),
+            ];
 
-        $tablesForClear = [
-            'ipm_report_2_by_hostname_and_server',
-            'ipm_report_by_hostname',
-            'ipm_report_by_hostname_and_server',
-            'ipm_report_by_server_name',
-            'ipm_req_time_details',
-            'ipm_mem_peak_usage_details',
-            'ipm_status_details',
-            'ipm_cpu_usage_details',
-            'ipm_timer',
-            'ipm_tag_info',
-        ];
+            $tablesForClear = [
+                'ipm_report_2_by_hostname_and_server',
+                'ipm_report_by_hostname',
+                'ipm_report_by_hostname_and_server',
+                'ipm_report_by_server_name',
+                'ipm_req_time_details',
+                'ipm_mem_peak_usage_details',
+                'ipm_status_details',
+                'ipm_cpu_usage_details',
+                'ipm_timer',
+                'ipm_tag_info',
+            ];
 
-        $sql = '';
+            $sql = '';
 
-        foreach ($tablesForClear as $value) {
-            $sql .= '
-            DELETE
-            FROM
-                ' . $value . '
-            WHERE
-                created_at < :created_at
-            ;';
-        }
-        $db->executeStatement($sql, $params);
-
-        if ($this->config->notificationEnable) {
-            $sql = '
-                SELECT
-                    server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
+            foreach ($tablesForClear as $value) {
+                $sql .= '
+                DELETE
                 FROM
-                    request
+                    ' . $value . '
                 WHERE
-                    status >= ' . $this->config->minErrorCode . '
-                GROUP BY
-                    server_name, script_name, status
-            ';
+                    created_at < :created_at
+                ;';
+            }
+            $db->executeStatement($sql, $params);
 
-            $errorPages = $db->executeQuery($sql)->fetchAllAssociative();
+            if ($this->config->notificationEnable) {
+                $sql = '
+                    SELECT
+                        server_name, script_name, status, max(hostname) AS hostname, count(*) AS count
+                    FROM
+                        request
+                    WHERE
+                        status >= ' . $this->config->minErrorCode . '
+                    GROUP BY
+                        server_name, script_name, status
+                ';
 
-            if (count($errorPages) > 0) {
-                try {
-                    $this->sendErrorEmails($errorPages);
-                } catch (Exception $e) {
-                    $output->writeln("<error>Notification sending error\n" . $e->getMessage() . '</error>');
+                $errorPages = $db->executeQuery($sql)->fetchAllAssociative();
+
+                if (count($errorPages) > 0) {
+                    try {
+                        $this->sendErrorEmails($errorPages);
+                    } catch (Exception $e) {
+                        $output->writeln("<error>Notification sending error\n" . $e->getMessage() . '</error>');
+                    }
                 }
+
+                unset($errorPages);
             }
 
-            unset($errorPages);
-        }
-
-        $db->beginTransaction();
+            $db->beginTransaction();
 
         $sql = '
             SELECT
@@ -763,13 +761,15 @@ class AggregateCommand extends Command
         $values = $this->getBorderOutValues($db, $servers);
         $this->sendBorderOutEmails($values);
 
-        $output->writeln('<info>Data are aggregated successfully</info>');
+            $output->writeln('<info>Data are aggregated successfully</info>');
 
-        if (file_exists($lockFile) && !unlink($lockFile)) {
-            $output->writeln('<error>Error: cannot remove ' . $lockFile . ' file, you must remove it manually and check server settings.</error>');
+            return Command::SUCCESS;
+        } finally {
+            ftruncate($lockHandle, 0);
+            fflush($lockHandle);
+            flock($lockHandle, LOCK_UN);
+            fclose($lockHandle);
         }
-
-        return Command::SUCCESS;
     }
 
 
