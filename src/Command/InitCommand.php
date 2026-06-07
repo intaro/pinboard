@@ -59,7 +59,7 @@ class InitCommand extends Command
             $output->writeln('<error>Unable to resolve console path</error>');
             return Command::FAILURE;
         }
-        $phpBinary = PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $phpBinary = PHP_BINARY;
         $command = sprintf(
             '*/%d * * * * %s %s aggregate --no-interaction',
             $frequency,

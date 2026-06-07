@@ -27,6 +27,7 @@
 - PHP style: `vendor/bin/php-cs-fixer fix --dry-run --diff` — fix violations with `vendor/bin/php-cs-fixer fix`.
 - PHP static analysis: `vendor/bin/phpstan analyse --no-progress` — runs at **level 10** (maximum).
 - Frontend rebuild: `pnpm build`.
+- Before pushing or opening a PR with PHP code changes, run `vendor/bin/php-cs-fixer fix --dry-run --diff` and `vendor/bin/phpstan analyse --no-progress` locally.
 - Prefer focused verification over broad test runs unless the change spans multiple layers.
 
 ## PHP Static Analysis Rules
