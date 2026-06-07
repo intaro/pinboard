@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.5](https://github.com/intaro/pinboard/compare/v2.1.4...v2.1.5) (2026-06-07)
+
+
+### Bug Fixes
+
+* **aggregate:** release lock on failure ([#166](https://github.com/intaro/pinboard/issues/166)) ([0fbb82d](https://github.com/intaro/pinboard/commit/0fbb82deb6e15694f6d5bf98d181270cfb94c0c0))
+
 ## [2.1.4](https://github.com/intaro/pinboard/compare/v2.1.3...v2.1.4) (2026-05-30)
 
 
