@@ -1,0 +1,61 @@
+version: 2
+updates:
+  # Keep GitHub Actions current. CI pins actions to mutable major tags (@v6,
+  # @v5, ...), so weekly PRs surface upstream releases and security fixes for
+  # the third-party actions the pipeline depends on.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # PHP dependencies (Symfony/Twig/Doctrine). Security fixes are handled
+  # separately by Dependabot security updates; these proactive version PRs are
+  # grouped weekly and use a `chore` prefix so they don't trigger a release on
+  # their own (Release Please only bumps on feat/fix).
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies
+      - composer
+    groups:
+      symfony:
+        patterns:
+          - "symfony/*"
+      php-deps:
+        patterns:
+          - "*"
+
+  # Frontend build toolchain (Webpack Encore, Babel, Sass). Reads
+  # package.json + pnpm-lock.yaml.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      npm:
+        patterns:
+          - "*"
