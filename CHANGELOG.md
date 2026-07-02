@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.6](https://github.com/intaro/pinboard/compare/v2.1.5...v2.1.6) (2026-07-02)
+
+
+### Bug Fixes
+
+* **deps:** resolve 30 Dependabot security advisories ([#169](https://github.com/intaro/pinboard/issues/169)) ([97c6c86](https://github.com/intaro/pinboard/commit/97c6c8635241232c084e062479ab354be2e824e9))
+
 ## [2.1.5](https://github.com/intaro/pinboard/compare/v2.1.4...v2.1.5) (2026-06-07)
 
 
