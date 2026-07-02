@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.8](https://github.com/intaro/pinboard/compare/v2.1.7...v2.1.8) (2026-07-02)
+
+
+### Maintenance
+
+* **security:** add Dependabot version updates and security policy ([#174](https://github.com/intaro/pinboard/issues/174)) ([9dec9ff](https://github.com/intaro/pinboard/commit/9dec9ff010d165d45d9f1976740ec953c5505034))
+
 ## [2.1.7](https://github.com/intaro/pinboard/compare/v2.1.6...v2.1.7) (2026-07-02)
 
 
