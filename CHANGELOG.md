@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.7](https://github.com/intaro/pinboard/compare/v2.1.6...v2.1.7) (2026-07-02)
+
+
+### Bug Fixes
+
+* **docker:** bump nginx apk pin to 1.28.3-r4 ([#171](https://github.com/intaro/pinboard/issues/171)) ([8237d2b](https://github.com/intaro/pinboard/commit/8237d2b900880f0def7ffcd99e53a4ee2fe538a6))
+
 ## [2.1.6](https://github.com/intaro/pinboard/compare/v2.1.5...v2.1.6) (2026-07-02)
 
 
