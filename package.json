@@ -1,16 +1,16 @@
 {
     "devDependencies": {
-        "@babel/core": "^7.17.0",
-        "@babel/preset-env": "^7.29.2",
+        "@babel/core": "^8.0.1",
+        "@babel/preset-env": "^8.0.2",
         "@popperjs/core": "^2.11.8",
-        "@symfony/webpack-encore": "^6.0.0",
+        "@symfony/webpack-encore": "^7.1.0",
         "bootstrap": "^5.3.3",
         "core-js": "^3.49.0",
         "regenerator-runtime": "^0.14.1",
         "sass": "^1.99.0",
-        "sass-loader": "^16.0.7",
+        "sass-loader": "^17.0.0",
         "webpack": "^5.106.2",
-        "webpack-cli": "^6.0.1",
+        "webpack-cli": "^7.1.0",
         "webpack-notifier": "^1.15.0"
     },
     "license": "UNLICENSED",
