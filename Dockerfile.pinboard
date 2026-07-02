@@ -20,7 +20,7 @@ WORKDIR /build
 # pnpm 9 matches pnpm-lock.yaml lockfileVersion 9.0
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 COPY webpack.config.js ./
