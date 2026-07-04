@@ -1,0 +1,17 @@
+name: Pinboard CodeQL config
+
+# Only hand-written frontend source under assets/ is our own JavaScript. The rest
+# is either third-party (node_modules, PHP vendor) or generated build output that
+# ships to the browser but is not our source of truth — analysing it just produces
+# noise, so exclude it from the javascript-typescript analysis.
+paths-ignore:
+  - "node_modules/**"
+  - "vendor/**"
+  - "public/build/**"
+  - "public/bundles/**"
+
+# security-extended is the deeper security-focused suite (taint tracking) without
+# the maintainability/style queries of security-and-quality — matches the query
+# suite the previous default setup used and the sibling pinba_engine config.
+queries:
+  - uses: security-extended
