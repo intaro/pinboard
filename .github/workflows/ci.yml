@@ -16,7 +16,7 @@ jobs:
     name: PHP CS Fixer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -24,7 +24,7 @@ jobs:
           extensions: intl, pdo_mysql
           coverage: none
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-8.4-${{ hashFiles('composer.lock') }}
@@ -38,7 +38,7 @@ jobs:
     name: PHPStan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -46,7 +46,7 @@ jobs:
           extensions: intl, pdo_mysql
           coverage: none
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-8.4-${{ hashFiles('composer.lock') }}
@@ -62,7 +62,7 @@ jobs:
           DATABASE_URL: mysql://pinba:pinba@127.0.0.1:3306/pinba?serverVersion=8.4.0
         run: php bin/console cache:warmup
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: var/phpstan
           key: phpstan-${{ hashFiles('phpstan.neon', 'composer.lock') }}
@@ -78,7 +78,7 @@ jobs:
       matrix:
         php: ['8.4', '8.5']
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -86,7 +86,7 @@ jobs:
           extensions: intl, pdo_mysql
           coverage: none
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -104,7 +104,7 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -112,7 +112,7 @@ jobs:
           extensions: intl, pdo_mysql
           coverage: pcov
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ~/.composer/cache
           key: composer-8.4-${{ hashFiles('composer.lock') }}
@@ -127,7 +127,7 @@ jobs:
         run: vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.xml
           fail_ci_if_error: false
