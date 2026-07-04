@@ -99,3 +99,36 @@ jobs:
           APP_ENV: test
           DATABASE_URL: mysql://pinba:pinba@127.0.0.1:3306/pinba?serverVersion=8.4.0
         run: vendor/bin/phpunit --no-progress
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_mysql
+          coverage: pcov
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.composer/cache
+          key: composer-8.4-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-8.4-
+
+      - run: composer install --no-interaction --prefer-dist --no-scripts
+
+      - name: Run test suite with coverage
+        env:
+          APP_ENV: test
+          DATABASE_URL: mysql://pinba:pinba@127.0.0.1:3306/pinba?serverVersion=8.4.0
+        run: vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
