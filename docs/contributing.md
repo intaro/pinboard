@@ -31,20 +31,30 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 type(scope): short imperative description
 ```
 
-Common types and their effect on versioning:
+Common types and their effect on versioning. Only user-facing types trigger a release; the rest are
+folded into the next release's changelog but do **not** cut a version or Docker image on their own:
 
-| Type       | SemVer bump | Appears in changelog |
-|------------|-------------|----------------------|
-| `feat`     | minor       | yes                  |
-| `fix`      | patch       | yes                  |
-| `perf`     | patch       | yes                  |
-| `refactor` | patch       | yes                  |
-| `chore`    | patch       | yes                  |
-| `docs`     | patch       | hidden               |
-| `test`     | patch       | hidden               |
-| `ci`       | patch       | hidden               |
+| Type       | SemVer bump      | Triggers release? | Appears in changelog |
+|------------|------------------|-------------------|----------------------|
+| `feat`     | minor            | yes               | yes                  |
+| `fix`      | patch            | yes               | yes                  |
+| `perf`     | patch            | yes               | yes                  |
+| `deps`     | patch            | yes               | yes                  |
+| `revert`   | patch            | yes               | yes                  |
+| `refactor` | none             | **no**            | hidden               |
+| `chore`    | none             | **no**            | hidden               |
+| `docs`     | none             | **no**            | hidden               |
+| `test`     | none             | **no**            | hidden               |
+| `build`    | none             | **no**            | hidden               |
+| `style`    | none             | **no**            | hidden               |
+| `ci`       | none             | **no**            | hidden               |
 
 A `!` suffix or `BREAKING CHANGE:` footer triggers a **major** bump regardless of type.
+
+Pick the type by *what the change affects*, not how big it feels — see
+[docs/releasing.md → "Version discipline"](releasing.md) for the full rule. In short: application
+code and the shipped Docker image use `feat`/`fix`; CI, docs, tests and tooling use
+`ci`/`docs`/`test`/`chore` and do not cut a release.
 
 Useful scopes for this project: `ui`, `auth`, `api`, `db`, `config`, `docker`, `ci`, `docs`.
 

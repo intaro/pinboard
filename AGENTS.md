@@ -64,6 +64,8 @@ All changes enter `master` exclusively via pull request — direct pushes are bl
 - Merging the Release PR creates a `vX.Y.Z` tag and GitHub Release.
 - The Docker workflow fires on the published release and pushes `xolegator/pinboard:<version>` and `xolegator/pinboard:latest` to Docker Hub.
 
+**Version discipline — choose the commit type by what the change affects, so the version only moves for real app changes.** Application code and the shipped runtime image (`src/**`, `templates/**`, `assets/**`, `migrations/**`, `config/**`, `public/**`, `bin/**`, runtime deps in `composer.json`/`composer.lock` and `package.json`/`pnpm-lock.yaml`, and `Dockerfile.pinboard`) use `feat:`/`fix:` and cut a new version, tag, and Docker image. CI and automation (`.github/**`), docs (`docs/**`, `*.md`), tests and QA config (`tests/**`, `phpstan.neon`, `.php-cs-fixer.dist.php`), and dev-only tooling (`Makefile`, dev-stack `docker/`) use `ci:`/`build:`/`chore:`/`docs:`/`test:`/`style:`/`refactor:` and do **not** trigger a release. Prefer `fix` over `feat` for behaviour corrections. Only `feat`, `fix`, `perf`, `revert`, `deps` and breaking changes are release-triggering. See `docs/releasing.md` → "Version discipline: what warrants a release" for the full rule and reasoning.
+
 Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (release process).
 
 ## Commit Messages
