@@ -1,5 +1,13 @@
 # Pinboard
 
+[![CI](https://github.com/intaro/pinboard/actions/workflows/ci.yml/badge.svg)](https://github.com/intaro/pinboard/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/intaro/pinboard)](https://github.com/intaro/pinboard/releases/latest)
+[![Docker Pulls](https://img.shields.io/docker/pulls/xolegator/pinboard?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)
+[![Docker Image Size](https://img.shields.io/docker/image-size/xolegator/pinboard/latest?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)
+[![PHP](https://img.shields.io/badge/PHP-8.4%20%E2%80%93%208.5-777BB4?logo=php&logoColor=white)](composer.json)
+[![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)](https://symfony.com)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A web admin panel for **Pinba** — a MySQL storage engine that collects real-time performance statistics from PHP applications.
 
 Pinba was originally developed by [@tony2001](https://github.com/tony2001/pinba_engine) for MySQL ≤ 5.6 and is no longer maintained. This project ships with the [@XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine) fork, which adds support for MySQL 8.0 / 8.4 LTS and MariaDB 10.11 / 11.8 LTS. Pinboard itself is agnostic to which engine build you use.
