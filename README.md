@@ -1,6 +1,7 @@
 # Pinboard
 
 [![CI](https://github.com/intaro/pinboard/actions/workflows/ci.yml/badge.svg)](https://github.com/intaro/pinboard/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/intaro/pinboard/branch/master/graph/badge.svg)](https://codecov.io/gh/intaro/pinboard)
 [![Release](https://img.shields.io/github/v/release/intaro/pinboard)](https://github.com/intaro/pinboard/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/xolegator/pinboard?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)
 [![Docker Image Size](https://img.shields.io/docker/image-size/xolegator/pinboard/latest?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)

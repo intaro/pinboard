@@ -1,0 +1,29 @@
+# Codecov configuration for Pinboard.
+#
+# Coverage is collected by the `coverage` job in .github/workflows/ci.yml, which
+# runs the PHPUnit suite with pcov and uploads a Clover report. Only `src/**` is
+# measured (see the <source> block in phpunit.xml.dist).
+
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  precision: 1
+  round: down
+  # Report coverage as a signal, but never block a PR on it. The suite is a mix
+  # of unit tests and a functional kernel-wiring smoke test; a hard coverage gate
+  # would be misleading at this stage.
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false
+
+ignore:
+  - "src/Kernel.php"   # Symfony framework glue, no meaningful branches to test
