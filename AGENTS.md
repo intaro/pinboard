@@ -68,6 +68,23 @@ All changes enter `master` exclusively via pull request — direct pushes are bl
 
 Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (release process).
 
+## GitHub Actions
+
+- When adding or editing a workflow, pin every third-party action to its current
+  major version. Always verify the latest release before committing instead of
+  reusing a version from memory or copying an old example, e.g.:
+
+  ```bash
+  gh api repos/actions/checkout/releases/latest --jq .tag_name
+  ```
+
+- Reference actions by their major tag (e.g. `actions/checkout@v7`) so they track
+  the latest compatible patch, and never introduce a version older than what the
+  rest of the repository (or the sibling Pinba repositories) already uses.
+- Dependabot (`.github/dependabot.yml`) opens grouped `ci:` PRs for action bumps;
+  keep all workflows (`ci.yml`, `codeql.yml`, `docker.yml`, `release-please.yml`)
+  on the same current majors.
+
 ## Commit Messages
 
 - Use Conventional Commits style.
