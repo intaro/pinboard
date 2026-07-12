@@ -1,0 +1,29 @@
+# pnpm settings (pnpm 10+ reads them from here, not from package.json/.npmrc).
+
+# Do not auto-install optional peer dependencies.
+# sass-loader lists node-sass as an optional peer; with auto-install enabled
+# pnpm pulled node-sass (+ its node-gyp/tar/glob native-build chain), which the
+# project does not use (we build with Dart `sass`) and which carried numerous
+# CVEs. This keeps the frontend toolchain on Dart sass only.
+autoInstallPeers: false
+
+# Supply-chain guard: refuse versions published less than 24h ago, giving the
+# ecosystem time to catch malicious releases before they land in our lockfile.
+minimumReleaseAge: 1440
+
+# Network resilience for cold installs (the minimumReleaseAge check fetches
+# registry metadata for every locked package).
+fetchRetries: 5
+fetchTimeout: 120000
+
+overrides:
+  uuid: '>=11.1.1'
+
+# Dependency build scripts are blocked by default (pnpm 10+ supply-chain
+# hardening). Both current candidates are explicitly denied:
+# - core-js: postinstall only prints a funding banner
+# - @parcel/watcher: ships prebuilt binaries via optionalDependencies; the
+#   install script is a source-build fallback we don't need
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: false
