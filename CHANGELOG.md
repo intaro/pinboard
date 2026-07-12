@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.8](https://github.com/intaro/pinboard/compare/v2.1.7...v2.1.8) (2026-07-12)
+
+
+### Bug Fixes
+
+* **docker:** sessions-only volume, rolling engine tags, repair image build ([#187](https://github.com/intaro/pinboard/issues/187)) ([80cf471](https://github.com/intaro/pinboard/commit/80cf4718065127600f78bdedc8bd766ca2763630))
+
 ## [2.1.7](https://github.com/intaro/pinboard/compare/v2.1.6...v2.1.7) (2026-07-02)
 
 
