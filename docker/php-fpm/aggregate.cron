@@ -1,1 +1,1 @@
-*/15 * * * * cd /var/www && APP_ENV=${APP_ENV:-dev} APP_DEBUG=${APP_DEBUG:-0} php bin/console aggregate --no-interaction >> /var/www/var/log/aggregate-cron.log 2>&1
+*/15 * * * * cd /var/www && APP_ENV=${APP_ENV:-dev} APP_DEBUG=${APP_DEBUG:-0} php bin/console aggregate --no-interaction

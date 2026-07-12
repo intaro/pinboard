@@ -40,6 +40,9 @@ if [ "${1:-}" = "/usr/bin/supervisord" ]; then
 fi
 
 # ── Warm cache (web container only) ──────────────────────────────────────────
+# The cache lives on the ephemeral container filesystem (no volume), so a
+# recreated container always starts with a cache compiled from its own image —
+# never a stale cache from a previous version.
 if [ "${1:-}" = "/usr/bin/supervisord" ] && [ ! -d var/cache/prod ]; then
     echo "[pinboard] Warming up Symfony cache..."
     su -s /bin/sh www-data -c "php bin/console cache:warmup"

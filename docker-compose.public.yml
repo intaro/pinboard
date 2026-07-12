@@ -1,8 +1,8 @@
 # docker-compose.public.yml — Pinboard quick start
 #
 # Uses pre-built images from Docker Hub:
-#   xolegator/pinba-engine:8.4-lts   MySQL 8.4 LTS + Pinba storage engine
-#   xolegator/pinboard:latest         Pinboard web app + aggregate worker
+#   xolegator/pinba-engine:8.4      MySQL 8.4 LTS + Pinba storage engine (rolling channel)
+#   xolegator/pinboard:latest        Pinboard web app + aggregate worker
 #
 # Quick start:
 #   cp .env.public.example .env
@@ -17,12 +17,21 @@
 # PHP app on monitored hosts must send Pinba stats to:
 #   pinba.server = <this-host-ip>
 #   pinba.port   = 30002   (or PINBA_UDP_PORT from .env)
+#
+# Data persistence (see docs/docker.md#data-persistence--backups):
+#   pinba-mysql-data    aggregated history + users — survives restarts/upgrades
+#   pinboard-sessions   login sessions — survives restarts/upgrades
+#   Symfony cache is ephemeral by design: rebuilt on container recreate,
+#   so image upgrades never run against a stale compiled cache.
 
 services:
 
   # ── MySQL 8.4 LTS + Pinba storage engine ────────────────────────────────────
   pinba-db:
-    image: xolegator/pinba-engine:8.4-lts-v2.0.0
+    # Rolling channel tag: follows pinba_engine releases automatically, no
+    # reconfiguration needed. Channels: 8.0 / 8.4 / mariadb-10.11 / mariadb-11.8.
+    # Set PINBA_ENGINE_TAG={series}-v{version} (e.g. 8.4-v2.11.3) to pin.
+    image: xolegator/pinba-engine:${PINBA_ENGINE_TAG:-8.4}
     container_name: pinboard-pinba-db
     restart: unless-stopped
     environment:
@@ -31,19 +40,24 @@ services:
       MYSQL_USER: ${DB_USER:-pinba}
       MYSQL_PASSWORD: ${DB_PASSWORD:-pinba}
     ports:
-      - "${MYSQL_PORT:-13306}:3306"
+      # MySQL TCP is bound to localhost by default; set MYSQL_BIND=0.0.0.0
+      # in .env only if other hosts must query the DB directly.
+      - "${MYSQL_BIND:-127.0.0.1}:${MYSQL_PORT:-13306}:3306"
       - "${PINBA_UDP_PORT:-30002}:30002/udp"
     volumes:
       - pinba-mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      # $$ defers expansion to the container shell — the password is read from
+      # the container env at runtime, not baked into the compose config.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\""]
       interval: 10s
       timeout: 5s
       retries: 20
 
   # ── Pinboard web UI (nginx + php-fpm in one container) ──────────────────────
   pinboard:
-    image: xolegator/pinboard:latest
+    # Pin PINBOARD_TAG in .env to a release (e.g. 2.0.0) for reproducible deploys.
+    image: xolegator/pinboard:${PINBOARD_TAG:-latest}
     container_name: pinboard-web
     restart: unless-stopped
     depends_on:
@@ -73,11 +87,19 @@ services:
     ports:
       - "${PINBOARD_HTTP_PORT:-8080}:80"
     volumes:
-      - pinboard-var:/var/www/var
+      # Only sessions need to survive container recreation; cache and logs
+      # are ephemeral (logs go to stdout/stderr).
+      - pinboard-sessions:/var/www/var/sessions
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
   # ── Aggregate worker (same image, cron mode) ─────────────────────────────────
   aggregate:
-    image: xolegator/pinboard:latest
+    image: xolegator/pinboard:${PINBOARD_TAG:-latest}
     container_name: pinboard-aggregate
     restart: unless-stopped
     depends_on:
@@ -93,6 +115,9 @@ services:
       DB_USER: ${DB_USER:-pinba}
       DB_PASSWORD: ${DB_PASSWORD:-pinba}
       DB_SERVER_VERSION: "8.4.0"
+      # Notification emails are sent by the aggregate run — MAILER_DSN must be
+      # set here, not only on the web container.
+      MAILER_DSN: ${MAILER_DSN:-null://null}
       TZ: ${TZ:-UTC}
       APP_AUTH_USER_SOURCE: ${APP_AUTH_USER_SOURCE:-db}
       APP_RECORDS_LIFETIME: ${APP_RECORDS_LIFETIME:-P1M}
@@ -104,9 +129,7 @@ services:
       APP_NOTIFICATION_SENDER: ${APP_NOTIFICATION_SENDER:-noreply@pinboard.local}
       APP_NOTIFICATION_GLOBAL_EMAIL: ${APP_NOTIFICATION_GLOBAL_EMAIL:-}
     command: ["supercronic", "/etc/crontabs/aggregate.cron"]
-    volumes:
-      - pinboard-var:/var/www/var
 
 volumes:
   pinba-mysql-data:
-  pinboard-var:
+  pinboard-sessions:
