@@ -16,6 +16,7 @@
     },
     "license": "UNLICENSED",
     "private": true,
+    "packageManager": "pnpm@9.15.9",
     "browserslist": [
         "last 2 Chrome versions",
         "last 2 Edge versions",

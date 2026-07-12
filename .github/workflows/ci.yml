@@ -15,6 +15,80 @@ permissions:
 
 jobs:
 
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+    steps:
+      - uses: actions/checkout@v7
+
+      # corepack resolves the exact pnpm version from package.json "packageManager";
+      # it must be enabled before setup-node so the pnpm cache step can call pnpm.
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # --frozen-lockfile also fails on package.json / pnpm-lock.yaml drift,
+      # which gives dependency-bump PRs a real frontend check.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build
+
+  docker-image:
+    name: Docker image + stack smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      # Build the exact production image on every PR (never pushed). This is
+      # the check that catches frontend-toolchain breakage and apk pin rot
+      # before merge instead of at release-publish time. The gha cache is
+      # shared with the release workflow, so a green PR makes the release
+      # build nearly free.
+      - name: Build production image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: Dockerfile.pinboard
+          push: false
+          load: true
+          tags: xolegator/pinboard:ci-smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Boot the public compose stack with the built image
+        run: |
+          set -euo pipefail
+          {
+            echo "APP_SECRET=$(openssl rand -hex 32)"
+            echo "MYSQL_ROOT_PASSWORD=Ci#Smoke-Root1"
+            echo "DB_PASSWORD=Ci#Smoke-App1"
+            echo "PINBOARD_TAG=ci-smoke"
+          } > .env
+          docker compose -f docker-compose.public.yml up -d --wait --wait-timeout 300
+
+      - name: Smoke-check HTTP, user creation and aggregation
+        run: |
+          set -euo pipefail
+          curl -fsS -o /dev/null http://127.0.0.1:8080/login
+          docker exec pinboard-web php bin/console add-user smoke@example.com SmokeCi123 ROLE_ADMIN
+          docker exec pinboard-aggregate php bin/console aggregate --no-interaction
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.public.yml logs --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.public.yml down -v
+
   cs-fixer:
     name: PHP CS Fixer
     runs-on: ubuntu-latest

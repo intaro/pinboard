@@ -36,7 +36,43 @@ jobs:
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+      # Build locally first and prove the whole stack boots before anything is
+      # pushed — a broken image must never reach Docker Hub. Mirrors the smoke
+      # gate in pinba_engine's publish workflow.
+      - name: Build image for smoke test
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: Dockerfile.pinboard
+          push: false
+          load: true
+          tags: xolegator/pinboard:release-smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Note: PINBOARD_TAG support exists in docker-compose.public.yml since
+      # v2.1.8 — re-publishing an older tag via workflow_dispatch will smoke
+      # test whatever image the compose file at that ref references instead.
+      - name: Smoke test — stack must boot before push
+        run: |
+          set -euo pipefail
+          {
+            echo "APP_SECRET=$(openssl rand -hex 32)"
+            echo "MYSQL_ROOT_PASSWORD=Rel#Smoke-Root1"
+            echo "DB_PASSWORD=Rel#Smoke-App1"
+            echo "PINBOARD_TAG=release-smoke"
+          } > .env
+          docker compose -f docker-compose.public.yml up -d --wait --wait-timeout 300
+          curl -fsS -o /dev/null http://127.0.0.1:8080/login
+          docker exec pinboard-aggregate php bin/console aggregate --no-interaction
+          docker compose -f docker-compose.public.yml down -v
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.public.yml logs --tail 200 || true
+
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: Dockerfile.pinboard
@@ -45,4 +81,3 @@ jobs:
             xolegator/pinboard:${{ steps.meta.outputs.version }}
             xolegator/pinboard:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
