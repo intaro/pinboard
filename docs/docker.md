@@ -15,8 +15,8 @@ Two ways to run the stack:
 ## Option A — Public images (quick-start)
 
 Uses pre-built images from Docker Hub:
-- `xolegator/pinba-engine:8.4-lts` — MySQL 8.4 LTS with Pinba storage engine
-- `xolegator/pinboard:latest` — Pinboard web app + aggregate worker
+- `xolegator/pinba-engine:8.4` — MySQL 8.4 LTS with Pinba storage engine
+- `xolegator/pinboard:latest` — Pinboard web app + aggregate worker (pin a release via `PINBOARD_TAG` in `.env`)
 
 ### Step 1 — Configure
 
@@ -37,6 +37,9 @@ Everything else has sensible defaults. Key optional overrides:
 ```env
 PINBOARD_HTTP_PORT=8080     # web UI port on your host
 PINBA_UDP_PORT=30002        # UDP port PHP apps send Pinba packets to
+PINBOARD_TAG=latest         # pin to a release tag (e.g. 2.0.0) for reproducible deploys
+PINBA_ENGINE_TAG=8.4        # rolling channel (8.0 / 8.4 / mariadb-*); pin {series}-v{version} to freeze
+MYSQL_BIND=127.0.0.1        # host interface for MySQL TCP; 0.0.0.0 to expose it
 TZ=UTC                      # timezone for aggregation timestamps
 APP_RECORDS_LIFETIME=P1M    # how long to keep raw data (ISO 8601 duration)
 ```
@@ -53,6 +56,8 @@ Three containers start:
 - `pinboard-aggregate` — supercronic running `aggregate` every 15 minutes
 
 The web container waits for the DB healthcheck to pass, then runs Doctrine migrations automatically on first boot.
+
+MySQL TCP (`13306`) is published on localhost only by default; the Pinba UDP port is published on all interfaces so monitored hosts can reach it.
 
 ### Step 3 — Create admin user
 
@@ -101,6 +106,31 @@ docker logs pinboard-aggregate
 docker exec pinboard-aggregate php bin/console aggregate --no-interaction
 ```
 
+### Data persistence & backups
+
+What survives container restarts and upgrades:
+
+| Data | Where | Survives restart / upgrade? |
+|---|---|---|
+| Aggregated history, users, settings | `pinba-mysql-data` volume (InnoDB) | yes |
+| Login sessions | `pinboard-sessions` volume | yes |
+| Raw Pinba request stream | in-memory tables (Pinba engine) | no — by design |
+| Symfony cache | container filesystem | no — rebuilt on recreate |
+| Application / cron logs | stdout/stderr | via `docker logs` |
+
+The Pinba storage engine keeps the raw request stream in memory, so restarting
+`pinboard-pinba-db` loses at most one aggregation period (15 minutes by
+default) of not-yet-aggregated data. Everything already aggregated lives in
+InnoDB tables on the `pinba-mysql-data` volume.
+
+Back up the database with `mysqldump` (raw in-memory tables are transient —
+only the aggregated data matters):
+
+```bash
+docker exec pinboard-pinba-db sh -c \
+  'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --databases pinba' > pinboard-backup.sql
+```
+
 ### Upgrading
 
 ```bash
@@ -108,7 +138,14 @@ docker compose -f docker-compose.public.yml pull
 docker compose -f docker-compose.public.yml up -d
 ```
 
-Migrations run automatically on container start.
+Migrations run automatically on container start, and the Symfony cache is
+compiled fresh inside the new containers — it is intentionally not stored in a
+volume, so an upgraded image never runs against a stale cache.
+
+> **Upgrading from an older compose file that used a `pinboard-var` volume:**
+> that volume is no longer referenced and can be removed
+> (`docker volume ls | grep pinboard-var`, then `docker volume rm <name>`).
+> Active logins are reset once — users simply sign in again.
 
 ### Stop / remove
 
@@ -128,7 +165,7 @@ For Pinboard contributors. Mounts source code into containers so edits are refle
 
 ### Architecture
 
-- **`mysql-pinba`** — MySQL + Pinba engine (from `xolegator/pinba-engine:8.4-lts` by default)
+- **`mysql-pinba`** — MySQL + Pinba engine (from `xolegator/pinba-engine:8.4` by default)
 - **`php-fpm`** — PHP-FPM with source mounted at `/var/www`
 - **`nginx`** — proxies HTTP to php-fpm
 - **`aggregate`** — runs `php bin/console aggregate` on cron
@@ -137,8 +174,8 @@ For Pinboard contributors. Mounts source code into containers so edits are refle
 
 | Env file | Image | Make targets |
 |---|---|---|
-| `docker/.env` (default) | `xolegator/pinba-engine:8.4-lts` | `make up`, `make build` |
-| `docker/.env.mysql84` | `xolegator/pinba-engine:8.4-lts` | `make up84`, `make build84` |
+| `docker/.env` (default) | `xolegator/pinba-engine:8.4` | `make up`, `make build` |
+| `docker/.env.mysql84` | `xolegator/pinba-engine:8.4` | `make up84`, `make build84` |
 | `docker/.env.mysql80` | `xolegator/pinba-engine:8.0` | `make up80`, `make build80` |
 
 ### Start

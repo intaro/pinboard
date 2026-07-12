@@ -85,8 +85,10 @@ Restart PHP-FPM and make a few requests on your site.
 
 | Image | Description |
 |---|---|
-| `xolegator/pinba-engine:8.4-lts` | MySQL 8.4 LTS with Pinba storage engine plugin |
-| `xolegator/pinboard:latest` | Pinboard web UI + aggregate worker |
+| `xolegator/pinba-engine:8.4` | MySQL 8.4 LTS with Pinba storage engine plugin |
+| `xolegator/pinboard:latest` | Pinboard web UI + aggregate worker (pin a release via `PINBOARD_TAG` in `.env`) |
+
+Aggregated history and login sessions are stored in named Docker volumes and survive restarts and upgrades; see [data persistence & backups](docs/docker.md#data-persistence--backups).
 
 The database image bundles the [XOlegator/pinba_engine](https://github.com/XOlegator/pinba_engine) plugin — a fork of the original [tony2001/pinba_engine](https://github.com/tony2001/pinba_engine) with support for MySQL 8.0 / 8.4 LTS and MariaDB 10.11 / 11.8 LTS added from a single source tree.
 

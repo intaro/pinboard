@@ -1,8 +1,10 @@
-const path = require('path');
-const Encore = require('@symfony/webpack-encore');
+// Webpack Encore 7 is ESM-only, so this config uses ESM syntax and the .mjs
+// extension (the project's package.json has no "type": "module").
+import path from 'path';
+import Encore from '@symfony/webpack-encore';
 
 // Manually configure the runtime environment if not already configured yet by the "encore" command.
-// It's useful when you use tools that rely on webpack.config.js file.
+// It's useful when you use tools that rely on the webpack config file.
 if (!Encore.isRuntimeEnvironmentConfigured()) {
     Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
 }
@@ -43,16 +45,13 @@ Encore
     // enables hashed filenames (e.g. app.abc123.css)
     .enableVersioning(Encore.isProduction())
 
-    // configure Babel
-    // .configureBabel((config) => {
-    //     config.plugins.push('@babel/a-babel-plugin');
-    // })
-
-    // enables and configure @babel/preset-env polyfills
-    .configureBabelPresetEnv((config) => {
-        config.useBuiltIns = 'usage';
-        config.corejs = '3.49';
-        config.bugfixes = true;
+    // configure Babel: core-js polyfills on demand. Babel 8 removed the
+    // useBuiltIns/corejs options from @babel/preset-env in favour of this plugin.
+    .configureBabel((config) => {
+        config.plugins.push([
+            'babel-plugin-polyfill-corejs3',
+            { method: 'usage-global', version: '3.49' },
+        ]);
     })
 
     // enables Sass/SCSS support
@@ -61,7 +60,7 @@ Encore
         options.sassOptions = {
             ...(options.sassOptions || {}),
             loadPaths: [
-                path.resolve(__dirname, 'node_modules'),
+                path.resolve(import.meta.dirname, 'node_modules'),
             ],
             quietDeps: true,
             style: Encore.isProduction() ? 'compressed' : 'expanded',
@@ -79,4 +78,4 @@ Encore
     //.enableIntegrityHashes(Encore.isProduction())
 ;
 
-module.exports = Encore.getWebpackConfig();
+export default await Encore.getWebpackConfig();
