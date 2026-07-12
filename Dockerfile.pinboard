@@ -17,11 +17,13 @@ FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526a
 
 WORKDIR /build
 
-# pnpm 9 matches pnpm-lock.yaml lockfileVersion 9.0
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
 COPY package.json pnpm-lock.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile
+
+# corepack reads the exact pnpm version from the "packageManager" field in
+# package.json — the single source of truth shared by CI, Docker and dev hosts.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable \
+ && pnpm install --frozen-lockfile
 
 COPY webpack.config.mjs ./
 COPY assets/     ./assets/

@@ -63,8 +63,11 @@ Useful scopes for this project: `ui`, `auth`, `api`, `db`, `config`, `docker`, `
 1. Create a branch from the latest `master`.
 2. Make commits with Conventional Commit titles.
 3. Push and open a PR against `master`.
-4. CI runs three jobs automatically: `PHP CS Fixer`, `PHPStan`, `PHPUnit`.
-5. All three must pass before the PR can be merged.
+4. CI runs automatically: `PHP CS Fixer`, `PHPStan`, `PHPUnit` (PHP 8.4 and 8.5), `Coverage`,
+   `Frontend build` (pnpm frozen install + production build) and
+   `Docker image + stack smoke test` (builds `Dockerfile.pinboard` and boots the public
+   compose stack against it).
+5. All of them must pass before the PR can be merged.
 6. Request review or merge it yourself if you are a maintainer.
 
 ## Merge policy
