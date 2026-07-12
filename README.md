@@ -96,7 +96,7 @@ The database image bundles the [XOlegator/pinba_engine](https://github.com/XOleg
 
 For local development without Docker.
 
-**Requirements:** PHP ≥ 8.5, MySQL 8.x with `pinba_engine` plugin, Node.js ≥ 22, pnpm ≥ 9.
+**Requirements:** PHP ≥ 8.5, MySQL 8.x with `pinba_engine` plugin, Node.js 24 (`.nvmrc`), pnpm via corepack (`corepack enable` — the exact version comes from `packageManager` in `package.json`).
 
 ```bash
 # PHP dependencies
