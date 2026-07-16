@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.9](https://github.com/intaro/pinboard/compare/v2.1.8...v2.1.9) (2026-07-16)
+
+
+### Bug Fixes
+
+* **docker:** move pinboard runtime and widen host fields ([#191](https://github.com/intaro/pinboard/issues/191)) ([1c60af2](https://github.com/intaro/pinboard/commit/1c60af25a9824fdb84199d1362bf9a52e08bdfb2))
+
 ## [2.1.8](https://github.com/intaro/pinboard/compare/v2.1.7...v2.1.8) (2026-07-12)
 
 
