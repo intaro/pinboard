@@ -27,8 +27,6 @@ final class Version20260716120000 extends AbstractMigration
         $this->widenColumn('ipm_status_details', 'hostname');
         $this->widenColumn('ipm_req_time_details', 'hostname');
         $this->widenColumn('ipm_mem_peak_usage_details', 'hostname');
-        $this->widenColumn('ipm_pinba_report_by_hostname_and_server_90_95_99', 'hostname');
-        $this->widenColumn('ipm_pinba_report_by_hostname_90_95_99', 'hostname');
     }
 
     public function down(Schema $schema): void
@@ -39,8 +37,6 @@ final class Version20260716120000 extends AbstractMigration
         $this->narrowColumn('ipm_status_details', 'hostname');
         $this->narrowColumn('ipm_req_time_details', 'hostname');
         $this->narrowColumn('ipm_mem_peak_usage_details', 'hostname');
-        $this->narrowColumn('ipm_pinba_report_by_hostname_and_server_90_95_99', 'hostname');
-        $this->narrowColumn('ipm_pinba_report_by_hostname_90_95_99', 'hostname');
     }
 
     private function widenColumn(string $table, string $column): void
