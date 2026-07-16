@@ -107,7 +107,7 @@ RUN addgroup -g 1000 -S www-data 2>/dev/null || true \
  && adduser  -u 1000 -S -D -G www-data www-data 2>/dev/null || true
 
 # ── Application ──────────────────────────────────────────────────────────────
-WORKDIR /var/www
+WORKDIR /var/www/pinboard
 
 # PHP vendor (production, no dev, optimized autoloader)
 COPY --from=composer-builder --chown=www-data:www-data /build/vendor ./vendor

@@ -89,7 +89,7 @@ services:
     volumes:
       # Only sessions need to survive container recreation; cache and logs
       # are ephemeral (logs go to stdout/stderr).
-      - pinboard-sessions:/var/www/var/sessions
+      - pinboard-sessions:/var/www/pinboard/var/sessions
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1/"]
       interval: 30s
