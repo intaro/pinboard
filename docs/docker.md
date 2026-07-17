@@ -57,6 +57,8 @@ Three containers start:
 
 The web container waits for the DB healthcheck to pass, then runs Doctrine migrations automatically on first boot.
 
+The public `xolegator/pinboard` image runs as the unprivileged `www-data` user by default. It does not require a host UID/GID passthrough for normal production use because the app code is baked into the image, Symfony cache is ephemeral, and the only persistent writable path is the named `pinboard-sessions` volume.
+
 MySQL TCP (`13306`) is published on localhost only by default; the Pinba UDP port is published on all interfaces so monitored hosts can reach it.
 
 ### Step 3 — Create admin user

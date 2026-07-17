@@ -36,7 +36,7 @@ echo "[pinboard] Database is ready."
 # ── Run migrations (web container only — aggregate shares the same DB) ───────
 if [ "${1:-}" = "/usr/bin/supervisord" ]; then
     echo "[pinboard] Running database migrations..."
-    su -s /bin/sh www-data -c "php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration"
+    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
 fi
 
 # ── Warm cache (web container only) ──────────────────────────────────────────
@@ -45,7 +45,7 @@ fi
 # never a stale cache from a previous version.
 if [ "${1:-}" = "/usr/bin/supervisord" ] && [ ! -d var/cache/prod ]; then
     echo "[pinboard] Warming up Symfony cache..."
-    su -s /bin/sh www-data -c "php bin/console cache:warmup"
+    php bin/console cache:warmup
 fi
 
 # ── First-run hint ────────────────────────────────────────────────────────────
