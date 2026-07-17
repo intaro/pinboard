@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.11](https://github.com/intaro/pinboard/compare/v2.1.10...v2.1.11) (2026-07-17)
+
+
+### Bug Fixes
+
+* **aggregate:** guard percentile inserts in strict mysql ([#195](https://github.com/intaro/pinboard/issues/195)) ([dfb8464](https://github.com/intaro/pinboard/commit/dfb84645f37427480ef30566e6e009569ef888a4))
+
 ## [2.1.10](https://github.com/intaro/pinboard/compare/v2.1.9...v2.1.10) (2026-07-17)
 
 
