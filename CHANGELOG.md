@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.14](https://github.com/intaro/pinboard/compare/v2.1.13...v2.1.14) (2026-07-17)
+
+
+### Bug Fixes
+
+* **docker:** refresh php alpine pins ([#203](https://github.com/intaro/pinboard/issues/203)) ([87d5ddd](https://github.com/intaro/pinboard/commit/87d5ddd9cdc05e120a5e4ae94fcd972367f02463))
+
 ## [2.1.13](https://github.com/intaro/pinboard/compare/v2.1.12...v2.1.13) (2026-07-17)
 
 
