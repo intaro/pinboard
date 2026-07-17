@@ -200,6 +200,36 @@ final class AggregateCommandConfigTest extends TestCase
         self::assertSame([], $this->invoke($command, 'buildNotificationList', 'TEST_NL'));
     }
 
+    // ---- percentile SQL guards: malformed Pinba values must be nulled ---------
+
+    public function testSafePinbaFloatBuildsRegexValidatedDoubleGuard(): void
+    {
+        $command = $this->command();
+
+        $sql = $this->invoke($command, 'safePinbaFloat', 'p90');
+
+        self::assertIsString($sql);
+        self::assertStringContainsString("TRIM(CONVERT(p90, CHAR)) REGEXP '^-?([0-9]+(\\.[0-9]+)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$'", $sql);
+        self::assertStringContainsString('CAST(TRIM(CONVERT(p90, CHAR)) AS DOUBLE)', $sql);
+        self::assertMatchesRegularExpression('/-1\\.7976931348623\\d*E\\+308/', $sql);
+        self::assertMatchesRegularExpression('/[^-]1\\.7976931348623\\d*E\\+308/', $sql);
+        self::assertStringContainsString('ELSE NULL', $sql);
+    }
+
+    public function testSafePinbaPercentilesBuildsAliasedGuardedSelectList(): void
+    {
+        $command = $this->command();
+
+        $sql = $this->invoke($command, 'safePinbaPercentiles');
+
+        self::assertIsString($sql);
+        self::assertStringContainsString('AS p90', $sql);
+        self::assertStringContainsString('AS p95', $sql);
+        self::assertStringContainsString('AS p99', $sql);
+        self::assertSame(3, substr_count($sql, 'REGEXP'));
+        self::assertSame(3, substr_count($sql, 'ELSE NULL'));
+    }
+
     // ---- isNotIgnore: unanchored regex match against the ignore list ----------
 
     public function testIsNotIgnoreMatchesIgnorePatternsAsUnanchoredRegex(): void
