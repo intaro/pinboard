@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.12](https://github.com/intaro/pinboard/compare/v2.1.11...v2.1.12) (2026-07-17)
+
+
+### Bug Fixes
+
+* **aggregate:** harden percentile value guards ([#199](https://github.com/intaro/pinboard/issues/199)) ([dcc0b6f](https://github.com/intaro/pinboard/commit/dcc0b6fef0bfa163ae1dc604c014f6c11dad1ead))
+
 ## [2.1.11](https://github.com/intaro/pinboard/compare/v2.1.10...v2.1.11) (2026-07-17)
 
 
