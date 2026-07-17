@@ -211,10 +211,21 @@ final class AggregateCommandConfigTest extends TestCase
         self::assertIsString($sql);
         self::assertStringContainsString("TRIM(CONVERT(p90, CHAR)) REGEXP '^-?([0-9]+(\\.[0-9]+)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$'", $sql);
         self::assertStringContainsString('CAST(TRIM(CONVERT(p90, CHAR)) AS DOUBLE)', $sql);
-        self::assertMatchesRegularExpression('/ABS\\(CAST\\(TRIM\\(CONVERT\\(p90, CHAR\\)\\) AS DOUBLE\\)\\) < 3\\.402823466385[23]\\d*E\\+38/', $sql);
+        self::assertMatchesRegularExpression('/ABS\\(CAST\\(TRIM\\(CONVERT\\(p90, CHAR\\)\\) AS DOUBLE\\)\\) < 3\\.4E\\+38/', $sql);
         self::assertMatchesRegularExpression('/-1\\.7976931348623\\d*E\\+308/', $sql);
         self::assertMatchesRegularExpression('/[^-]1\\.7976931348623\\d*E\\+308/', $sql);
         self::assertStringContainsString('ELSE NULL', $sql);
+    }
+
+    public function testSafePinbaFloatRejectsRoundedFloatMaxSentinelValues(): void
+    {
+        $command = $this->command();
+
+        $sql = $this->invoke($command, 'safePinbaFloat', 'p90');
+
+        self::assertIsString($sql);
+        self::assertStringContainsString('3.4E+38', $sql);
+        self::assertStringNotContainsString('3.4028234663852886E+38', $sql);
     }
 
     public function testSafePinbaPercentilesBuildsAliasedGuardedSelectList(): void
