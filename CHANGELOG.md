@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.10](https://github.com/intaro/pinboard/compare/v2.1.9...v2.1.10) (2026-07-17)
+
+
+### Bug Fixes
+
+* **docker:** run public image rootless by default ([#193](https://github.com/intaro/pinboard/issues/193)) ([6730bd0](https://github.com/intaro/pinboard/commit/6730bd06b7c54872c66dba1cf3f3100097f9f09a))
+
 ## [2.1.9](https://github.com/intaro/pinboard/compare/v2.1.8...v2.1.9) (2026-07-16)
 
 
