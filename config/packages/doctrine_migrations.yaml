@@ -3,4 +3,7 @@ doctrine_migrations:
         # namespace is arbitrary but should be different from App\Migrations
         # as migrations classes should NOT be autoloaded
         'DoctrineMigrations': '%kernel.project_dir%/migrations'
+    # MySQL performs implicit commits around DDL, so wrapping migrations in a
+    # transaction triggers deprecation warnings in doctrine/migrations.
+    transactional: false
     enable_profiler: false
