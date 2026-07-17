@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.13](https://github.com/intaro/pinboard/compare/v2.1.12...v2.1.13) (2026-07-17)
+
+
+### Bug Fixes
+
+* **aggregate:** drop pinba float sentinel percentiles ([#201](https://github.com/intaro/pinboard/issues/201)) ([c011c1b](https://github.com/intaro/pinboard/commit/c011c1b0385352d9f42bb52c6a7f35f0ee03e9e7))
+
 ## [2.1.12](https://github.com/intaro/pinboard/compare/v2.1.11...v2.1.12) (2026-07-17)
 
 
