@@ -51,6 +51,8 @@ docker exec pinboard-web php bin/console add-user admin@example.com yourpassword
 
 Open **http://localhost:8080** (or `PINBOARD_HTTP_PORT` from your `.env`).
 
+The public image runs rootless by default as `www-data`; no host UID/GID mapping is needed for the standard production compose stack because application code is immutable inside the image and persistent state lives in Docker-managed volumes.
+
 ### Sending stats from your PHP app
 
 Add to your PHP configuration (`php.ini` or pool config):

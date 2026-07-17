@@ -85,13 +85,13 @@ services:
       APP_NOTIFICATION_SENDER: ${APP_NOTIFICATION_SENDER:-noreply@pinboard.local}
       APP_NOTIFICATION_GLOBAL_EMAIL: ${APP_NOTIFICATION_GLOBAL_EMAIL:-}
     ports:
-      - "${PINBOARD_HTTP_PORT:-8080}:80"
+      - "${PINBOARD_HTTP_PORT:-8080}:8080"
     volumes:
       # Only sessions need to survive container recreation; cache and logs
       # are ephemeral (logs go to stdout/stderr).
       - pinboard-sessions:/var/www/pinboard/var/sessions
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1/"]
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://127.0.0.1:8080/"]
       interval: 30s
       timeout: 5s
       retries: 3
