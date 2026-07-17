@@ -211,7 +211,8 @@ final class AggregateCommandConfigTest extends TestCase
         self::assertIsString($sql);
         self::assertStringContainsString("TRIM(CONVERT(p90, CHAR)) REGEXP '^-?([0-9]+(\\.[0-9]+)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$'", $sql);
         self::assertStringContainsString('CAST(TRIM(CONVERT(p90, CHAR)) AS DOUBLE)', $sql);
-        self::assertStringContainsString('1.7976931348623157E+308', $sql);
+        self::assertMatchesRegularExpression('/-1\\.7976931348623\\d*E\\+308/', $sql);
+        self::assertMatchesRegularExpression('/[^-]1\\.7976931348623\\d*E\\+308/', $sql);
         self::assertStringContainsString('ELSE NULL', $sql);
     }
 
