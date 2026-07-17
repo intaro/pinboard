@@ -19,6 +19,7 @@ use Twig\Environment;
 class AggregateCommand extends Command
 {
     private const float MYSQL_DOUBLE_MAX = 1.7976931348623157e308;
+    private const float PINBA_FLOAT_MAX = 3.4028234663852886e38;
     private const string MYSQL_NUMERIC_PATTERN = '^-?([0-9]+(\\.[0-9]+)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$';
 
     private AggregateConfig $config;
@@ -188,9 +189,13 @@ class AggregateCommand extends Command
         // Normalize through CHAR first to avoid MySQL warning on malformed
         // numeric payloads coming from Pinba virtual tables before CASE can
         // short-circuit. Scientific notation is accepted for large values.
+        // Pinba engine percentiles are exposed as FLOAT columns; FLT_MAX-like
+        // values (for example 3.40282e38) are treated as broken sentinels and
+        // are nulled instead of being persisted into report tables.
         return sprintf(
             "CASE
                 WHEN TRIM(CONVERT(%1\$s, CHAR)) REGEXP '%2\$s'
+                    AND ABS(CAST(TRIM(CONVERT(%1\$s, CHAR)) AS DOUBLE)) < %4\$s
                     THEN LEAST(
                         GREATEST(CAST(TRIM(CONVERT(%1\$s, CHAR)) AS DOUBLE), -%3\$s),
                         %3\$s
@@ -199,7 +204,8 @@ class AggregateCommand extends Command
             END",
             $expression,
             self::MYSQL_NUMERIC_PATTERN,
-            self::MYSQL_DOUBLE_MAX
+            self::MYSQL_DOUBLE_MAX,
+            self::PINBA_FLOAT_MAX
         );
     }
 
