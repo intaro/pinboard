@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.15](https://github.com/intaro/pinboard/compare/v2.1.14...v2.1.15) (2026-07-17)
+
+
+### Bug Fixes
+
+* **aggregate:** reject rounded float sentinels ([#205](https://github.com/intaro/pinboard/issues/205)) ([8cfc8d0](https://github.com/intaro/pinboard/commit/8cfc8d05b187b4e361b0adbb99d328f4e08d2fcc))
+
 ## [2.1.14](https://github.com/intaro/pinboard/compare/v2.1.13...v2.1.14) (2026-07-17)
 
 
