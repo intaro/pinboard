@@ -180,6 +180,27 @@ class AggregateCommand extends Command
         return $this->config->notificationSender;
     }
 
+    private function safePinbaFloat(string $expression): string
+    {
+        // Pinba virtual tables may occasionally expose non-finite or out-of-range
+        // percentile values. In strict MySQL modes those warnings abort
+        // INSERT ... SELECT during aggregation, so coerce unsafe values to NULL.
+        return sprintf(
+            'CASE WHEN %1$s = %1$s AND ABS(%1$s) <= 1.7976931348623157e308 THEN %1$s ELSE NULL END',
+            $expression
+        );
+    }
+
+    private function safePinbaPercentiles(): string
+    {
+        return sprintf(
+            '%s AS p90, %s AS p95, %s AS p99',
+            $this->safePinbaFloat('p90'),
+            $this->safePinbaFloat('p95'),
+            $this->safePinbaFloat('p99')
+        );
+    }
+
     /** @param string|list<string> $to */
     private function sendEmail(string|array $to, string $subject, string $html): void
     {
@@ -450,7 +471,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
+                    hostname, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
 
             INSERT INTO ipm_report_by_hostname_and_server
                 (
@@ -464,7 +485,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
+                    hostname, server_name, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
 
             INSERT INTO ipm_report_by_server_name
                 (
@@ -478,7 +499,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name, req_time_median, p90, p95, p99, \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
+                    server_name, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
         ';
             $db->executeStatement($sql);
 
@@ -491,7 +512,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_name;
 
@@ -502,7 +523,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_server_name;
 
@@ -513,7 +534,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_name_hostname;
 
@@ -524,7 +545,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_server_name_hostname;
 
@@ -535,7 +556,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_name;
 
@@ -546,7 +567,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_server_name;
 
@@ -557,7 +578,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_name_hostname;
 
@@ -568,7 +589,7 @@ class AggregateCommand extends Command
                 )
             SELECT
                     tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
-                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, \'' . $now . '\'
+                    hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_server_name_hostname;
         ';
