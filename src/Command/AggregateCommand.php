@@ -18,6 +18,8 @@ use Twig\Environment;
 #[AsCommand(name: 'aggregate', description: 'Aggregate data from source tables and save to report tables')]
 class AggregateCommand extends Command
 {
+    private const float MYSQL_DOUBLE_MAX = 1.7976931348623157e308;
+
     private AggregateConfig $config;
     private string $projectDir;
 
@@ -186,7 +188,7 @@ class AggregateCommand extends Command
         // percentile values. In strict MySQL modes those warnings abort
         // INSERT ... SELECT during aggregation, so coerce unsafe values to NULL.
         return sprintf(
-            'CASE WHEN %1$s = %1$s AND ABS(%1$s) <= 1.7976931348623157e308 THEN %1$s ELSE NULL END',
+            'CASE WHEN %1$s = %1$s AND ABS(%1$s) <= ' . self::MYSQL_DOUBLE_MAX . ' THEN %1$s ELSE NULL END',
             $expression
         );
     }
