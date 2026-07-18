@@ -27,10 +27,17 @@ class UsersMigrateDbToFileCommand extends Command
 
         $users = [];
         foreach ($dbUsers as $dbUser) {
-            $users[$dbUser->getUserIdentifier()] = [
+            $record = [
                 'password' => $dbUser->getPassword(),
                 'roles' => $dbUser->getRoles(),
             ];
+
+            $hosts = $dbUser->getHosts();
+            if ($hosts !== null && trim($hosts) !== '') {
+                $record['hosts'] = $hosts;
+            }
+
+            $users[$dbUser->getUserIdentifier()] = $record;
         }
 
         $this->fileUserStorage->replaceUsers($users);

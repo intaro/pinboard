@@ -11,6 +11,49 @@ use PHPUnit\Framework\TestCase;
 
 final class UtilsAccessTest extends TestCase
 {
+    // ── normalizeHostsConfig ──────────────────────────────────────────────────
+
+    public function testNormalizeHostsConfigReturnsNullForUnrestrictedValues(): void
+    {
+        self::assertNull(Utils::normalizeHostsConfig(null));
+        self::assertNull(Utils::normalizeHostsConfig(''));
+        self::assertNull(Utils::normalizeHostsConfig('.*'));
+        self::assertNull(Utils::normalizeHostsConfig('  .*  '));
+        self::assertNull(Utils::normalizeHostsConfig([]));
+        self::assertNull(Utils::normalizeHostsConfig(['.*', '', '  ']));
+        self::assertNull(Utils::normalizeHostsConfig([123, false]));
+    }
+
+    public function testNormalizeHostsConfigKeepsSingleStringPattern(): void
+    {
+        self::assertSame('site-a\.com', Utils::normalizeHostsConfig('site-a\.com'));
+        self::assertSame('site-a\.com', Utils::normalizeHostsConfig('  site-a\.com  '));
+    }
+
+    public function testNormalizeHostsConfigCombinesLegacyArrayOfPatterns(): void
+    {
+        self::assertSame(
+            '(^site-a\.com$)|(^site-b\.com$)',
+            Utils::normalizeHostsConfig(['^site-a\.com$', '^site-b\.com$'])
+        );
+    }
+
+    public function testNormalizeHostsConfigDropsWildcardEntriesFromArray(): void
+    {
+        self::assertSame('site-a\.com', Utils::normalizeHostsConfig(['.*', 'site-a\.com']));
+    }
+
+    public function testNormalizedLegacyArrayRestrictsAccessCorrectly(): void
+    {
+        $hosts = Utils::normalizeHostsConfig(['^site-a\.com$', '^site-b\.com$']);
+        $user = new FileUser('u@example.com', 'h', ['ROLE_USER'], $hosts);
+
+        self::assertTrue(Utils::userCanAccessServer($user, 'site-a.com'));
+        self::assertTrue(Utils::userCanAccessServer($user, 'site-b.com'));
+        self::assertFalse(Utils::userCanAccessServer($user, 'site-c.com'));
+        self::assertFalse(Utils::userCanAccessServer($user, 'evil-site-a.com'));
+    }
+
     // ── getUserHostsRegexp ────────────────────────────────────────────────────
 
     public function testGetUserHostsRegexpReturnsWildcardForNull(): void

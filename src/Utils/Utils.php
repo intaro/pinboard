@@ -14,8 +14,35 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class Utils
 {
     /**
-     * Returns the hosts regexp for the current user, or '.*' if unrestricted.
-     * Only FileUser supports per-user host filtering; DB users see everything.
+     * Normalizes a `hosts` config value to a single regexp string, or null if unrestricted.
+     *
+     * The legacy (Silex-era) config allowed both a string and a list of regexps per user;
+     * empty and '.*' entries mean "no restriction" and are dropped. Multiple patterns are
+     * combined into one alternation that works both in PCRE and MySQL REGEXP.
+     */
+    public static function normalizeHostsConfig(mixed $hosts): ?string
+    {
+        $patterns = [];
+        foreach (is_array($hosts) ? $hosts : [$hosts] as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $item = trim($item);
+            if ($item === '' || $item === '.*') {
+                continue;
+            }
+            $patterns[] = $item;
+        }
+
+        if ($patterns === []) {
+            return null;
+        }
+
+        return count($patterns) === 1 ? $patterns[0] : '(' . implode(')|(', $patterns) . ')';
+    }
+
+    /**
+     * Returns the hosts regexp for the current user (FileUser or DB User), or '.*' if unrestricted.
      */
     public static function getUserHostsRegexp(?UserInterface $user): string
     {
