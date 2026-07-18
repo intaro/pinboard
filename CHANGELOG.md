@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.16](https://github.com/intaro/pinboard/compare/v2.1.15...v2.1.16) (2026-07-18)
+
+
+### Bug Fixes
+
+* enforce per-user hosts access across legacy configs, timers and user migration ([#207](https://github.com/intaro/pinboard/issues/207)) ([3b672e2](https://github.com/intaro/pinboard/commit/3b672e2b0da455546dd7c24d24157aeffd0503d7))
+
 ## [2.1.15](https://github.com/intaro/pinboard/compare/v2.1.14...v2.1.15) (2026-07-17)
 
 
