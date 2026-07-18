@@ -477,8 +477,13 @@ class AggregateCommand extends Command
 
             $db->commit();
 
+            // INSERT IGNORE: pinba engine percentile columns may hold NaN
+            // (rendered as 0), and in strict mode merely copying such a value
+            // escalates warning 1265 to an error that aborts the whole
+            // aggregation. IGNORE keeps it a warning; safePinbaPercentiles()
+            // still nulls the values it can detect as broken.
             $sql = '
-            INSERT INTO ipm_report_by_hostname
+            INSERT IGNORE INTO ipm_report_by_hostname
                 (
                     req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
@@ -492,7 +497,7 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
 
-            INSERT INTO ipm_report_by_hostname_and_server
+            INSERT IGNORE INTO ipm_report_by_hostname_and_server
                 (
                     req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
@@ -506,7 +511,7 @@ class AggregateCommand extends Command
                     traffic_total, traffic_percent, traffic_per_sec,
                     hostname, server_name, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
 
-            INSERT INTO ipm_report_by_server_name
+            INSERT IGNORE INTO ipm_report_by_server_name
                 (
                     req_count, req_per_sec, req_time_total, req_time_percent, req_time_per_sec,
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,

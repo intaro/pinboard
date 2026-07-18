@@ -8,6 +8,7 @@ use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 class TimerController extends AbstractController
@@ -36,6 +37,11 @@ class TimerController extends AbstractController
         $request = $this->getRequestById($type, $requestId, $date);
         if (!$request) {
             throw $this->createNotFoundException("Request #$requestId not found.");
+        }
+
+        $serverName = is_string($request['server_name'] ?? null) ? $request['server_name'] : '';
+        if (!Utils::userCanAccessServer($this->getUser(), $serverName)) {
+            throw new AccessDeniedHttpException('Access to this server is not allowed for your account.');
         }
 
         $request['script_name'] = Utils::urlDecode(is_string($request['script_name']) ? $request['script_name'] : '');

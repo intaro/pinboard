@@ -7,6 +7,7 @@ namespace App\Command;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\FileUserStorage;
+use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -63,6 +64,7 @@ class UsersMigrateFileToDbCommand extends Command
 
             $user->setRoles($roles);
             $user->setPassword($row['password']);
+            $user->setHosts(Utils::normalizeHostsConfig($row['hosts'] ?? null));
             $this->entityManager->persist($user);
         }
 

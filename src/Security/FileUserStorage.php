@@ -107,7 +107,9 @@ class FileUserStorage
         }
 
         $yaml = Yaml::dump($data, 6, 4);
-        file_put_contents($this->resolvedFilePath, $yaml);
+        if (@file_put_contents($this->resolvedFilePath, $yaml) === false) {
+            throw new \RuntimeException(\sprintf('Failed to write users file "%s".', $this->resolvedFilePath));
+        }
     }
 
     private function resolvePath(string $projectDir, string $filePath): string

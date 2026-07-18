@@ -6,6 +6,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Utils\Utils;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -78,7 +79,7 @@ class SwitchableUserProvider implements UserProviderInterface, PasswordUpgraderI
             $roles = ['ROLE_USER'];
         }
 
-        $hosts = isset($row['hosts']) && \is_string($row['hosts']) ? $row['hosts'] : null;
+        $hosts = Utils::normalizeHostsConfig($row['hosts'] ?? null);
 
         return new FileUser(
             $storageKey,

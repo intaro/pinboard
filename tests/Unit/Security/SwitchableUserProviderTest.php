@@ -42,9 +42,51 @@ final class SwitchableUserProviderTest extends TestCase
         self::assertInstanceOf(FileUser::class, $user);
         self::assertSame('admin@example.com', $user->getUserIdentifier());
         self::assertSame('hashed-password', $user->getPassword());
-        self::assertSame('.*', $user->getHosts());
+        self::assertNull($user->getHosts());
         self::assertContains('ROLE_ADMIN', $user->getRoles());
         self::assertContains('ROLE_USER', $user->getRoles());
+    }
+
+    public function testLoadUserByIdentifierKeepsStringHostsRestriction(): void
+    {
+        $storage = new FileUserStorage($this->projectDir, 'config/users.yaml');
+        $storage->upsertUser('user@example.com', 'hashed-password', ['ROLE_USER'], 'site-a\.com');
+
+        $provider = new SwitchableUserProvider(
+            $this->createStub(UserRepository::class),
+            $storage,
+            'file'
+        );
+
+        $user = $provider->loadUserByIdentifier('user@example.com');
+
+        self::assertInstanceOf(FileUser::class, $user);
+        self::assertSame('site-a\.com', $user->getHosts());
+    }
+
+    public function testLoadUserByIdentifierNormalizesLegacyArrayHosts(): void
+    {
+        file_put_contents($this->projectDir . '/users.yaml', <<<'YAML'
+            secure:
+                enable: true
+                users:
+                    user@example.com:
+                        password: hashed-password
+                        hosts:
+                            - '^site-a\.com$'
+                            - '^site-b\.com$'
+            YAML);
+
+        $provider = new SwitchableUserProvider(
+            $this->createStub(UserRepository::class),
+            new FileUserStorage($this->projectDir, 'users.yaml'),
+            'file'
+        );
+
+        $user = $provider->loadUserByIdentifier('user@example.com');
+
+        self::assertInstanceOf(FileUser::class, $user);
+        self::assertSame('(^site-a\.com$)|(^site-b\.com$)', $user->getHosts());
     }
 
     public function testLoadUserByIdentifierFromDatabase(): void
