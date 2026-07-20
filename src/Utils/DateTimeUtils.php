@@ -63,21 +63,6 @@ final class DateTimeUtils
             ->format($format);
     }
 
-    public static function configureServerTimezone(mixed $value): void
-    {
-        if (!is_string($value) || $value === '') {
-            return;
-        }
-
-        try {
-            new DateTimeZone($value);
-        } catch (Exception) {
-            return;
-        }
-
-        date_default_timezone_set($value);
-    }
-
     private static function parseStorageDateTime(string $value): ?DateTimeImmutable
     {
         if ($value === '') {
@@ -98,6 +83,15 @@ final class DateTimeUtils
 
     private static function serverTimezone(): DateTimeZone
     {
+        $timezone = getenv('TZ');
+        if (is_string($timezone) && $timezone !== '') {
+            try {
+                return new DateTimeZone($timezone);
+            } catch (Exception) {
+                // Fall back to PHP's configured timezone below.
+            }
+        }
+
         return new DateTimeZone(date_default_timezone_get());
     }
 }

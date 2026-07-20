@@ -1,13 +1,10 @@
 <?php
 
 use App\Kernel;
-use App\Utils\DateTimeUtils;
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
 return function (array $context) {
-    DateTimeUtils::configureServerTimezone($context['TZ'] ?? getenv('TZ'));
-
     $envRaw = $context['APP_ENV'] ?? 'dev';
     $env = is_string($envRaw) ? $envRaw : 'dev';
     if (!in_array($env, ['dev', 'test', 'prod'], true)) {
