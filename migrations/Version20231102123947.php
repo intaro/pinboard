@@ -22,7 +22,7 @@ final class Version20231102123947 extends AbstractMigration
         $this->addSql("
             CREATE TABLE IF NOT EXISTS `ipm_cpu_usage_details` (
               `server_name` varchar(64) DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `script_name` varchar(128) DEFAULT NULL,
               `cpu_peak_usage` float DEFAULT NULL,
               `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP

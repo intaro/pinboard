@@ -18,6 +18,12 @@ use Twig\Environment;
 #[AsCommand(name: 'aggregate', description: 'Aggregate data from source tables and save to report tables')]
 class AggregateCommand extends Command
 {
+    private const int HOSTNAME_MAX_LENGTH = 64;
+    private const int SERVER_NAME_MAX_LENGTH = 64;
+    private const int STATUS_SERVER_NAME_MAX_LENGTH = 128;
+    private const int SCRIPT_NAME_MAX_LENGTH = 128;
+    private const int TAG_VALUE_MAX_LENGTH = 64;
+    private const int TAGS_MAX_LENGTH = 1024;
     private const float MYSQL_DOUBLE_MAX = 1.7976931348623157e308;
     private const float PINBA_FLOAT_SENTINEL_MAX = 3.4e38;
     private const string MYSQL_NUMERIC_PATTERN = '^-?([0-9]+(\\.[0-9]+)?|\\.[0-9]+)([eE][+-]?[0-9]+)?$';
@@ -220,6 +226,20 @@ class AggregateCommand extends Command
         );
     }
 
+    private function truncatePinbaString(string $expression, int $maxLength): string
+    {
+        return sprintf('LEFT(%s, %d)', $expression, $maxLength);
+    }
+
+    private function truncateString(string $value, int $maxLength): string
+    {
+        if (strlen($value) <= $maxLength) {
+            return $value;
+        }
+
+        return substr($value, 0, $maxLength);
+    }
+
     /** @param string|list<string> $to */
     private function sendEmail(string|array $to, string $subject, string $html): void
     {
@@ -342,6 +362,10 @@ class AggregateCommand extends Command
         try {
             $now = new \DateTime();
             $now = $now->format('Y-m-d H:i:s');
+            $hostnameSql = $this->truncatePinbaString('hostname', self::HOSTNAME_MAX_LENGTH);
+            $serverNameSql = $this->truncatePinbaString('server_name', self::SERVER_NAME_MAX_LENGTH);
+            $scriptNameSql = $this->truncatePinbaString('script_name', self::SCRIPT_NAME_MAX_LENGTH);
+            $maxTagsSql = $this->truncatePinbaString('max(tags)', self::TAGS_MAX_LENGTH);
 
             $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
             $date = new \DateTime();
@@ -439,6 +463,8 @@ class AggregateCommand extends Command
                 }
                 $serverNameEsc = addslashes($serverName);
                 $hostNameEsc = addslashes($hostName);
+                $truncatedServerNameEsc = addslashes($this->truncateString($serverName, self::SERVER_NAME_MAX_LENGTH));
+                $truncatedHostNameEsc = addslashes($this->truncateString($hostName, self::HOSTNAME_MAX_LENGTH));
                 $sql .= '
                 INSERT INTO ipm_report_2_by_hostname_and_server
                     (server_name, hostname, req_time_90, req_time_95, req_time_99, req_time_100,
@@ -446,8 +472,8 @@ class AggregateCommand extends Command
                      cpu_peak_usage_90, cpu_peak_usage_95, cpu_peak_usage_99, cpu_peak_usage_100,
                      doc_size_90, doc_size_95, doc_size_99, doc_size_100, created_at)
                 SELECT
-                    "' . $serverNameEsc . '" AS server_name,
-                    "' . $hostNameEsc . '" AS hostname,
+                    "' . $truncatedServerNameEsc . '" AS server_name,
+                    "' . $truncatedHostNameEsc . '" AS hostname,
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.90), 'req_time_90') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.95), 'req_time_95') . ',
                     ' . sprintf($subselectTemplate, 'req_time', 'req_time', $cnt * (1 - 0.99), 'req_time_99') . ',
@@ -495,7 +521,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
+                    ' . $hostnameSql . ', req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_90_95_99;
 
             INSERT IGNORE INTO ipm_report_by_hostname_and_server
                 (
@@ -509,7 +535,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    hostname, server_name, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
+                    ' . $hostnameSql . ', ' . $serverNameSql . ', req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_hostname_and_server_90_95_99;
 
             INSERT IGNORE INTO ipm_report_by_server_name
                 (
@@ -523,7 +549,7 @@ class AggregateCommand extends Command
                     ru_utime_total, ru_utime_percent, ru_utime_per_sec,
                     ru_stime_total, ru_stime_percent, ru_stime_per_sec,
                     traffic_total, traffic_percent, traffic_per_sec,
-                    server_name, req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
+                    ' . $serverNameSql . ', req_time_median, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\' FROM ipm_pinba_report_by_server_90_95_99;
         ';
             $db->executeStatement($sql);
 
@@ -535,7 +561,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::SERVER_NAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_name;
@@ -546,7 +572,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::SERVER_NAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_server_name;
@@ -557,7 +583,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::SERVER_NAME_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::HOSTNAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_name_hostname;
@@ -568,7 +594,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::SERVER_NAME_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag4_value', self::HOSTNAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_group_server_server_name_hostname;
@@ -579,7 +605,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::SERVER_NAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_name;
@@ -590,7 +616,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::SERVER_NAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_server_name;
@@ -601,7 +627,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::SERVER_NAME_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::HOSTNAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_name_hostname;
@@ -612,7 +638,7 @@ class AggregateCommand extends Command
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, p90, p95, p99, created_at
                 )
             SELECT
-                    tag1_value, tag2_value, tag3_value, tag4_value, req_count, req_per_sec, hit_count,
+                    ' . $this->truncatePinbaString('tag1_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag2_value', self::TAG_VALUE_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag3_value', self::SERVER_NAME_MAX_LENGTH) . ', ' . $this->truncatePinbaString('tag4_value', self::HOSTNAME_MAX_LENGTH) . ', req_count, req_per_sec, hit_count,
                     hit_per_sec, timer_value, timer_median, ru_utime_value, ru_stime_value, ' . $this->safePinbaPercentiles() . ', \'' . $now . '\'
             FROM
                 ipm_pinba_tag_info_category_server_server_name_hostname;
@@ -623,7 +649,7 @@ class AggregateCommand extends Command
             INSERT INTO
                 ipm_status_details (server_name, hostname, script_name, status, tags, tags_cnt, created_at)
             SELECT
-                server_name, hostname, script_name, status, max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
+                ' . $this->truncatePinbaString('server_name', self::STATUS_SERVER_NAME_MAX_LENGTH) . ', ' . $hostnameSql . ', ' . $scriptNameSql . ', status, ' . $maxTagsSql . ', max(tags_cnt), FROM_UNIXTIME(max(timestamp))
             FROM
                 request
             WHERE
@@ -659,12 +685,12 @@ class AggregateCommand extends Command
                     (
                         SELECT
                             r.id AS request_id,
-                            r.server_name,
-                            r.hostname,
-                            r.script_name,
+                            ' . $this->truncatePinbaString('r.server_name', self::SERVER_NAME_MAX_LENGTH) . ' AS server_name,
+                            ' . $this->truncatePinbaString('r.hostname', self::HOSTNAME_MAX_LENGTH) . ' AS hostname,
+                            ' . $this->truncatePinbaString('r.script_name', self::SCRIPT_NAME_MAX_LENGTH) . ' AS script_name,
                             r.req_time,
                             r.mem_peak_usage,
-                            r.tags,
+                            ' . $this->truncatePinbaString('r.tags', self::TAGS_MAX_LENGTH) . ' AS tags,
                             r.tags_cnt,
                             r.timers_cnt,
                             FROM_UNIXTIME(r.timestamp) AS created_at,
@@ -715,7 +741,7 @@ class AggregateCommand extends Command
                     INSERT INTO ipm_timer
                         (timer_id, request_id, hit_count, value, tag_name, tag_value, created_at)
                     SELECT
-                        t.id, t.request_id, t.hit_count, t.value, tag.name as tag_name, tt.value as tag_value, FROM_UNIXTIME(r.timestamp)
+                        t.id, t.request_id, t.hit_count, t.value, tag.name as tag_name, ' . $this->truncatePinbaString('tt.value', self::TAG_VALUE_MAX_LENGTH) . ' as tag_value, FROM_UNIXTIME(r.timestamp)
                     FROM
                         timer t
                     JOIN
@@ -750,7 +776,7 @@ class AggregateCommand extends Command
                 INSERT INTO ipm_mem_peak_usage_details
                     (server_name, hostname, script_name, mem_peak_usage, tags, tags_cnt, created_at)
                 SELECT
-                    server_name, hostname, script_name, max(mem_peak_usage), max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
+                    ' . $serverNameSql . ', ' . $hostnameSql . ', ' . $scriptNameSql . ', max(mem_peak_usage), ' . $maxTagsSql . ', max(tags_cnt), FROM_UNIXTIME(max(timestamp))
                 FROM
                     request
                 WHERE
@@ -785,7 +811,7 @@ class AggregateCommand extends Command
                   INSERT INTO ipm_cpu_usage_details
                       (server_name, hostname, script_name, cpu_peak_usage, tags, tags_cnt, created_at)
                   SELECT
-                      server_name, hostname, script_name, max(ru_utime), max(tags), max(tags_cnt), FROM_UNIXTIME(max(timestamp))
+                      ' . $serverNameSql . ', ' . $hostnameSql . ', ' . $scriptNameSql . ', max(ru_utime), ' . $maxTagsSql . ', max(tags_cnt), FROM_UNIXTIME(max(timestamp))
                   FROM
                       request
                   WHERE
