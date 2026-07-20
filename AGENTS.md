@@ -70,17 +70,23 @@ Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (rele
 
 ## GitHub Actions
 
-- When adding or editing a workflow, pin every third-party action to its current
-  major version. Always verify the latest release before committing instead of
-  reusing a version from memory or copying an old example, e.g.:
+- When adding or editing a workflow, verify the current latest release before
+  committing instead of reusing a version from memory or copying an old example,
+  e.g.:
 
   ```bash
-  gh api repos/actions/checkout/releases/latest --jq .tag_name
+  gh api repos/docker/build-push-action/releases/latest --jq .tag_name
   ```
 
-- Reference actions by their major tag (e.g. `actions/checkout@v7`) so they track
-  the latest compatible patch, and never introduce a version older than what the
-  rest of the repository (or the sibling Pinba repositories) already uses.
+- Reference first-party GitHub actions by their major tag (e.g.
+  `actions/checkout@v7`) so they track the latest compatible patch.
+- Reference third-party actions by full commit SHA and add the verified release
+  tag as a trailing comment, e.g.
+  `docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0`.
+  This is required to keep CodeQL `actions/unpinned-tag` clean. Resolve annotated
+  tags to the target commit SHA, not the tag object SHA.
+- Never introduce a version older than what the rest of the repository (or the
+  sibling Pinba repositories) already uses.
 - Dependabot (`.github/dependabot.yml`) opens grouped `ci:` PRs for action bumps;
   keep all workflows (`ci.yml`, `codeql.yml`, `docker.yml`, `release-please.yml`)
   on the same current majors.
