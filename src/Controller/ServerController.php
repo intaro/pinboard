@@ -72,6 +72,7 @@ class ServerController extends AbstractController
 
             foreach ($result['req'] as &$value) {
                 unset($value['date']);
+                unset($value['label']);
             }
 
             $allPoints = [];
@@ -87,6 +88,7 @@ class ServerController extends AbstractController
                 foreach ($result['req_per_sec']['data'] as &$value) {
                     if ($value['parsed_hostname'] === '_') {
                         unset($value['date']);
+                        unset($value['label']);
                         unset($value['parsed_hostname']);
                         unset($value['hostname']);
 
@@ -101,12 +103,14 @@ class ServerController extends AbstractController
 
                 foreach ($result['req_per_sec'] as &$value) {
                     unset($value['date']);
+                    unset($value['label']);
                     unset($value['parsed_hostname']);
                 }
             }
 
             foreach ($result['statuses']['data'] as &$value) {
                 unset($value['date']);
+                unset($value['label']);
             }
 
             $result['success'] = 'true';
@@ -515,6 +519,7 @@ class ServerController extends AbstractController
             $data[] = [
                 'created_at' => $createdAt,
                 'date' => DateTimeUtils::chartDateFromStorageDateTime($createdAt),
+                'label' => DateTimeUtils::chartLabelFromStorageDateTime($createdAt),
                 'error_code' => $statusCode,
                 'error_count' => $row['cnt'],
             ];
@@ -569,10 +574,12 @@ class ServerController extends AbstractController
             $hostname = is_string($item['hostname']) ? $item['hostname'] : '';
             $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
             $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
+            $label = DateTimeUtils::chartLabelFromStorageDateTime($createdAt);
             $parsedHostname = '_' . preg_replace('/\W/', '_', $hostname);
 
             $rpqData[$date][] = [
                 'created_at' => $createdAt,
+                'label' => $label,
                 'hostname' => $hostname,
                 'parsed_hostname' => $parsedHostname,
                 'req_per_sec' => number_format($reqPerSec, 2, '.', ''),
@@ -609,9 +616,11 @@ class ServerController extends AbstractController
                 $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
                 $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
                 $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
+                $label = DateTimeUtils::chartLabelFromStorageDateTime($createdAt);
 
                 $rpqData[$date][] = [
                     'created_at' => $createdAt,
+                    'label' => $label,
                     'hostname' => '_',
                     'parsed_hostname' => '_',
                     'req_per_sec' => number_format($reqPerSec, 2, '.', ''),
@@ -670,7 +679,11 @@ class ServerController extends AbstractController
         $result = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $row = ['created_at' => $createdAt, 'date' => DateTimeUtils::chartDateFromStorageDateTime($createdAt)];
+            $row = [
+                'created_at' => $createdAt,
+                'date' => DateTimeUtils::chartDateFromStorageDateTime($createdAt),
+                'label' => DateTimeUtils::chartLabelFromStorageDateTime($createdAt),
+            ];
 
             foreach (['90', '95', '99', '100'] as $percent) {
                 $raw = $item['req_time_' . $percent] ?? null;
