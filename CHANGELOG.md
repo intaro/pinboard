@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.19](https://github.com/intaro/pinboard/compare/v2.1.18...v2.1.19) (2026-07-20)
+
+
+### Bug Fixes
+
+* **time:** correct aggregate page timestamps ([#215](https://github.com/intaro/pinboard/issues/215)) ([f06a420](https://github.com/intaro/pinboard/commit/f06a42068ea0515cfd40f3e6e4940c46376579fd))
+
 ## [2.1.18](https://github.com/intaro/pinboard/compare/v2.1.17...v2.1.18) (2026-07-20)
 
 
