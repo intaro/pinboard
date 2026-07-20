@@ -42,7 +42,7 @@ final class DateTimeUtils
 
     public static function chartLabelFromStorageDateTime(string $value): string
     {
-        return self::formatStorageDateTimeForServer($value, 'Y-m-d H:i');
+        return self::formatStorageDateTimeForServer($value, 'H:i');
     }
 
     public static function storageDateTimeAgo(string $period, string $format = self::DEFAULT_DATETIME_FORMAT): string
