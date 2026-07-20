@@ -38,9 +38,32 @@ final class DateTimeUtilsTest extends TestCase
         );
     }
 
+    public function testFormatsChartLabelInServerTimezone(): void
+    {
+        self::assertSame(
+            '2026-07-20 15:34',
+            DateTimeUtils::chartLabelFromStorageDateTime('2026-07-20 12:34:56')
+        );
+    }
+
     public function testFormatsUnixTimestampInServerTimezone(): void
     {
         self::assertSame('03:00:00', DateTimeUtils::formatUnixTimestampForServer(0));
+    }
+
+    public function testConfiguresServerTimezone(): void
+    {
+        DateTimeUtils::configureServerTimezone('Asia/Yekaterinburg');
+
+        self::assertSame('Asia/Yekaterinburg', date_default_timezone_get());
+        self::assertSame('05:00:00', DateTimeUtils::formatUnixTimestampForServer(0));
+    }
+
+    public function testIgnoresInvalidServerTimezone(): void
+    {
+        DateTimeUtils::configureServerTimezone('invalid/timezone');
+
+        self::assertSame('Europe/Moscow', date_default_timezone_get());
     }
 
     public function testInvalidStorageDateTimeFallsBackToOriginalValue(): void

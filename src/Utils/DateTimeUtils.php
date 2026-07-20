@@ -40,6 +40,11 @@ final class DateTimeUtils
         );
     }
 
+    public static function chartLabelFromStorageDateTime(string $value): string
+    {
+        return self::formatStorageDateTimeForServer($value, 'Y-m-d H:i');
+    }
+
     public static function storageDateTimeAgo(string $period, string $format = self::DEFAULT_DATETIME_FORMAT): string
     {
         try {
@@ -56,6 +61,21 @@ final class DateTimeUtils
         return (new DateTimeImmutable('@' . $timestamp))
             ->setTimezone(self::serverTimezone())
             ->format($format);
+    }
+
+    public static function configureServerTimezone(mixed $value): void
+    {
+        if (!is_string($value) || $value === '') {
+            return;
+        }
+
+        try {
+            new DateTimeZone($value);
+        } catch (Exception) {
+            return;
+        }
+
+        date_default_timezone_set($value);
     }
 
     private static function parseStorageDateTime(string $value): ?DateTimeImmutable
