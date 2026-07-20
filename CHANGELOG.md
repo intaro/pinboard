@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.17](https://github.com/intaro/pinboard/compare/v2.1.16...v2.1.17) (2026-07-20)
+
+
+### Bug Fixes
+
+* harden pinba aggregation and local test stack ([f0b047a](https://github.com/intaro/pinboard/commit/f0b047a3cda897d6e8de875d6d3b85dce3595c68))
+
 ## [2.1.16](https://github.com/intaro/pinboard/compare/v2.1.15...v2.1.16) (2026-07-18)
 
 
