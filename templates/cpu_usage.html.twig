@@ -56,7 +56,7 @@
                                 {% endfor %}
                             </td>
                             <td>{{ page.cpu_peak_usage }}</td>
-                            <td>{{ page.created_at }}</td>
+                            <td>{{ page.created_at_format|default(page.created_at) }}</td>
                         </tr>
                     {% endfor %}
                 </table>

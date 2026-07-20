@@ -55,7 +55,7 @@
                                 {% endfor %}
                             </td>
                             <td>{{ page.mem_peak_usage }}</td>
-                            <td>{{ page.created_at }}</td>
+                            <td>{{ page.created_at_format|default(page.created_at) }}</td>
                         </tr>
                     {% endfor %}
                 </table>

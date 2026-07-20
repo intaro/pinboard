@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Utils\DateTimeUtils;
 use Doctrine\DBAL\Connection;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -939,6 +940,8 @@ class AggregateCommand extends Command
                                 'prev_formatted' => number_format($values[1]['value'] * 1000, 0, '.', '') . ' ms',
                                 'current_date' => $values[0]['created_at'],
                                 'prev_date' => $values[1]['created_at'],
+                                'current_date_format' => DateTimeUtils::formatStorageDateTimeForServer($values[0]['created_at'], 'Y-m-d H:i'),
+                                'prev_date_format' => DateTimeUtils::formatStorageDateTimeForServer($values[1]['created_at'], 'Y-m-d H:i'),
                                 'border' => number_format($border * 1000, 0, '.', '') . ' ms',
                             ];
                         }

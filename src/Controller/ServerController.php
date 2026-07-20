@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Command\AggregateCommand;
+use App\Utils\DateTimeUtils;
 use App\Utils\SqlUtils;
 use App\Utils\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -478,7 +479,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
+            'created_at' => DateTimeUtils::storageDateTimeAgo($period)
         ];
 
         $hostCondition = '';
@@ -510,12 +511,10 @@ class ServerController extends AbstractController
         foreach ($stmt as $row) {
             $createdAt = is_string($row['created_at']) ? $row['created_at'] : '';
             $statusCode = is_string($row['status']) ? $row['status'] : (is_int($row['status']) ? (string) $row['status'] : '');
-            $t = strtotime($createdAt) ?: 0;
-            $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
 
             $data[] = [
                 'created_at' => $createdAt,
-                'date' => $date,
+                'date' => DateTimeUtils::chartDateFromStorageDateTime($createdAt),
                 'error_code' => $statusCode,
                 'error_count' => $row['cnt'],
             ];
@@ -535,7 +534,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
+            'created_at' => DateTimeUtils::storageDateTimeAgo($period)
         ];
 
         $hostCondition = '';
@@ -569,8 +568,7 @@ class ServerController extends AbstractController
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
             $hostname = is_string($item['hostname']) ? $item['hostname'] : '';
             $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
-            $t = strtotime($createdAt) ?: 0;
-            $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+            $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
             $parsedHostname = '_' . preg_replace('/\W/', '_', $hostname);
 
             $rpqData[$date][] = [
@@ -610,8 +608,7 @@ class ServerController extends AbstractController
             foreach ($data as $item) {
                 $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
                 $reqPerSec = is_numeric($item['req_per_sec']) ? (float) $item['req_per_sec'] : 0.0;
-                $t = strtotime($createdAt) ?: 0;
-                $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+                $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
 
                 $rpqData[$date][] = [
                     'created_at' => $createdAt,
@@ -633,7 +630,7 @@ class ServerController extends AbstractController
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period)),
+            'created_at' => DateTimeUtils::storageDateTimeAgo($period),
         ];
 
         $selectFields = '
@@ -673,8 +670,7 @@ class ServerController extends AbstractController
         $result = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $t = strtotime($createdAt) ?: 0;
-            $row = ['created_at' => $createdAt, 'date' => date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t)];
+            $row = ['created_at' => $createdAt, 'date' => DateTimeUtils::chartDateFromStorageDateTime($createdAt)];
 
             foreach (['90', '95', '99', '100'] as $percent) {
                 $raw = $item['req_time_' . $percent] ?? null;
@@ -699,7 +695,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', (int) strtotime('-' . $period))
+            'created_at' => DateTimeUtils::storageDateTimeAgo($period)
         ];
         $dateSelect = SqlUtils::getDateSelectExpression($period);
         $timeGroupBy = SqlUtils::getDateGroupExpression($period);
@@ -756,8 +752,7 @@ class ServerController extends AbstractController
             $reqField = $aggregation[$valueField]['req_field'];
             foreach ($data as $item) {
                 $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-                $t = strtotime($createdAt) ?: 0;
-                $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+                $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
                 $raw = isset($item[$reqField]) && is_numeric($item[$reqField]) ? (float) $item[$reqField] : 0.0;
 
                 $formatted = match ($reqField) {
@@ -800,8 +795,7 @@ class ServerController extends AbstractController
 
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $t = strtotime($createdAt) ?: 0;
-            $date = date('Y,', $t) . (date('n', $t) - 1) . date(',d,H,i', $t);
+            $date = DateTimeUtils::chartDateFromStorageDateTime($createdAt);
 
             if (isset($item['timer_median']) && is_numeric($item['timer_median'])) {
                 $item['timer_median'] = number_format((float) $item['timer_median'] * 1000, 3, '.', '');
@@ -844,7 +838,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 week'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 week')
         ];
 
         $hostCondition = '';
@@ -883,6 +877,8 @@ class ServerController extends AbstractController
 
         $rows = [];
         foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $parsed = Utils::parseRequestTags($item);
             $rows[] = is_array($parsed) ? $parsed : $item;
@@ -895,7 +891,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
 
         $hostCondition = '';
@@ -925,7 +921,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
 
         $hostCondition = '';
@@ -958,6 +954,8 @@ class ServerController extends AbstractController
 
         $rows = [];
         foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['req_time'] = number_format(is_numeric($item['req_time']) ? (float) $item['req_time'] * 1000 : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);
@@ -971,7 +969,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
 
         $hostCondition = '';
@@ -1000,7 +998,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
         $hostCondition = '';
 
@@ -1030,7 +1028,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
 
         $hostCondition = '';
@@ -1063,6 +1061,8 @@ class ServerController extends AbstractController
 
         $rows = [];
         foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['cpu_peak_usage'] = number_format(is_numeric($item['cpu_peak_usage']) ? (float) $item['cpu_peak_usage'] : 0.0, 3);
             $parsed = Utils::parseRequestTags($item);
@@ -1077,7 +1077,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+            'created_at' => DateTimeUtils::storageDateTimeAgo('1 day')
         ];
 
         $hostCondition = '';
@@ -1116,6 +1116,8 @@ class ServerController extends AbstractController
 
         $rows = [];
         foreach ($data as $item) {
+            $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
+            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['mem_peak_usage'] = number_format(is_numeric($item['mem_peak_usage']) ? (float) $item['mem_peak_usage'] : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);
@@ -1227,7 +1229,7 @@ class ServerController extends AbstractController
             $item['req_time'] = $reqTime;
             $item['req_time_format'] = number_format($reqTime);
             $item['mem_peak_usage_format'] = number_format(is_numeric($item['mem_peak_usage']) ? (float) $item['mem_peak_usage'] : 0.0);
-            $item['timestamp_format'] = date('H:i:s', $itemTimestamp);
+            $item['timestamp_format'] = DateTimeUtils::formatUnixTimestampForServer($itemTimestamp);
             $data[] = $item;
         }
 
@@ -1313,7 +1315,7 @@ class ServerController extends AbstractController
     {
         $params = [
             'server_name' => $serverName,
-            'created_at'  => date('Y-m-d H:i:s', strtotime('-1 week')),
+            'created_at'  => DateTimeUtils::storageDateTimeAgo('1 week'),
         ];
         $hostCondition = '';
 
