@@ -42,6 +42,9 @@ FROM composer:2@sha256:b09bccd91a78fe8a9ab4b33d707b862e8fe54fec17782e32683ad2a69
 
 WORKDIR /build
 
+RUN apk add --no-cache libxslt-dev=~1.1 \
+ && docker-php-ext-install -j"$(nproc)" xsl
+
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install \
     --no-dev \
@@ -73,11 +76,12 @@ RUN apk add --no-cache \
     bash=~5.3 \
     curl=~8.21 \
     icu-dev=~78 \
+    libxslt-dev=~1.1 \
     nginx=~1.30 \
     oniguruma-dev=~6.9 \
     supervisor=~4.3 \
     tzdata=~2026 \
- && docker-php-ext-install -j"$(nproc)" intl pdo_mysql \
+ && docker-php-ext-install -j"$(nproc)" intl pdo_mysql xsl \
  && rm -rf /var/cache/apk/*
 
 # ── Supercronic (production-grade cron runner) ────────────────────────────────

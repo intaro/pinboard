@@ -1,0 +1,29 @@
+services:
+  mysql-pinba:
+    restart: "no"
+
+  php-fpm:
+    restart: "no"
+    environment:
+      APP_ENV: test
+      APP_DEBUG: 1
+    volumes: !override
+      - ./../:/var/www
+      - pinba-test-var:/var/www/var
+
+  node:
+    image: node:24-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-node
+    working_dir: /var/www
+    user: "${PUID}:${PGID}"
+    restart: "no"
+    environment:
+      CI: "true"
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      COREPACK_HOME: /tmp/corepack
+    volumes:
+      - ./../:/var/www
+    command: ["tail", "-f", "/dev/null"]
+
+volumes:
+  pinba-test-var:

@@ -1,5 +1,33 @@
 # Testing
 
+## Isolated Docker test stack
+
+Use the local test stack for the closest developer-machine equivalent of CI:
+
+```bash
+make test
+```
+
+This command uses `docker/.env.test` and the Compose project name `pinboard-test`.
+It starts only the test MySQL/Pinba, PHP-FPM and Node containers, installs PHP
+and frontend dependencies, runs Doctrine migrations in the test database, then
+runs:
+
+- `php bin/console lint:twig`
+- `vendor/bin/php-cs-fixer fix --dry-run --diff --using-cache=no`
+- `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`
+- `vendor/bin/phpunit --no-progress`
+- `pnpm build`
+
+The stack is independent from the development stack (`pinboard`) and uses
+auto-assigned host ports to avoid conflicts. It is left running after the check
+so repeat runs can reuse containers and dependency caches.
+
+```bash
+make test-down   # stop only the pinboard-test containers
+make test-reset  # stop them and remove only the pinboard-test volumes
+```
+
 ## Local checks before pushing
 
 Run these before every push to avoid CI failures:
@@ -8,8 +36,8 @@ Run these before every push to avoid CI failures:
 # PHP syntax (touched files only)
 php -l src/Path/To/File.php
 
-# Twig syntax (touched templates only)
-php bin/console lint:twig templates/
+# Twig syntax
+php bin/console lint:twig
 
 # Code style — check, then fix
 vendor/bin/php-cs-fixer fix --dry-run --diff
