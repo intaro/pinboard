@@ -145,7 +145,7 @@ jobs:
           key: phpstan-${{ hashFiles('phpstan.neon', 'composer.lock') }}
           restore-keys: phpstan-
 
-      - run: vendor/bin/phpstan analyse --no-progress
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})

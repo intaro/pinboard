@@ -15,7 +15,7 @@ runs:
 
 - `php bin/console lint:twig`
 - `vendor/bin/php-cs-fixer fix --dry-run --diff --using-cache=no`
-- `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`
+- `vendor/bin/phpstan analyse --no-progress --memory-limit=${PHPSTAN_MEMORY_LIMIT:-1G}`
 - `vendor/bin/phpunit --no-progress`
 - `pnpm build`
 
@@ -44,7 +44,7 @@ vendor/bin/php-cs-fixer fix --dry-run --diff
 vendor/bin/php-cs-fixer fix
 
 # Static analysis (level 10)
-vendor/bin/phpstan analyse --no-progress
+vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
 # Unit and functional tests
 vendor/bin/phpunit --no-progress
@@ -60,7 +60,7 @@ Three jobs run automatically on every PR and on every push to `master`:
 | Job            | Command                                         |
 |----------------|-------------------------------------------------|
 | PHP CS Fixer   | `vendor/bin/php-cs-fixer fix --dry-run --diff`  |
-| PHPStan        | `vendor/bin/phpstan analyse --no-progress`       |
+| PHPStan        | `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` |
 | PHPUnit        | `vendor/bin/phpunit --no-progress` (PHP 8.4 + 8.5) |
 
 All three must pass before a PR can be merged. See `.github/workflows/ci.yml` for the full configuration.

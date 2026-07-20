@@ -25,9 +25,9 @@
 - Backend sanity checks: `php -l` for touched PHP files and `php bin/console lint:twig` for touched Twig files.
 - PHP unit and functional tests: `vendor/bin/phpunit`.
 - PHP style: `vendor/bin/php-cs-fixer fix --dry-run --diff` — fix violations with `vendor/bin/php-cs-fixer fix`.
-- PHP static analysis: `vendor/bin/phpstan analyse --no-progress` — runs at **level 10** (maximum).
+- PHP static analysis: `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` — runs at **level 10** (maximum).
 - Frontend rebuild: `pnpm build`.
-- Before pushing or opening a PR with PHP code changes, run `vendor/bin/php-cs-fixer fix --dry-run --diff` and `vendor/bin/phpstan analyse --no-progress` locally.
+- Before pushing or opening a PR with PHP code changes, run `vendor/bin/php-cs-fixer fix --dry-run --diff` and `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` locally.
 - Prefer focused verification over broad test runs unless the change spans multiple layers.
 
 ## PHP Static Analysis Rules

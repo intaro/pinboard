@@ -9,6 +9,7 @@ DOCKER_COMPOSE_PHP_FPM_EXEC = ${DOCKER_COMPOSE} exec -u www-data php-fpm
 DOCKER_COMPOSE_TEST = docker compose --env-file ./docker/.env.test -f ./docker/docker-compose.yml -f ./docker/docker-compose.test.yml
 DOCKER_COMPOSE_TEST_PHP = ${DOCKER_COMPOSE_TEST} exec -u www-data php-fpm
 DOCKER_COMPOSE_TEST_NODE = ${DOCKER_COMPOSE_TEST} exec node
+PHPSTAN_MEMORY_LIMIT ?= 1G
 
 .PHONY: build build80 build84 start stop up up80 up84 down restart dc_ps dc_logs dc_down dc_restart \
 	app_bash php test test-up test-deps test-migrate test-check test-down test-reset cache db_migrate migrate \
@@ -85,7 +86,7 @@ test-check:
 	${DOCKER_COMPOSE_TEST_PHP} php bin/console lint:twig
 	${DOCKER_COMPOSE_TEST_PHP} vendor/bin/php-cs-fixer fix --dry-run --diff --using-cache=no
 	${DOCKER_COMPOSE_TEST_PHP} env APP_ENV=dev APP_DEBUG=1 php bin/console cache:warmup
-	${DOCKER_COMPOSE_TEST_PHP} vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+	${DOCKER_COMPOSE_TEST_PHP} vendor/bin/phpstan analyse --no-progress --memory-limit=${PHPSTAN_MEMORY_LIMIT}
 	${DOCKER_COMPOSE_TEST_PHP} vendor/bin/phpunit --no-progress
 	${DOCKER_COMPOSE_TEST_NODE} sh -lc 'COREPACK_HOME=/tmp/corepack corepack pnpm build'
 
@@ -126,7 +127,7 @@ users_db_to_file:
 ##################
 
 phpstan:
-	${DOCKER_COMPOSE_PHP_FPM_EXEC} vendor/bin/phpstan analyse -c phpstan.neon; \
+	${DOCKER_COMPOSE_PHP_FPM_EXEC} vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=${PHPSTAN_MEMORY_LIMIT}; \
  	${DOCKER_COMPOSE_PHP_FPM_EXEC} vendor/bin/phpstan clear-result-cache
 
 deptrac:

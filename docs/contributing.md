@@ -82,7 +82,7 @@ Run the following before pushing to avoid CI failures:
 
 ```bash
 vendor/bin/php-cs-fixer fix
-vendor/bin/phpstan analyse --no-progress
+vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 vendor/bin/phpunit --no-progress
 ```
 
