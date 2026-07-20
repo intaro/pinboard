@@ -777,6 +777,7 @@ class ServerController extends AbstractController
                     $result[$date] = [];
                 }
 
+                $result[$date]['label'] = $this->formatChartTimeLabel($createdAt);
                 $result[$date][$reqField] = $formatted;
             }
 
@@ -837,6 +838,7 @@ class ServerController extends AbstractController
             if (!isset($result[$date])) {
                 $result[$date] = [];
             }
+            $result[$date]['label'] = $this->formatChartTimeLabel($createdAt);
             $result[$date][$key] = $item[$valueField];
         }
 
@@ -844,6 +846,13 @@ class ServerController extends AbstractController
             'timers' => !empty($data) ? $timers : [],
             'values' => !empty($data) ? $result : []
         ];
+    }
+
+    private function formatChartTimeLabel(string $createdAt): string
+    {
+        return preg_match('/^\d{4}-\d{2}-\d{2} (\d{2}:\d{2})/', $createdAt, $matches) === 1
+            ? $matches[1]
+            : $createdAt;
     }
 
     /** @return list<array<string, mixed>> */
@@ -891,7 +900,7 @@ class ServerController extends AbstractController
         $rows = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
+            $item['created_at_format'] = $createdAt;
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $parsed = Utils::parseRequestTags($item);
             $rows[] = is_array($parsed) ? $parsed : $item;
@@ -968,7 +977,7 @@ class ServerController extends AbstractController
         $rows = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
+            $item['created_at_format'] = $createdAt;
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['req_time'] = number_format(is_numeric($item['req_time']) ? (float) $item['req_time'] * 1000 : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);
@@ -1075,7 +1084,7 @@ class ServerController extends AbstractController
         $rows = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
+            $item['created_at_format'] = $createdAt;
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['cpu_peak_usage'] = number_format(is_numeric($item['cpu_peak_usage']) ? (float) $item['cpu_peak_usage'] : 0.0, 3);
             $parsed = Utils::parseRequestTags($item);
@@ -1130,7 +1139,7 @@ class ServerController extends AbstractController
         $rows = [];
         foreach ($data as $item) {
             $createdAt = is_string($item['created_at']) ? $item['created_at'] : '';
-            $item['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
+            $item['created_at_format'] = $createdAt;
             $item['script_name'] = Utils::urlDecode(is_string($item['script_name']) ? $item['script_name'] : '');
             $item['mem_peak_usage'] = number_format(is_numeric($item['mem_peak_usage']) ? (float) $item['mem_peak_usage'] : 0.0, 0, '.', ',');
             $parsed = Utils::parseRequestTags($item);

@@ -48,7 +48,7 @@ class TimerController extends AbstractController
         $request['script_name'] = Utils::urlDecode(is_string($request['script_name']) ? $request['script_name'] : '');
         if ($type === 'req_time') {
             $createdAt = is_string($request['created_at'] ?? null) ? $request['created_at'] : '';
-            $request['created_at_format'] = DateTimeUtils::formatStorageDateTimeForServer($createdAt);
+            $request['created_at_format'] = $createdAt;
         } elseif (is_numeric($request['timestamp'] ?? null)) {
             $request['timestamp_format'] = DateTimeUtils::formatUnixTimestampForServer((int) $request['timestamp']);
         }

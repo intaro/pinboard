@@ -42,7 +42,7 @@ final class DateTimeUtils
 
     public static function chartLabelFromStorageDateTime(string $value): string
     {
-        return self::formatStorageDateTimeForServer($value, 'Y-m-d H:i');
+        return self::formatStorageDateTimeForServer($value, 'H:i');
     }
 
     public static function storageDateTimeAgo(string $period, string $format = self::DEFAULT_DATETIME_FORMAT): string
@@ -61,21 +61,6 @@ final class DateTimeUtils
         return (new DateTimeImmutable('@' . $timestamp))
             ->setTimezone(self::serverTimezone())
             ->format($format);
-    }
-
-    public static function configureServerTimezone(mixed $value): void
-    {
-        if (!is_string($value) || $value === '') {
-            return;
-        }
-
-        try {
-            new DateTimeZone($value);
-        } catch (Exception) {
-            return;
-        }
-
-        date_default_timezone_set($value);
     }
 
     private static function parseStorageDateTime(string $value): ?DateTimeImmutable
@@ -98,6 +83,15 @@ final class DateTimeUtils
 
     private static function serverTimezone(): DateTimeZone
     {
+        $timezone = getenv('TZ');
+        if (is_string($timezone) && $timezone !== '') {
+            try {
+                return new DateTimeZone($timezone);
+            } catch (Exception) {
+                // Fall back to PHP's configured timezone below.
+            }
+        }
+
         return new DateTimeZone(date_default_timezone_get());
     }
 }

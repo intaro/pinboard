@@ -10,16 +10,24 @@ use PHPUnit\Framework\TestCase;
 final class DateTimeUtilsTest extends TestCase
 {
     private string $originalTimezone = 'UTC';
+    private string|false $originalEnvironmentTimezone = false;
 
     protected function setUp(): void
     {
         $this->originalTimezone = date_default_timezone_get();
+        $this->originalEnvironmentTimezone = getenv('TZ');
         date_default_timezone_set('Europe/Moscow');
+        putenv('TZ=Europe/Moscow');
     }
 
     protected function tearDown(): void
     {
         date_default_timezone_set($this->originalTimezone);
+        if ($this->originalEnvironmentTimezone === false) {
+            putenv('TZ');
+        } else {
+            putenv('TZ=' . $this->originalEnvironmentTimezone);
+        }
     }
 
     public function testFormatsStorageDateTimeInServerTimezone(): void
@@ -41,7 +49,7 @@ final class DateTimeUtilsTest extends TestCase
     public function testFormatsChartLabelInServerTimezone(): void
     {
         self::assertSame(
-            '2026-07-20 15:34',
+            '15:34',
             DateTimeUtils::chartLabelFromStorageDateTime('2026-07-20 12:34:56')
         );
     }
@@ -51,19 +59,20 @@ final class DateTimeUtilsTest extends TestCase
         self::assertSame('03:00:00', DateTimeUtils::formatUnixTimestampForServer(0));
     }
 
-    public function testConfiguresServerTimezone(): void
+    public function testFormatsWithTimezoneFromEnvironment(): void
     {
-        DateTimeUtils::configureServerTimezone('Asia/Yekaterinburg');
+        putenv('TZ=Asia/Yekaterinburg');
 
-        self::assertSame('Asia/Yekaterinburg', date_default_timezone_get());
+        self::assertSame('Europe/Moscow', date_default_timezone_get());
         self::assertSame('05:00:00', DateTimeUtils::formatUnixTimestampForServer(0));
     }
 
-    public function testIgnoresInvalidServerTimezone(): void
+    public function testInvalidEnvironmentTimezoneFallsBackToPhpDefault(): void
     {
-        DateTimeUtils::configureServerTimezone('invalid/timezone');
+        putenv('TZ=invalid/timezone');
 
         self::assertSame('Europe/Moscow', date_default_timezone_get());
+        self::assertSame('03:00:00', DateTimeUtils::formatUnixTimestampForServer(0));
     }
 
     public function testInvalidStorageDateTimeFallsBackToOriginalValue(): void
