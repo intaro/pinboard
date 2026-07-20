@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\IpmReportByServerName;
+use App\Utils\DateTimeUtils;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -28,7 +29,7 @@ class IpmReportByServerNameRepository extends ServiceEntityRepository
      */
     public function findAllServers(string $hostsRegexp = '.*'): array
     {
-        $params = ['created_at' => date('Y-m-d H:00:00', strtotime('-1 day'))];
+        $params = ['created_at' => DateTimeUtils::storageDateTimeAgo('1 day', 'Y-m-d H:00:00')];
         $hostsWhere = '';
 
         if ($hostsRegexp !== '.*') {

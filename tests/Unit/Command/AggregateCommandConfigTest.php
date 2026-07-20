@@ -58,7 +58,6 @@ final class AggregateCommandConfigTest extends TestCase
     private function invoke(AggregateCommand $command, string $method, mixed ...$args): mixed
     {
         $ref = new \ReflectionMethod($command, $method);
-        $ref->setAccessible(true);
 
         return $ref->invoke($command, ...$args);
     }
@@ -242,6 +241,36 @@ final class AggregateCommandConfigTest extends TestCase
         self::assertSame(3, substr_count($sql, 'ELSE NULL'));
     }
 
+    // ---- string guards: long Pinba request strings are truncated before insert
+
+    public function testTruncatePinbaStringBuildsLeftExpressionForLongUrlColumns(): void
+    {
+        $command = $this->command();
+
+        self::assertSame('LEFT(script_name, 128)', $this->invoke($command, 'truncatePinbaString', 'script_name', 128));
+        self::assertSame('LEFT(r.script_name, 128)', $this->invoke($command, 'truncatePinbaString', 'r.script_name', 128));
+        self::assertSame('LEFT(max(tags), 1024)', $this->invoke($command, 'truncatePinbaString', 'max(tags)', 1024));
+    }
+
+    public function testTruncateStringCutsLongUrlBeforeLiteralInsert(): void
+    {
+        $command = $this->command();
+        $longUrl = '/catalog/' . str_repeat('long-url-segment-', 20);
+
+        $truncated = $this->invoke($command, 'truncateString', $longUrl, 128);
+
+        self::assertIsString($truncated);
+        self::assertSame(128, strlen($truncated));
+        self::assertSame(substr($longUrl, 0, 128), $truncated);
+    }
+
+    public function testTruncateStringKeepsShortUrlUnchanged(): void
+    {
+        $command = $this->command();
+
+        self::assertSame('/short-url', $this->invoke($command, 'truncateString', '/short-url', 128));
+    }
+
     // ---- isNotIgnore: unanchored regex match against the ignore list ----------
 
     public function testIsNotIgnoreMatchesIgnorePatternsAsUnanchoredRegex(): void
@@ -286,7 +315,6 @@ final class AggregateCommandConfigTest extends TestCase
         );
 
         $ref = new \ReflectionProperty($command, 'config');
-        $ref->setAccessible(true);
         $ref->setValue($command, $config);
     }
 }

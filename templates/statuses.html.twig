@@ -46,7 +46,7 @@
                                 {% endfor %}
                             </td>
                             <td>{{ status.status }}</td>
-                            <td>{{ status.created_at }}</td>
+                            <td>{{ status.created_at_format|default(status.created_at) }}</td>
                         </tr>
                     {% endfor %}
                 </table>

@@ -25,7 +25,7 @@
                             {{ values.current_formatted }}
                         </td>
                         <td style="padding: 4px; color: #999; font-size: 12px;">
-                            (as of {{ values.current_date|date('Y-m-d H:i') }})
+                            (as of {{ values.current_date_format|default(values.current_date) }})
                         </td>
                     </tr>
                     <tr>
@@ -36,7 +36,7 @@
                             {{ values.prev_formatted }}
                         </td>
                         <td style="padding: 4px; color: #999; font-size: 12px;">
-                            (as of {{ values.prev_date|date('Y-m-d H:i') }})
+                            (as of {{ values.prev_date_format|default(values.prev_date) }})
                         </td>
                     </tr>
                     <tr>

@@ -22,7 +22,7 @@ final class Version20231102123529 extends AbstractMigration
         $this->addSql("
             CREATE TABLE IF NOT EXISTS `ipm_report_2_by_hostname_and_server` (
               `server_name` varchar(64) DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `req_time_90` float DEFAULT NULL,
               `req_time_95` float DEFAULT NULL,
               `req_time_99` float DEFAULT NULL,
@@ -54,7 +54,7 @@ final class Version20231102123529 extends AbstractMigration
               `traffic_total` float DEFAULT NULL,
               `traffic_percent` float DEFAULT NULL,
               `traffic_per_sec` float DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `created_at` timestamp DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='ipm_report3';
         ");
@@ -74,7 +74,7 @@ final class Version20231102123529 extends AbstractMigration
               `traffic_total` float DEFAULT NULL,
               `traffic_percent` float DEFAULT NULL,
               `traffic_per_sec` float DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `server_name` varchar(64) DEFAULT NULL,
               `created_at` timestamp DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='ipm_report6';
@@ -102,7 +102,7 @@ final class Version20231102123529 extends AbstractMigration
         $this->addSql("
             CREATE TABLE IF NOT EXISTS `ipm_status_details` (
               `server_name` varchar(128) DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `script_name` varchar(128) DEFAULT NULL,
               `status` int(11) DEFAULT NULL,
               `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
@@ -111,7 +111,7 @@ final class Version20231102123529 extends AbstractMigration
         $this->addSql("
             CREATE TABLE IF NOT EXISTS `ipm_req_time_details` (
               `server_name` varchar(64) DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `script_name` varchar(128) DEFAULT NULL,
               `req_time` float DEFAULT NULL,
               `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
@@ -120,7 +120,7 @@ final class Version20231102123529 extends AbstractMigration
         $this->addSql("
             CREATE TABLE IF NOT EXISTS `ipm_mem_peak_usage_details` (
               `server_name` varchar(64) DEFAULT NULL,
-              `hostname` varchar(32) DEFAULT NULL,
+              `hostname` varchar(64) DEFAULT NULL,
               `script_name` varchar(128) DEFAULT NULL,
               `mem_peak_usage` float DEFAULT NULL,
               `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP

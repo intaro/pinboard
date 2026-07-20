@@ -138,6 +138,9 @@ make up80   # MySQL 8.0 (for compatibility testing)
 make db_migrate
 docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml \
   exec -u www-data php-fpm php bin/console add-user admin@example.com yourpassword ROLE_ADMIN
+
+# Run the isolated local CI-style test stack
+make test
 ```
 
 See [docs/docker.md](docs/docker.md) for full details on both the dev stack and the public image stack.
