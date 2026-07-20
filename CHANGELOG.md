@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.18](https://github.com/intaro/pinboard/compare/v2.1.17...v2.1.18) (2026-07-20)
+
+
+### Bug Fixes
+
+* **time:** use server timezone on live and overview ([087d759](https://github.com/intaro/pinboard/commit/087d759355359568725b93df57912b09415be788))
+
 ## [2.1.17](https://github.com/intaro/pinboard/compare/v2.1.16...v2.1.17) (2026-07-20)
 
 
