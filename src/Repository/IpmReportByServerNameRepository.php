@@ -33,20 +33,25 @@ class IpmReportByServerNameRepository extends ServiceEntityRepository
         $hostsWhere = '';
 
         if ($hostsRegexp !== '.*') {
-            $hostsWhere = 'AND server_name REGEXP :hosts_regexp';
+            $hostsWhere = 'AND a.server_name REGEXP :hosts_regexp';
             $params['hosts_regexp'] = $hostsRegexp;
         }
 
         $sql = "
-            SELECT server_name,
-                   sum(req_count)    as req_count,
-                   avg(req_per_sec)  as req_per_sec,
-                   0                 as error_count
-            FROM ipm_report_by_server_name
-            WHERE created_at > :created_at
+            SELECT a.server_name,
+                   sum(a.req_count)    as req_count,
+                   avg(a.req_per_sec)  as req_per_sec,
+                   (
+                       SELECT count(*)
+                       FROM ipm_status_details b
+                       WHERE b.server_name = a.server_name
+                         AND b.created_at > :created_at
+                   ) as error_count
+            FROM ipm_report_by_server_name a
+            WHERE a.created_at > :created_at
               $hostsWhere
-            GROUP BY server_name
-            ORDER BY server_name
+            GROUP BY a.server_name
+            ORDER BY a.server_name
         ";
 
         $rows = $this->getEntityManager()->getConnection()->executeQuery($sql, $params)->fetchAllAssociative();
