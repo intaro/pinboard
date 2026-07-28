@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.20](https://github.com/intaro/pinboard/compare/v2.1.19...v2.1.20) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ui:** restore server error counts ([d50df25](https://github.com/intaro/pinboard/commit/d50df25908d9ee1e73e89000f311dab4dc06703d))
+
 ## [2.1.19](https://github.com/intaro/pinboard/compare/v2.1.18...v2.1.19) (2026-07-20)
 
 
