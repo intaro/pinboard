@@ -3,7 +3,7 @@
         "@babel/core": "^8.0.1",
         "@babel/preset-env": "^8.0.2",
         "@popperjs/core": "^2.11.8",
-        "@symfony/webpack-encore": "^7.1.0",
+        "@symfony/webpack-encore": "^7.2.0",
         "babel-plugin-polyfill-corejs3": "^1.0.0",
         "bootstrap": "^5.3.3",
         "core-js": "^3.49.0",
