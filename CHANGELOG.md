@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.21](https://github.com/intaro/pinboard/compare/v2.1.20...v2.1.21) (2026-08-03)
+
+
+### Bug Fixes
+
+* **ui:** restore pagination layout and refresh dependencies ([#224](https://github.com/intaro/pinboard/issues/224)) ([eaa74bb](https://github.com/intaro/pinboard/commit/eaa74bbbe28683301a5abc15d04001e008546a1b))
+
 ## [2.1.20](https://github.com/intaro/pinboard/compare/v2.1.19...v2.1.20) (2026-07-28)
 
 
