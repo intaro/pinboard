@@ -60,31 +60,31 @@
                     {% endfor %}
                 </table>
                 {% if rowCount > rowPerPage %}
-                    <div class="pagination">
-                        <ul>
+                    <nav class="overflow-auto" aria-label="Memory usage pagination">
+                        <ul class="pagination mb-0 flex-nowrap">
                             {% if pageNum > 1 %}
-                                <li>
-                                    <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum - 1), colOrder: colOrder, colDir: colDir }) }}">
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum - 1), colOrder: colOrder, colDir: colDir }) }}">
                                         Prev
                                     </a>
                                 </li>
                             {% endif %}
                             {% for i in 1..pageCount %}
-                                <li {{ pageNum == i ? 'class="active"' : '' }}><a
-                                            href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ i, colOrder: colOrder, colDir: colDir }) }}">
+                                <li class="page-item{{ pageNum == i ? ' active' : '' }}"><a
+                                            class="page-link" href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ i, colOrder: colOrder, colDir: colDir }) }}"{{ pageNum == i ? ' aria-current="page"' : '' }}>
                                         {{ i }}
                                     </a>
                                 </li>
                             {% endfor %}
                             {% if pageNum < pageCount %}
-                                <li>
-                                    <a href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum + 1), colOrder: colOrder, colDir: colDir }) }}">
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ path('server_mem_usage', { serverName: server_name, hostName: hostname, pageNum: 'page' ~ (pageNum + 1), colOrder: colOrder, colDir: colDir }) }}">
                                         Next
                                     </a>
                                 </li>
                             {% endif %}
                         </ul>
-                    </div>
+                    </nav>
                 {% endif %}
             {% else %}
                 <p>No heavy pages for a last day.</p>
