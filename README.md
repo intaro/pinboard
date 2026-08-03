@@ -134,6 +134,9 @@ make up
 make up84   # MySQL 8.4 LTS (same as default)
 make up80   # MySQL 8.0 (for compatibility testing)
 
+# Install PHP dependencies inside the dev php-fpm container
+make composer_install
+
 # Run migrations and create a user
 make db_migrate
 docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml \
@@ -142,6 +145,8 @@ docker compose --env-file ./docker/.env -f ./docker/docker-compose.yml \
 # Run the isolated local CI-style test stack
 make test
 ```
+
+If you change `docker/php-fpm/Dockerfile` or the PHP extension set, rebuild the dev image before restarting the stack so the running `php-fpm` container picks up the new extensions.
 
 See [docs/docker.md](docs/docker.md) for full details on both the dev stack and the public image stack.
 

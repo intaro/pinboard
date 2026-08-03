@@ -12,7 +12,7 @@ DOCKER_COMPOSE_TEST_NODE = ${DOCKER_COMPOSE_TEST} exec node
 PHPSTAN_MEMORY_LIMIT ?= 1G
 
 .PHONY: build build80 build84 start stop up up80 up84 down restart dc_ps dc_logs dc_down dc_restart \
-	app_bash php test test-up test-deps test-migrate test-check test-down test-reset cache db_migrate migrate \
+	app_bash php composer_install composer_update test test-up test-deps test-migrate test-check test-down test-reset cache db_migrate migrate \
 	db_diff diff db_drop users_file_to_db users_db_to_file phpstan deptrac cs_fix linter cs_fix_diff composer_validate
 
 ##################
@@ -68,6 +68,12 @@ dc_restart:
 app_bash:
 	${DOCKER_COMPOSE} exec -u www-data php-fpm bash
 php: app_bash
+
+composer_install:
+	${DOCKER_COMPOSE_PHP_FPM_EXEC} env COMPOSER_HOME=/tmp/composer composer install --no-interaction --prefer-dist
+
+composer_update:
+	${DOCKER_COMPOSE_PHP_FPM_EXEC} env COMPOSER_HOME=/tmp/composer composer update --with-all-dependencies
 
 test: test-up test-deps test-migrate test-check
 

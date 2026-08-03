@@ -192,9 +192,12 @@ make build80
 make up80
 ```
 
+If you change `docker/php-fpm/Dockerfile` or any PHP extension set, rebuild the dev image before restarting the stack so the running `php-fpm` container picks up the new extensions.
+
 ### First-time init
 
 ```bash
+make composer_install
 make db_migrate
 
 # Create a user
@@ -211,6 +214,8 @@ make up           # start stack
 make down         # stop stack
 make dc_logs      # tail all logs
 make dc_ps        # show container status
+make composer_install  # install PHP deps inside php-fpm as www-data
+make composer_update   # update PHP deps inside php-fpm as www-data
 make db_migrate   # run Doctrine migrations
 make test         # run PHPUnit
 make phpstan      # run static analysis
