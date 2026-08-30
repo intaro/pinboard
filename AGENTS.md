@@ -91,6 +91,51 @@ Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (rele
   keep all workflows (`ci.yml`, `codeql.yml`, `docker.yml`, `release-please.yml`)
   on the same current majors.
 
+## Dependency Updates
+
+**General Rules:**
+- Update dependencies only to stable, released versions (no `-beta`, `-rc`, `-dev`).
+- Updates are always **forward** to newer stable versions; backtracking to older versions is forbidden without explicit justification in the commit message.
+- Pinned hashes (Docker images, GitHub Actions) must be updated to reflect the new version; never remove a hash that already exists.
+- Group related dependency updates into a single consolidated commit when possible (e.g., all PHP deps, all JS deps, all Docker images).
+- All dependency updates must be done in a feature branch (`chore/update-*` naming) and submitted via PR.
+
+**PHP Dependencies (composer.json / composer.lock):**
+- Run `composer update` to get the latest compatible versions within declared constraints.
+- Pin Symfony to LTS versions when available (e.g., `8.1.*`); never jump minor versions without review.
+- Merge all package updates into one commit, not one per package.
+
+**JavaScript Dependencies (package.json / pnpm-lock.yaml):**
+- Run `pnpm update` to update all dependencies within version constraints.
+- Use the pinned `pnpm` version from `package.json` `packageManager` field; do not manually change it.
+- Update `.nvmrc` only if the Node version constraint in `package.json` changes or there is a security reason.
+
+**Docker Base Images (Dockerfile.pinboard):**
+- Always pin Docker base images to their full digest (SHA256 hash), never use untagged `latest`.
+- When updating an image tag (e.g., `node:24-alpine`), fetch the current digest via `docker pull <image>` and update the hash.
+- Example: `FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`
+- Never remove an existing hash; always replace it with the new one if upgrading.
+
+**GitHub Actions (.github/workflows/*.yml):**
+- First-party GitHub actions (e.g., `actions/checkout`, `actions/setup-node`) use major version tags (`v7`, `v4`), which auto-track latest compatible patches.
+- Third-party actions (e.g., `docker/build-push-action`, `shivammathur/setup-php`) must be pinned by full commit SHA with the release tag as a comment.
+- To find the SHA: `gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object.sha` or check the GitHub release page.
+- Example: `uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6`
+- Never downgrade action major versions (e.g., v7 → v4); this is a backwards step and violates the forward-only rule.
+- When Dependabot opens grouped PRs for action updates, validate they are actual upgrades before merging.
+
+**Commit Message Template for Dependency Updates:**
+```
+chore: update <layer> dependencies to latest stable versions
+
+- <package>: <old> → <new> (X updates total)
+- <package>: <old> → <new>
+
+All versions are stable releases. GitHub Actions already at latest majors.
+
+Closes: #<PR> #<PR>
+```
+
 ## Commit Messages
 
 - Use Conventional Commits style.
