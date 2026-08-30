@@ -13,7 +13,7 @@
 ###############################################################################
 # Stage 1 — Frontend: build Webpack Encore assets via pnpm
 ###############################################################################
-FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS node-builder
+FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf AS node-builder
 
 WORKDIR /build
 
@@ -38,7 +38,7 @@ RUN pnpm run build
 ###############################################################################
 # Stage 2 — PHP dependencies: composer install (no dev)
 ###############################################################################
-FROM composer:2@sha256:b09bccd91a78fe8a9ab4b33d707b862e8fe54fec17782e32683ad2a69c46867d AS composer-builder
+FROM composer:2@sha256:4d71c3c2109c61d5415544264b59ad4087e4c5b7244481723664138fd36d5040 AS composer-builder
 
 WORKDIR /build
 
@@ -65,7 +65,7 @@ RUN composer dump-autoload \
 ###############################################################################
 # Stage 3 — Runtime: PHP-FPM + Nginx + Supervisord
 ###############################################################################
-FROM php:8.5-fpm-alpine@sha256:79def1d16ece3ab1a6656c46a23bfd80ad33887fbd33626e7bd743cef54ef9c6 AS runtime
+FROM php:8.5-fpm-alpine@sha256:9dc81f4086ea5402227a6bcc489b04b4baba12394624d9621faa92ed812fb8ee AS runtime
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # ── System packages ───────────────────────────────────────────────────────────
