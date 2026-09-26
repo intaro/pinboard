@@ -93,48 +93,63 @@ Full details: `docs/contributing.md` (PR workflow) and `docs/releasing.md` (rele
 
 ## Dependency Updates
 
+Step-by-step runbook (inventory commands, where every version lives, verification matrix, known
+pitfalls): [`docs/dependency-updates.md`](docs/dependency-updates.md). Follow it for scheduled bulk
+updates; the rules below are binding.
+
 **General Rules:**
-- Update dependencies only to stable, released versions (no `-beta`, `-rc`, `-dev`).
+- Update dependencies only to stable, released versions (no `-beta`, `-rc`, `-dev`), and skip releases younger than 24h (same window as pnpm `minimumReleaseAge`).
 - Updates are always **forward** to newer stable versions; backtracking to older versions is forbidden without explicit justification in the commit message.
-- Pinned hashes (Docker images, GitHub Actions) must be updated to reflect the new version; never remove a hash that already exists.
-- Group related dependency updates into a single consolidated commit when possible (e.g., all PHP deps, all JS deps, all Docker images).
+- Major upgrades (including majors of transitive packages and of tooling) are allowed, but only after reading the package's `UPGRADE.md` / release notes and grepping the code for every affected API — never guess.
+- Pinned hashes (Docker images, GitHub Actions, supercronic) must be updated to reflect the new version; never remove a hash that already exists.
+- Take a baseline of all checks before updating, so pre-existing failures are not reported as regressions.
+- Group related dependency updates into one commit per layer (PHP, JS + pnpm, Docker, GitHub Actions + QA hooks, docs).
 - All dependency updates must be done in a feature branch (`chore/update-*` naming) and submitted via PR.
+- Before opening the PR, compare the branch with every open Dependabot PR and state which ones it supersedes.
 
 **PHP Dependencies (composer.json / composer.lock):**
-- Run `composer update` to get the latest compatible versions within declared constraints.
-- Pin Symfony to LTS versions when available (e.g., `8.1.*`); never jump minor versions without review.
-- Merge all package updates into one commit, not one per package.
+- Run `composer install` first (a stale `vendor/` falsifies the baseline), then `composer update --with-all-dependencies`.
+- Keep all `symfony/*` constraints and `extra.symfony.require` on the same minor (`8.1.*`); move to a new minor only deliberately and after reading `UPGRADE-8.x.md`. Prefer the LTS minor (`x.4`) once it exists.
+- After updating, `debug:container --deprecations` must be clean in `dev` and `test`; commit the regenerated `config/reference.php`.
+- Flex recipe updates (`composer recipes:update`) go into a separate PR.
 
 **JavaScript Dependencies (package.json / pnpm-lock.yaml):**
-- Run `pnpm update` to update all dependencies within version constraints.
-- Use the pinned `pnpm` version from `package.json` `packageManager` field; do not manually change it.
-- Update `.nvmrc` only if the Node version constraint in `package.json` changes or there is a security reason.
+- Run `CI=true pnpm update --latest` (updates the `package.json` ranges too; `CI=true` avoids TTY prompts).
+- pnpm itself is pinned by `package.json` `packageManager` and run through corepack everywhere (CI, `Dockerfile.pinboard`, `make test`). It may be bumped, majors included, after reading the release notes; keep `pnpm-workspace.yaml` free of unknown keys (pnpm 12 fails on them).
+- `pnpm-lock.yaml` must remain a single YAML document (`grep -c '^---$' pnpm-lock.yaml` → `0`); do not remove `pmOnFail: ignore` / `minimumReleaseAgeStrict: false` from `pnpm-workspace.yaml` without re-checking the Dependabot issues referenced there.
+- `.nvmrc` follows the current Node.js **Active LTS** major; bump it together with the `node:<major>-alpine` images.
 
-**Docker Base Images (Dockerfile.pinboard):**
-- Always pin Docker base images to their full digest (SHA256 hash), never use untagged `latest`.
+**Docker Images (Dockerfile.pinboard, docker/):**
+- Always pin Docker base images to their full digest (SHA256 hash), never use untagged `latest` — this includes the dev stack (`docker/php-fpm/Dockerfile`, `docker/nginx/Dockerfile`, `docker/docker-compose*.yml`).
 - When updating an image tag (e.g., `node:24-alpine`), fetch the current digest via `docker pull <image>` and update the hash.
-- Example: `FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf`
+- Example: `FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1`
 - Never remove an existing hash; always replace it with the new one if upgrading.
+- Alpine packages use fuzzy pins (`pkg=~X.Y`), never exact `-rN` pins; check `apk policy` in the new base image and bump the pinned feature version when Alpine ships a new one.
+- Build `Dockerfile.pinboard` and run the public-stack smoke test locally before pushing.
 
 **GitHub Actions (.github/workflows/*.yml):**
 - First-party GitHub actions (e.g., `actions/checkout`, `actions/setup-node`) use major version tags (`v7`, `v4`), which auto-track latest compatible patches.
 - Third-party actions (e.g., `docker/build-push-action`, `shivammathur/setup-php`) must be pinned by full commit SHA with the release tag as a comment.
-- To find the SHA: `gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object.sha` or check the GitHub release page.
-- Example: `uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6`
+- To find the SHA: `gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object.sha`; if `.object.type` is `tag`, dereference it with `gh api repos/<owner>/<repo>/git/tags/<sha> --jq .object.sha`.
+- Example: `uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0`
 - Never downgrade action major versions (e.g., v7 → v4); this is a backwards step and violates the forward-only rule.
 - When Dependabot opens grouped PRs for action updates, validate they are actual upgrades before merging.
 
+**QA tools (.pre-commit-config.yaml):**
+- Bump hook `rev`s to the latest release and run the new versions over the whole repository — new releases add rules (hadolint 2.15 added DL3066).
+
 **Commit Message Template for Dependency Updates:**
 ```
-chore: update <layer> dependencies to latest stable versions
+chore(deps): update <layer> dependencies to latest stable versions
 
 - <package>: <old> → <new> (X updates total)
 - <package>: <old> → <new>
 
 All versions are stable releases. GitHub Actions already at latest majors.
 
-Closes: #<PR> #<PR>
+Supersedes: #<PR> #<PR>
 ```
+Use `fix(deps):` instead when the shipped image must be rebuilt (security fix, broken `apk` pin); see `docs/releasing.md` → "Version discipline". GitHub closing keywords do not close pull requests, so superseded Dependabot PRs are closed by Dependabot itself after merge or manually.
 
 ## Commit Messages
 
