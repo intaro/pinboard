@@ -93,6 +93,13 @@ RUN curl -fsSL \
  && echo "${SUPERCRONIC_SHA1SUM}  /usr/local/bin/supercronic" | sha1sum -c - \
  && chmod +x /usr/local/bin/supercronic
 
+# ── PHP runtime configuration ─────────────────────────────────────────────────
+# Without a php.ini PHP runs on built-in defaults: display_errors and
+# display_startup_errors on, log_errors off, assertions compiled in. Use the
+# official production profile and layer Pinboard's overrides on top.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+COPY docker/php-fpm/php.prod.ini "$PHP_INI_DIR/conf.d/zz-pinboard.ini"
+
 # ── Nginx (single-container: php-fpm on 127.0.0.1:9000) ─────────────────────
 COPY docker/nginx/nginx.prod.conf   /etc/nginx/nginx.conf
 COPY docker/nginx/default.prod.conf /etc/nginx/conf.d/default.conf
