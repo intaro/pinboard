@@ -11,6 +11,22 @@ autoInstallPeers: false
 # ecosystem time to catch malicious releases before they land in our lockfile.
 minimumReleaseAge: 1440
 
+# pnpm 12.3+ turns strict mode on whenever minimumReleaseAge is set explicitly,
+# and strict mode rejects the `pnpm update --no-save` call Dependabot makes, so
+# every grouped npm PR would fail (dependabot/dependabot-core#16375). false
+# keeps the pnpm 11 behaviour: the 24h gate still applies, and only when no
+# version in the requested range is old enough does pnpm fall back to a newer one.
+minimumReleaseAgeStrict: false
+
+# The pnpm version is pinned by package.json "packageManager" and enforced by
+# corepack (CI, Dockerfile.pinboard, `make test`). With pnpm 12 the default
+# (`download`) also writes pnpm's own resolution into a leading YAML document of
+# pnpm-lock.yaml; GitHub's dependency graph reads only that first document, so
+# npm dependencies vanish from it and Dependabot security alerts stop
+# (dependabot/dependabot-core#15904, pnpm/pnpm#13805). `ignore` keeps the
+# lockfile single-document. Revisit once GitHub parses multi-document lockfiles.
+pmOnFail: ignore
+
 # Network resilience for cold installs (the minimumReleaseAge check fetches
 # registry metadata for every locked package).
 fetchRetries: 5
