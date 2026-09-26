@@ -13,7 +13,7 @@
 ###############################################################################
 # Stage 1 — Frontend: build Webpack Encore assets via pnpm
 ###############################################################################
-FROM node:24-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf AS node-builder
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS node-builder
 
 WORKDIR /build
 
@@ -38,7 +38,7 @@ RUN pnpm run build
 ###############################################################################
 # Stage 2 — PHP dependencies: composer install (no dev)
 ###############################################################################
-FROM composer:2@sha256:4d71c3c2109c61d5415544264b59ad4087e4c5b7244481723664138fd36d5040 AS composer-builder
+FROM composer:2@sha256:9715c7f69044da2a212a5fbde29ee7da24e364d426560ae6367b060236f847d7 AS composer-builder
 
 WORKDIR /build
 
@@ -65,7 +65,7 @@ RUN composer dump-autoload \
 ###############################################################################
 # Stage 3 — Runtime: PHP-FPM + Nginx + Supervisord
 ###############################################################################
-FROM php:8.5-fpm-alpine@sha256:9dc81f4086ea5402227a6bcc489b04b4baba12394624d9621faa92ed812fb8ee AS runtime
+FROM php:8.5-fpm-alpine@sha256:ef8e5dac4f891df1e452a7b89b01de01d20d25788d2c3dd0f8ce137ac546c47d AS runtime
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # ── System packages ───────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 # from its live repo, so exact pins rot and break the post-release image build.
 RUN apk add --no-cache \
     bash=~5.3 \
-    curl=~8.21 \
+    curl=~8.22 \
     icu-dev=~78 \
     libxslt-dev=~1.1 \
     nginx=~1.30 \
@@ -85,8 +85,8 @@ RUN apk add --no-cache \
  && rm -rf /var/cache/apk/*
 
 # ── Supercronic (production-grade cron runner) ────────────────────────────────
-ENV SUPERCRONIC_VERSION=0.2.46 \
-    SUPERCRONIC_SHA1SUM=5bcefed628e32adc08e32634db2d10e9230dbca0
+ENV SUPERCRONIC_VERSION=0.2.49 \
+    SUPERCRONIC_SHA1SUM=e63c11a9726b775a6a11801e81af4f3fb926aa68
 RUN curl -fsSL \
     "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/supercronic-linux-amd64" \
     -o /usr/local/bin/supercronic \
@@ -106,7 +106,9 @@ COPY docker/php-fpm/supervisord.prod.conf /etc/supervisor/pinboard.conf
 # ── Aggregate cron ────────────────────────────────────────────────────────────
 COPY docker/php-fpm/aggregate.cron /etc/crontabs/aggregate.cron
 
-# ── App user (www-data, uid 1000) ────────────────────────────────────────────
+# ── App user ─────────────────────────────────────────────────────────────────
+# The php:*-alpine base already ships www-data as uid/gid 82, so these
+# commands are a no-op there and the runtime user stays 82:82.
 RUN addgroup -g 1000 -S www-data 2>/dev/null || true \
  && adduser  -u 1000 -S -D -G www-data www-data 2>/dev/null || true
 
@@ -141,7 +143,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 ENV APP_ENV=prod \
     APP_DEBUG=0
 
-USER www-data
+# Numeric uid:gid (the base image's www-data) so orchestrators such as
+# Kubernetes can verify runAsNonRoot without reading /etc/passwd (DL3066).
+USER 82:82
 
 EXPOSE 8080
 
