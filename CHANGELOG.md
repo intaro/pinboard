@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.22](https://github.com/intaro/pinboard/compare/v2.1.21...v2.1.22) (2026-09-26)
+
+
+### Bug Fixes
+
+* **deps:** update all dependencies, move to pnpm 12 and harden the Docker image ([#243](https://github.com/intaro/pinboard/issues/243)) ([1457de8](https://github.com/intaro/pinboard/commit/1457de8ab72ccc5ffe8de898bda82296131c300b))
+
 ## [2.1.21](https://github.com/intaro/pinboard/compare/v2.1.20...v2.1.21) (2026-08-03)
 
 
