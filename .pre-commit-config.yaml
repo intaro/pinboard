@@ -7,6 +7,13 @@ repos:
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: check-yaml
+        exclude: ^(docker/)?docker-compose[^/]*\.ya?ml$
+      # Compose files use Compose-specific YAML tags (`!override`, `!reset`)
+      # that a plain YAML loader rejects; check them for syntax only.
+      - id: check-yaml
+        name: check yaml (compose, syntax only)
+        args: [--unsafe]
+        files: ^(docker/)?docker-compose[^/]*\.ya?ml$
       - id: check-json
       - id: check-added-large-files
       - id: check-case-conflict
