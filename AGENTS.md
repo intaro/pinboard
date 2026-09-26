@@ -13,6 +13,10 @@
 - Keep changes scoped to the requested behavior.
 - If you change Sass, Twig, or JS assets, rebuild the frontend before finishing.
 - Do not revert user changes that are already present in the worktree.
+- Git-ignored local files are irreplaceable user data, not build output: `.env.local`, `.env.public.local`, `config/parameters.yml` (file-based users), `.idea/`, local tool binaries. They exist in no commit and no backup.
+- Never use `git reset --hard`, `git clean`, `git checkout -- .` or `git stash -u/-a` as a "try, then revert" loop in the main checkout. Trial runs (e.g. `composer recipes:update`) go into a throwaway worktree: `git worktree add <tmp>/wt HEAD`, then `composer install` there, then `git worktree remove`.
+  - Why: tools can rewrite `.gitignore` (Flex recipes do). A later `git add -A`/`-N` then picks up formerly ignored files, and `reset --hard` deletes them from disk. In 2026-09 this wiped `.env.local` (lost for good), `config/parameters.yml`, `.idea/`, `vendor/`, `node_modules/` and `var/`.
+  - Before any command that may delete untracked or ignored files, preview it (`git clean -n -d`, `git status --ignored`) and check that `.gitignore` is unchanged.
 
 ## Runtime Notes
 
@@ -111,7 +115,7 @@ updates; the rules below are binding.
 - Run `composer install` first (a stale `vendor/` falsifies the baseline), then `composer update --with-all-dependencies`.
 - Keep all `symfony/*` constraints and `extra.symfony.require` on the same minor (`8.1.*`); move to a new minor only deliberately and after reading `UPGRADE-8.x.md`. Prefer the LTS minor (`x.4`) once it exists.
 - After updating, `debug:container --deprecations` must be clean in `dev` and `test`; commit the regenerated `config/reference.php`.
-- Flex recipe updates (`composer recipes:update`) go into a separate PR.
+- Flex recipe updates (`composer recipes:update`) go into a separate PR and are tried in a throwaway `git worktree`, never in the main checkout (see Working Rules).
 
 **JavaScript Dependencies (package.json / pnpm-lock.yaml):**
 - Run `CI=true pnpm update --latest` (updates the `package.json` ranges too; `CI=true` avoids TTY prompts).
