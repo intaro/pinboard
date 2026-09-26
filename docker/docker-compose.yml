@@ -54,7 +54,7 @@ services:
       - ./../:/var/www
 
   nginx:
-    image: nginx:1.30-alpine
+    image: nginx:1.30-alpine@sha256:985220252f3863977e468f611ef118ebd01421289dd86ee1ae99cb068c3bce2b
     container_name: ${COMPOSE_PROJECT_NAME}-nginx
     restart: unless-stopped
     depends_on:

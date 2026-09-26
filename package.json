@@ -1,22 +1,22 @@
 {
     "devDependencies": {
-        "@babel/core": "^8.0.1",
-        "@babel/preset-env": "^8.0.2",
+        "@babel/core": "^8.0.6",
+        "@babel/preset-env": "^8.0.6",
         "@popperjs/core": "^2.11.8",
         "@symfony/webpack-encore": "^7.2.0",
         "babel-plugin-polyfill-corejs3": "^1.0.0",
         "bootstrap": "^5.3.8",
         "core-js": "^3.50.0",
         "regenerator-runtime": "^0.14.1",
-        "sass": "^1.103.1",
-        "sass-loader": "^17.0.0",
-        "webpack": "^5.110.1",
+        "sass": "^1.105.0",
+        "sass-loader": "^17.0.1",
+        "webpack": "^5.111.1",
         "webpack-cli": "^7.2.3",
-        "webpack-notifier": "^1.15.0"
+        "webpack-notifier": "^1.17.0"
     },
     "license": "UNLICENSED",
     "private": true,
-    "packageManager": "pnpm@11.12.0",
+    "packageManager": "pnpm@12.6.0",
     "browserslist": [
         "last 2 Chrome versions",
         "last 2 Edge versions",
