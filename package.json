@@ -1,14 +1,14 @@
 {
     "devDependencies": {
-        "@babel/core": "^8.0.6",
-        "@babel/preset-env": "^8.0.6",
+        "@babel/core": "^8.0.7",
+        "@babel/preset-env": "^8.0.7",
         "@popperjs/core": "^2.11.8",
         "@symfony/webpack-encore": "^7.2.0",
         "babel-plugin-polyfill-corejs3": "^1.0.0",
         "bootstrap": "^5.3.8",
         "core-js": "^3.50.0",
         "regenerator-runtime": "^0.14.1",
-        "sass": "^1.105.0",
+        "sass": "^1.105.1",
         "sass-loader": "^17.0.1",
         "webpack": "^5.111.1",
         "webpack-cli": "^7.2.3",
@@ -30,7 +30,7 @@
         "build": "encore production --progress"
     },
     "dependencies": {
-        "bootstrap-icons": "^1.13.1",
+        "bootstrap-icons": "^1.13.2",
         "chart.js": "^4.5.1",
         "chartjs-adapter-date-fns": "^3.0.0",
         "date-fns": "^4.4.0"
