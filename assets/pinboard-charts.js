@@ -106,11 +106,73 @@ function createChart(target, config) {
     return new Chart(context, config);
 }
 
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+
+// Spans up to this length keep hourly ticks (1 day, 3 days); longer ones switch to days.
+const HOURLY_TICKS_MAX_SPAN = 4 * DAY;
+// Spans up to this length use even 2-hour ticks so the labels stay evenly spaced.
+const TWO_HOUR_TICKS_MAX_SPAN = 1.5 * DAY;
+
+function toTimestamp(value) {
+    if (typeof value === 'number') {
+        return value;
+    }
+
+    // An ISO date-time without an offset is parsed as local time, so the axis shows the server wall clock.
+    return new Date(value).getTime();
+}
+
+function buildTimeAxis(datasets) {
+    let min = Infinity;
+    let max = -Infinity;
+    datasets.forEach((dataset) => {
+        dataset.data.forEach(({ x }) => {
+            min = Math.min(min, x);
+            max = Math.max(max, x);
+        });
+    });
+
+    const span = max > min ? max - min : 0;
+    const hourly = span <= HOURLY_TICKS_MAX_SPAN;
+
+    return {
+        type: 'time',
+        time: {
+            unit: hourly ? 'hour' : 'day',
+            displayFormats: {
+                hour: 'HH:mm',
+                day: 'dd.MM',
+            },
+            tooltipFormat: 'HH:mm, dd MMM yyyy',
+        },
+        ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            autoSkipPadding: 12,
+            stepSize: span <= TWO_HOUR_TICKS_MAX_SPAN ? 2 : 1,
+            // On hourly axes midnight ticks become "major" and show the date instead of 00:00.
+            major: {
+                enabled: hourly,
+            },
+            font: (context) => (context.tick?.major ? { weight: 'bold' } : undefined),
+        },
+    };
+}
+
 function renderTimeSeriesChart(target, { series, yTitle = '', stacked = false, legend = true, interaction = {}, tooltip = {} }) {
+    const datasets = buildDatasets(
+        series.map((item) => ({
+            ...item,
+            data: item.data.map(({ x, y }) => ({ x: toTimestamp(x), y })),
+        })),
+        { stacked, useTimeScale: true, chartType: 'line' },
+    );
+
     return createChart(target, {
         type: 'line',
         data: {
-            datasets: buildDatasets(series, { stacked, useTimeScale: true, chartType: 'line' }),
+            datasets,
         },
         options: {
             ...chartDefaults,
@@ -119,26 +181,7 @@ function renderTimeSeriesChart(target, { series, yTitle = '', stacked = false, l
                 ...interaction,
             },
             scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        displayFormats: {
-                            hour: 'HH:mm',
-                            minute: 'HH:mm',
-                            second: 'HH:mm:ss',
-                            day: 'dd MMM',
-                            week: 'dd MMM',
-                            month: 'MMM yyyy',
-                            quarter: 'QQQ yyyy',
-                            year: 'yyyy',
-                        },
-                        tooltipFormat: 'HH:mm, dd MMM yyyy',
-                    },
-                    ticks: {
-                        maxRotation: 0,
-                        autoSkip: true,
-                    },
-                },
+                x: buildTimeAxis(datasets),
                 y: {
                     beginAtZero: true,
                     stacked,
