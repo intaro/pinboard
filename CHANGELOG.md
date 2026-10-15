@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.23](https://github.com/intaro/pinboard/compare/v2.1.22...v2.1.23) (2026-10-15)
+
+
+### Bug Fixes
+
+* **ui:** scale chart time axis to the selected period ([#249](https://github.com/intaro/pinboard/issues/249)) ([8db34cd](https://github.com/intaro/pinboard/commit/8db34cd9377b5a6eadcc09b45658d8ea77eb99e2))
+
 ## [2.1.22](https://github.com/intaro/pinboard/compare/v2.1.21...v2.1.22) (2026-09-26)
 
 
