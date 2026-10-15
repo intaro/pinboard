@@ -22,11 +22,6 @@
                     </div>
                     <script type="text/javascript">
                         document.addEventListener('DOMContentLoaded', () => {
-                        const reqTimeLabels = [
-                            {% for item in req %}
-                            "{{ item.label|e('js') }}"{{ not loop.last ? ',' : '' }}
-                            {% endfor %}
-                        ];
                         const reqTimeSeries = [
                             {
                                 label: 'Max request time',
@@ -34,7 +29,7 @@
                                 hidden: true,
                                 data: [
                                     {% for item in req %}
-                                    {{ item.req_time_100 }}{{ not loop.last ? ',' : '' }}
+                                    { x: "{{ item.time }}", y: {{ item.req_time_100 }} }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],
                             },
@@ -43,7 +38,7 @@
                                 color: '#C38630',
                                 data: [
                                     {% for item in req %}
-                                    {{ item.req_time_99 }}{{ not loop.last ? ',' : '' }}
+                                    { x: "{{ item.time }}", y: {{ item.req_time_99 }} }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],
                             },
@@ -52,7 +47,7 @@
                                 color: '#700193',
                                 data: [
                                     {% for item in req %}
-                                    {{ item.req_time_95 }}{{ not loop.last ? ',' : '' }}
+                                    { x: "{{ item.time }}", y: {{ item.req_time_95 }} }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],
                             },
@@ -61,7 +56,7 @@
                                 color: '#39A3B9',
                                 data: [
                                     {% for item in req %}
-                                    {{ item.req_time_90 }}{{ not loop.last ? ',' : '' }}
+                                    { x: "{{ item.time }}", y: {{ item.req_time_90 }} }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],
                             },
@@ -70,14 +65,13 @@
                                 color: '#e24a14',
                                 data: [
                                     {% for item in req %}
-                                    {{ req_time_border }}{{ not loop.last ? ',' : '' }}
+                                    { x: "{{ item.time }}", y: {{ req_time_border }} }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],
                             },
                         ];
 
-                        window.PinboardCharts.renderCategoryChart('req-time-chart', {
-                            labels: reqTimeLabels,
+                        window.PinboardCharts.renderTimeSeriesChart('req-time-chart', {
                             series: reqTimeSeries,
                         });
                         });
@@ -100,7 +94,7 @@
                         const rpsChartData = [];
                         {% for date, item in req_per_sec.data %}
                         rpsChartData.push({
-                            label: "{{ item|first.label|e('js') }}"
+                            time: "{{ item|first.time|e('js') }}"
                             {% for iter in item %}
                             , rps{{ iter.parsed_hostname }}: {{ iter.req_per_sec }}
                             {% endfor %}
@@ -112,13 +106,12 @@
                             {
                                 label: "{{ host == '_' ? 'Total requests per second at all hosts' : 'Requests per second at host ' ~ keydata.host }}",
                                 color: "#{{ keydata.color }}",
-                                data: rpsChartData.map((point) => point['rps{{ host }}'] ?? 0),
+                                data: rpsChartData.map((point) => ({ x: point.time, y: point['rps{{ host }}'] ?? 0 })),
                             }{{ not loop.last ? ',' : '' }}
                             {% endfor %}
                         ];
 
-                        window.PinboardCharts.renderCategoryChart('req-per-sec-chart', {
-                            labels: rpsChartData.map((point) => point.label),
+                        window.PinboardCharts.renderTimeSeriesChart('req-per-sec-chart', {
                             series: rpsSeries,
                         });
                         });
@@ -146,13 +139,7 @@
                     </div>
                     <script type="text/javascript">
                         document.addEventListener('DOMContentLoaded', () => {
-                        const memUsageLabels = [
-                            {% for item in req %}
-                            "{{ item.label|e('js') }}"{{ not loop.last ? ',' : '' }}
-                            {% endfor %}
-                        ];
-                        window.PinboardCharts.renderCategoryChart('mem-usage-chart', {
-                            labels: memUsageLabels,
+                        window.PinboardCharts.renderTimeSeriesChart('mem-usage-chart', {
                             series: [
                                 {
                                     label: 'Max memory peak usage',
@@ -160,7 +147,7 @@
                                     hidden: true,
                                     data: [
                                         {% for item in req %}
-                                        {{ item.mem_peak_usage_100 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.mem_peak_usage_100 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -169,7 +156,7 @@
                                     color: '#C38630',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.mem_peak_usage_99 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.mem_peak_usage_99 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -178,7 +165,7 @@
                                     color: '#700193',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.mem_peak_usage_95 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.mem_peak_usage_95 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -187,7 +174,7 @@
                                     color: '#39A3B9',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.mem_peak_usage_90 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.mem_peak_usage_90 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -215,13 +202,7 @@
                     </div>
                     <script type="text/javascript">
                         document.addEventListener('DOMContentLoaded', () => {
-                        const cpuUsageLabels = [
-                            {% for item in req %}
-                            "{{ item.label|e('js') }}"{{ not loop.last ? ',' : '' }}
-                            {% endfor %}
-                        ];
-                        window.PinboardCharts.renderCategoryChart('cpu-usage-chart', {
-                            labels: cpuUsageLabels,
+                        window.PinboardCharts.renderTimeSeriesChart('cpu-usage-chart', {
                             series: [
                                 {
                                     label: 'Max CPU peak usage',
@@ -229,7 +210,7 @@
                                     hidden: true,
                                     data: [
                                         {% for item in req %}
-                                        {{ item.cpu_peak_usage_100 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.cpu_peak_usage_100 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -238,7 +219,7 @@
                                     color: '#C38630',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.cpu_peak_usage_99 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.cpu_peak_usage_99 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -247,7 +228,7 @@
                                     color: '#700193',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.cpu_peak_usage_95 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.cpu_peak_usage_95 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -256,7 +237,7 @@
                                     color: '#39A3B9',
                                     data: [
                                         {% for item in req %}
-                                        {{ item.cpu_peak_usage_90 }}{{ not loop.last ? ',' : '' }}
+                                        { x: "{{ item.time }}", y: {{ item.cpu_peak_usage_90 }} }{{ not loop.last ? ',' : '' }}
                                         {% endfor %}
                                     ],
                                 },
@@ -286,22 +267,21 @@
                     </div>
                     <script type="text/javascript">
                         document.addEventListener('DOMContentLoaded', () => {
-                        const statusChartData = [];
+                        const statusChartData = new Map();
                         {% for item in statuses.data %}
-                        statusChartData.push({
-                            label: "{{ item.label|e('js') }}"
-                            , status{{ item.error_code }}: {{ item.error_count }}
-                        });
+                        if (!statusChartData.has("{{ item.time|e('js') }}")) {
+                            statusChartData.set("{{ item.time|e('js') }}", { time: "{{ item.time|e('js') }}" });
+                        }
+                        statusChartData.get("{{ item.time|e('js') }}").status{{ item.error_code }} = {{ item.error_count }};
                         {% endfor %}
 
-                        window.PinboardCharts.renderCategoryChart('statuses-chart', {
-                            labels: statusChartData.map((point) => point.label),
+                        window.PinboardCharts.renderTimeSeriesChart('statuses-chart', {
                             series: [
                                 {% for code, color in statuses.codes %}
                                 {
                                     label: "Status {{ code }}",
                                     color: "#{{ color }}",
-                                    data: statusChartData.map((point) => point['status{{ code }}'] ?? 0),
+                                    data: [...statusChartData.values()].map((point) => ({ x: point.time, y: point['status{{ code }}'] ?? 0 })),
                                 }{{ not loop.last ? ',' : '' }}
                                 {% endfor %}
                             ],

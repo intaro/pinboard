@@ -32,15 +32,14 @@
                             const {{ chart.field }}ChartData = [];
                             {% for date, item in chart.data.values %}
                             {{ chart.field }}ChartData.push({
-                                label: "{{ item.label|e('js') }}"
+                                time: "{{ item.time|e('js') }}"
                                 {% for timer in chart.data.timers %}
                                 , '{{ timer }}': {{ item[timer] is defined and item[timer] > 0 ? item[timer] : 0 }}
                                 {% endfor %}
                             });
                             {% endfor %}
 
-                            const {{ chart.field }}Chart = window.PinboardCharts.renderCategoryChart('{{ chart.field }}-chart', {
-                                labels: {{ chart.field }}ChartData.map((point) => point.label),
+                            const {{ chart.field }}Chart = window.PinboardCharts.renderTimeSeriesChart('{{ chart.field }}-chart', {
                                 stacked: true,
                                 series: [
                                     {% for timer in chart.data.timers %}
@@ -48,7 +47,7 @@
                                         label: "{{ request_graphs[timer] is defined ? request_graphs[timer]['title'] : timer }}",
                                         color: "{{ request_graphs[timer] is defined ? '#39A3B9' : '#729462' }}",
                                         fill: true,
-                                        data: {{ chart.field }}ChartData.map((point) => point['{{ timer }}'] ?? 0),
+                                        data: {{ chart.field }}ChartData.map((point) => ({ x: point.time, y: point['{{ timer }}'] ?? 0 })),
                                     }{{ not loop.last ? ',' : '' }}
                                     {% endfor %}
                                 ],

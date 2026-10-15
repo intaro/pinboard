@@ -46,11 +46,11 @@ final class DateTimeUtilsTest extends TestCase
         );
     }
 
-    public function testFormatsChartLabelInServerTimezone(): void
+    public function testFormatsChartTimeInServerTimezone(): void
     {
         self::assertSame(
-            '15:34',
-            DateTimeUtils::chartLabelFromStorageDateTime('2026-07-20 12:34:56')
+            '2026-07-20T15:34:56',
+            DateTimeUtils::chartTimeFromStorageDateTime('2026-07-20 12:34:56')
         );
     }
 
