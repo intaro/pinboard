@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.24](https://github.com/intaro/pinboard/compare/v2.1.23...v2.1.24) (2026-10-16)
+
+
+### Bug Fixes
+
+* **deps:** update all dependencies and install nginx 1.30.6 from nginx.org ([#251](https://github.com/intaro/pinboard/issues/251)) ([5a73ef3](https://github.com/intaro/pinboard/commit/5a73ef3dcfe9fabb242b4087566ba64b6b136e4b))
+
 ## [2.1.23](https://github.com/intaro/pinboard/compare/v2.1.22...v2.1.23) (2026-10-15)
 
 
