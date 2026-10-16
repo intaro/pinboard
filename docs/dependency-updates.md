@@ -17,6 +17,7 @@ Updates"; this page is the how-to.
 | Node.js | `.nvmrc` (major only) | `node:<major>-alpine` digests in `Dockerfile.pinboard` and `docker/docker-compose.test.yml` |
 | Base images | `Dockerfile.pinboard` (`node`, `composer`, `php`) | `docker/php-fpm/Dockerfile` (`php`, `composer`), `docker/nginx/Dockerfile`, `docker/docker-compose.yml` (`nginx`) |
 | Alpine packages | `apk add` fuzzy pins (`=~`) in `Dockerfile.pinboard` | `docker/php-fpm/Dockerfile` |
+| nginx (runtime image) | `nginx=~1.30` from the nginx.org stable repo in `Dockerfile.pinboard` | signing key `COPY --from=nginx:1.30-alpine@sha256:…` (same digest as the dev stack) |
 | Supercronic | `SUPERCRONIC_VERSION` + `SUPERCRONIC_SHA1SUM` in `Dockerfile.pinboard` | `docker/php-fpm/Dockerfile` |
 | GitHub Actions | `.github/workflows/*.yml` | — |
 | QA hooks | `.pre-commit-config.yaml` (`pre-commit-hooks`, `hadolint`) | — |
@@ -69,6 +70,11 @@ done
 
 # Alpine package versions actually available to the runtime image
 docker run --rm php:8.5-fpm-alpine sh -c 'apk update -q >/dev/null; for p in bash curl icu-dev libxslt-dev nginx oniguruma-dev supervisor tzdata git libzip-dev unzip zip; do apk policy $p | sed -n 2p | sed "s/^ */$p /"; done'
+
+# nginx: newest stable release vs. what the runtime image actually installs (nginx.org repo)
+curl -fsSL https://nginx.org/en/CHANGES-1.30 | sed -n 2p
+docker run --rm --entrypoint nginx xolegator/pinboard:local-smoke -v   # after building the image
+curl -fsSL https://nginx.org/en/security_advisories.html | sed 's/<[^>]*>/ /g' | grep -E 'CVE-[0-9]{4}' | head
 
 gh release view -R aptible/supercronic   # release notes contain the SHA1 per binary
 ```
@@ -132,6 +138,11 @@ the vendor chunk and CSS mean the bundle output did not change.
 - `apk` pins are fuzzy (`curl=~8.22`): bump the pinned feature version when Alpine ships a new
   one — **the old pin fails the build as soon as the live repository moves on**, even with an old
   base digest.
+- nginx in the runtime image comes from `https://nginx.org/packages/alpine/v<alpine>/main`, not from
+  Alpine, because Alpine stable can lag nginx security releases by weeks. The repository version is
+  derived from `/etc/alpine-release`; the signing key is copied from the pinned `nginx:1.30-alpine`
+  image — when bumping that digest, check the key still matches
+  `https://nginx.org/keys/nginx_signing.rsa.pub` (`sha256sum`). Check the built image with `nginx -v`.
 - Supercronic: take the SHA1 from the release notes, then verify it yourself:
   `curl -fsSL <url> | sha1sum`.
 - Lint with the hadolint version from `.pre-commit-config.yaml`:
@@ -234,6 +245,10 @@ Commit type follows [releasing.md → "Version discipline"](releasing.md):
   so it does not propose versions pnpm would reject.
 - **New lint rules in tool updates.** hadolint 2.15 added DL3066 (numeric `USER`). The runtime image
   now uses `USER 82:82`, the uid/gid of `www-data` in the `php:*-alpine` base.
-- **Vendor deprecations in logs.** `doctrine/migrations` 3.9.7 logs
-  `Table::addColumn is deprecated` with DBAL 4.5 while creating its metadata table. It comes from the
-  vendor code and needs an upstream `doctrine/migrations` release; nothing to change in Pinboard.
+- **Deprecations in logs.** The smoke run must log no `"channel":"deprecation"` entries.
+  doctrine/deprecations reports each message only once per process, so one entry can stand for many
+  call sites. `doctrine/migrations` 3.9.7's `Table::addColumn` deprecation (DBAL 4.5) was fixed
+  upstream in 3.9.8.
+- **Transactional migrations.** MySQL commits implicitly around DDL, so every migration must override
+  `isTransactional()` to return `false`; the bundle's `transactional: false` only affects newly
+  generated classes. `tests/Unit/Migrations/MigrationsTransactionalTest` enforces it.

@@ -17,6 +17,11 @@ final class Version20231102124411 extends AbstractMigration
         return '';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("ALTER TABLE `ipm_report_by_hostname` ADD req_time_median float DEFAULT NULL");

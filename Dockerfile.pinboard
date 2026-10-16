@@ -13,7 +13,7 @@
 ###############################################################################
 # Stage 1 — Frontend: build Webpack Encore assets via pnpm
 ###############################################################################
-FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS node-builder
+FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS node-builder
 
 WORKDIR /build
 
@@ -38,7 +38,7 @@ RUN pnpm run build
 ###############################################################################
 # Stage 2 — PHP dependencies: composer install (no dev)
 ###############################################################################
-FROM composer:2@sha256:9715c7f69044da2a212a5fbde29ee7da24e364d426560ae6367b060236f847d7 AS composer-builder
+FROM composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac AS composer-builder
 
 WORKDIR /build
 
@@ -65,14 +65,24 @@ RUN composer dump-autoload \
 ###############################################################################
 # Stage 3 — Runtime: PHP-FPM + Nginx + Supervisord
 ###############################################################################
-FROM php:8.5-fpm-alpine@sha256:ef8e5dac4f891df1e452a7b89b01de01d20d25788d2c3dd0f8ce137ac546c47d AS runtime
+FROM php:8.5-fpm-alpine@sha256:fa01fb1645cd0fc566a5f146b099adace33b906571f972f71f2182a7c12d1cd7 AS runtime
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # ── System packages ───────────────────────────────────────────────────────────
 # Fuzzy pins (=~) hold the feature version but tolerate Alpine -rN security
 # revisions. Do NOT use exact pins (pkg=x.y.z-rN): Alpine drops old revisions
 # from its live repo, so exact pins rot and break the post-release image build.
+#
+# nginx comes from the official nginx.org stable repository for this Alpine
+# release (the source the official nginx:*-alpine images use), not from Alpine:
+# nginx.org ships security releases the same day, Alpine stable can lag for
+# weeks (1.30.6, CVE-2026-93479 and four more, was missing from Alpine 3.24).
+# apk takes the highest version across repositories, so nginx.org wins. The
+# signing key is copied from the digest-pinned official nginx image.
+COPY --from=nginx:1.30-alpine@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5 \
+     /etc/apk/keys/nginx_signing.rsa.pub /etc/apk/keys/nginx_signing.rsa.pub
 RUN apk add --no-cache \
+    --repository "https://nginx.org/packages/alpine/v$(cut -d. -f1,2 /etc/alpine-release)/main" \
     bash=~5.3 \
     curl=~8.22 \
     icu-dev=~78 \
@@ -103,9 +113,7 @@ COPY docker/php-fpm/php.prod.ini "$PHP_INI_DIR/conf.d/zz-pinboard.ini"
 # ── Nginx (single-container: php-fpm on 127.0.0.1:9000) ─────────────────────
 COPY docker/nginx/nginx.prod.conf   /etc/nginx/nginx.conf
 COPY docker/nginx/default.prod.conf /etc/nginx/conf.d/default.conf
-# Alpine nginx ships a default in http.d/ — remove it to avoid conflicts
-RUN rm -f /etc/nginx/http.d/default.conf \
- && mkdir -p /tmp/nginx /tmp/nginx/client_temp /tmp/nginx/proxy_temp /tmp/nginx/fastcgi_temp /tmp/nginx/uwsgi_temp /tmp/nginx/scgi_temp /var/log/nginx
+RUN mkdir -p /tmp/nginx /tmp/nginx/client_temp /tmp/nginx/proxy_temp /tmp/nginx/fastcgi_temp /tmp/nginx/uwsgi_temp /tmp/nginx/scgi_temp /var/log/nginx
 
 # ── Supervisor ────────────────────────────────────────────────────────────────
 COPY docker/php-fpm/supervisord.prod.conf /etc/supervisor/pinboard.conf
@@ -140,7 +148,7 @@ COPY --from=node-builder --chown=www-data:www-data /build/public/build ./public/
 
 # Symfony var/ must be writable at runtime
 RUN mkdir -p var/cache var/log var/sessions \
- && chown -R www-data:www-data /var/www/pinboard /tmp/nginx /var/lib/nginx /var/log/nginx
+ && chown -R www-data:www-data /var/www/pinboard /tmp/nginx /var/cache/nginx /var/log/nginx
 
 # ── Entrypoint: waits for DB, runs migrations, starts supervisord ─────────────
 COPY docker/php-fpm/entrypoint.prod.sh /usr/local/bin/entrypoint.sh

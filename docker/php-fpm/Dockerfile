@@ -1,4 +1,4 @@
-FROM php:8.5-fpm-alpine@sha256:ef8e5dac4f891df1e452a7b89b01de01d20d25788d2c3dd0f8ce137ac546c47d
+FROM php:8.5-fpm-alpine@sha256:fa01fb1645cd0fc566a5f146b099adace33b906571f972f71f2182a7c12d1cd7
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # Latest release should be periodically revalidated against aptible/supercronic.
@@ -34,7 +34,7 @@ RUN if [ "${INSTALL_XDEBUG}" = "true" ]; then \
     fi
 COPY ./docker/php-fpm/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
-COPY --from=composer:2@sha256:9715c7f69044da2a212a5fbde29ee7da24e364d426560ae6367b060236f847d7 /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac /usr/bin/composer /usr/local/bin/composer
 
 ARG PUID=1000
 ARG PGID=1000

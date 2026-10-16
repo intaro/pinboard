@@ -14,6 +14,11 @@ final class Version20260524190059 extends AbstractMigration
         return 'Add hosts regexp column to user table for per-user server access filtering';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("ALTER TABLE `user` ADD hosts VARCHAR(500) DEFAULT NULL");

@@ -14,6 +14,11 @@ final class Version20231102124434 extends AbstractMigration
         return 'Create PINBA virtual report tables (report2/3/6 with percentile columns) and add p90/p95/p99 to aggregate tables';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("
