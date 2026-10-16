@@ -17,6 +17,11 @@ final class Version20231102124022 extends AbstractMigration
         return '';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("ALTER TABLE `ipm_req_time_details` ADD tags VARCHAR(1024) DEFAULT NULL, ADD tags_cnt INT(11) DEFAULT NULL");

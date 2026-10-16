@@ -14,6 +14,11 @@ final class Version20231102124237 extends AbstractMigration
         return 'Create PINBA virtual tables for tag group reports (group × server_name variants)';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("

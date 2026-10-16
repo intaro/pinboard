@@ -14,6 +14,11 @@ final class Version20260717125500 extends AbstractMigration
         return 'Widen aggregated percentile columns to DOUBLE for MySQL 8.4 strict mode compatibility';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         foreach ([

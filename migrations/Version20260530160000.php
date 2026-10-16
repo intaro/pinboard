@@ -17,6 +17,11 @@ final class Version20260530160000 extends AbstractMigration
         return 'Add created_at index for ipm_tag_info retention cleanup';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql("
