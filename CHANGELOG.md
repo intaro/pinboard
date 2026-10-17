@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.25](https://github.com/intaro/pinboard/compare/v2.1.24...v2.1.25) (2026-10-17)
+
+
+### Bug Fixes
+
+* correct source table repair, UTC storage and chart grouping ([#253](https://github.com/intaro/pinboard/issues/253)) ([1c633a0](https://github.com/intaro/pinboard/commit/1c633a0da6d2042177269613ac8eafdd5655462e))
+
 ## [2.1.24](https://github.com/intaro/pinboard/compare/v2.1.23...v2.1.24) (2026-10-16)
 
 
