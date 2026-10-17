@@ -4,11 +4,26 @@ declare(strict_types=1);
 
 namespace DoctrineMigrations;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 final class Version20260309173000 extends AbstractMigration
 {
+    private const array SOURCE_TABLES = [
+        'ipm_pinba_report_by_hostname_and_server_90_95_99',
+        'ipm_pinba_report_by_server_90_95_99',
+        'ipm_pinba_report_by_hostname_90_95_99',
+        'ipm_pinba_tag_info_group_server_name',
+        'ipm_pinba_tag_info_group_server_server_name',
+        'ipm_pinba_tag_info_group_server_name_hostname',
+        'ipm_pinba_tag_info_group_server_server_name_hostname',
+        'ipm_pinba_tag_info_category_server_name',
+        'ipm_pinba_tag_info_category_server_server_name',
+        'ipm_pinba_tag_info_category_server_name_hostname',
+        'ipm_pinba_tag_info_category_server_server_name_hostname',
+    ];
+
     public function getDescription(): string
     {
         return 'Repair: convert ipm_pinba_* tables from InnoDB to PINBA engine (fixes installations made before migration 20231102124237 was corrected)';
@@ -27,15 +42,17 @@ final class Version20260309173000 extends AbstractMigration
 
         $this->abortIf(!$pinbaAvailable, 'PINBA storage engine is not available in current MySQL instance.');
 
-        // Skip if the tables already have PINBA engine (fresh installs with fixed migrations).
-        $alreadyPinba = (bool)$this->connection->fetchOne(
+        // Check every managed source table, including missing tables.
+        $pinbaTableCount = $this->connection->fetchOne(
             "SELECT COUNT(*) FROM information_schema.TABLES
              WHERE TABLE_SCHEMA = DATABASE()
-               AND TABLE_NAME = 'ipm_pinba_report_by_hostname_and_server_90_95_99'
-               AND ENGINE = 'PINBA'"
+               AND TABLE_NAME IN (:tables)
+               AND ENGINE = 'PINBA'",
+            ['tables' => self::SOURCE_TABLES],
+            ['tables' => ArrayParameterType::STRING],
         );
 
-        if ($alreadyPinba) {
+        if (is_numeric($pinbaTableCount) && (int) $pinbaTableCount === count(self::SOURCE_TABLES)) {
             $this->write('ipm_pinba_* tables already use PINBA engine — skipping repair.');
             return;
         }
@@ -51,19 +68,9 @@ final class Version20260309173000 extends AbstractMigration
 
     private function dropPinbaSourceTables(): void
     {
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_report_by_hostname_and_server_90_95_99`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_report_by_server_90_95_99`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_report_by_hostname_90_95_99`");
-
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_group_server_name`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_group_server_server_name`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_group_server_name_hostname`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_group_server_server_name_hostname`");
-
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_category_server_name`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_category_server_server_name`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_category_server_name_hostname`");
-        $this->addSql("DROP TABLE IF EXISTS `ipm_pinba_tag_info_category_server_server_name_hostname`");
+        foreach (self::SOURCE_TABLES as $table) {
+            $this->addSql(sprintf('DROP TABLE IF EXISTS `%s`', $table));
+        }
     }
 
     private function createPinbaSourceTables(): void

@@ -40,9 +40,20 @@ PINBA_UDP_PORT=30002        # UDP port PHP apps send Pinba packets to
 PINBOARD_TAG=latest         # pin to a release tag (e.g. 2.0.0) for reproducible deploys
 PINBA_ENGINE_TAG=8.4        # rolling channel (8.0 / 8.4 / mariadb-*); pin {series}-v{version} to freeze
 MYSQL_BIND=127.0.0.1        # host interface for MySQL TCP; 0.0.0.0 to expose it
-TZ=UTC                      # timezone for aggregation timestamps
+TZ=UTC                      # server timezone used for display
 APP_RECORDS_LIFETIME=P1M    # how long to keep raw data (ISO 8601 duration)
 ```
+
+### Timestamp storage
+
+Aggregation stores report and detail timestamps in UTC, independently of `TZ`
+and PHP's default timezone. Every Doctrine MySQL connection sets its session
+`time_zone` to `+00:00`, including connections used by migrations and the web UI.
+`TZ` selects the server timezone used when displaying stored timestamps.
+
+Existing timestamps written in local time are not rewritten automatically:
+correcting them requires knowing the writer timezone and affected date range.
+Do not shift all stored history if it contains both UTC and local-time rows.
 
 ### Step 2 — Start
 

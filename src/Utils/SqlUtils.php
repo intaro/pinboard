@@ -24,9 +24,9 @@ class SqlUtils
             return $field;
         }
         if (stripos($period, '1 week') !== false || stripos($period, '3 days') !== false) {
-            return "day($field), hour($field)";
+            return "date($field), hour($field)";
         }
 
-        return "day($field), round(hour($field) / 4)";
+        return "date($field), round(hour($field) / 4)";
     }
 }
