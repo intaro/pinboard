@@ -280,6 +280,8 @@
                                 {% for code, color in statuses.codes %}
                                 {
                                     label: "Status {{ code }}",
+                                    tension: 0,
+                                    pointRadius: 2,
                                     color: "#{{ color }}",
                                     data: [...statusChartData.values()].map((point) => ({ x: point.time, y: point['status{{ code }}'] ?? 0 })),
                                 }{{ not loop.last ? ',' : '' }}

@@ -29,12 +29,12 @@ final class SqlUtilsTest extends TestCase
 
     public function testDateGroupExpressionForThreeDaysAndWeekUsesHourBuckets(): void
     {
-        self::assertSame('day(created_at), hour(created_at)', SqlUtils::getDateGroupExpression('3 days'));
-        self::assertSame('day(timestamp), hour(timestamp)', SqlUtils::getDateGroupExpression('1 week', 'timestamp'));
+        self::assertSame('date(created_at), hour(created_at)', SqlUtils::getDateGroupExpression('3 days'));
+        self::assertSame('date(timestamp), hour(timestamp)', SqlUtils::getDateGroupExpression('1 week', 'timestamp'));
     }
 
     public function testDateGroupExpressionForMonthUsesQuarterDayBuckets(): void
     {
-        self::assertSame('day(created_at), round(hour(created_at) / 4)', SqlUtils::getDateGroupExpression('1 month'));
+        self::assertSame('date(created_at), round(hour(created_at) / 4)', SqlUtils::getDateGroupExpression('1 month'));
     }
 }
