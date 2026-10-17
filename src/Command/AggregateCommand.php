@@ -361,7 +361,7 @@ class AggregateCommand extends Command
         }
 
         try {
-            $now = new \DateTime();
+            $now = new \DateTime('now', new \DateTimeZone(DateTimeUtils::STORAGE_TIMEZONE));
             $now = $now->format('Y-m-d H:i:s');
             $hostnameSql = $this->truncatePinbaString('hostname', self::HOSTNAME_MAX_LENGTH);
             $serverNameSql = $this->truncatePinbaString('server_name', self::SERVER_NAME_MAX_LENGTH);
@@ -369,7 +369,7 @@ class AggregateCommand extends Command
             $maxTagsSql = $this->truncatePinbaString('max(tags)', self::TAGS_MAX_LENGTH);
 
             $delta = new \DateInterval($this->config->recordsLifetime !== '' ? $this->config->recordsLifetime : 'P1M');
-            $date = new \DateTime();
+            $date = new \DateTime('now', new \DateTimeZone(DateTimeUtils::STORAGE_TIMEZONE));
             $date->sub($delta);
 
             $params = [
@@ -861,7 +861,7 @@ class AggregateCommand extends Command
      */
     protected function getBorderOutValues(Connection $db, array $servers): array
     {
-        $d = new \DateTime();
+        $d = new \DateTime('now', new \DateTimeZone(DateTimeUtils::STORAGE_TIMEZONE));
         $aggregationPeriod = $this->config->aggregationPeriod !== '' ? $this->config->aggregationPeriod : 'PT15M';
         $di = new \DateInterval($aggregationPeriod);
         //2 aggregations ago
