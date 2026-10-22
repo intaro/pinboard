@@ -64,12 +64,12 @@ done
 gh api repos/github/codeql-action/git/matching-refs/tags/v --jq '.[].ref' | grep -E 'tags/v[0-9]+$'
 
 # Base image digests
-for i in node:24-alpine composer:2 php:8.5-fpm-alpine nginx:1.30-alpine; do
+for i in node:24-alpine composer:2 php:8.5.12-fpm-alpine nginx:1.30-alpine; do
   docker pull -q $i >/dev/null && docker image inspect $i --format '{{index .RepoDigests 0}}'
 done
 
 # Alpine package versions actually available to the runtime image
-docker run --rm php:8.5-fpm-alpine sh -c 'apk update -q >/dev/null; for p in bash curl icu-dev libxslt-dev nginx oniguruma-dev supervisor tzdata git libzip-dev unzip zip; do apk policy $p | sed -n 2p | sed "s/^ */$p /"; done'
+docker run --rm php:8.5.12-fpm-alpine sh -c 'apk update -q >/dev/null; for p in bash curl icu-dev libxslt-dev nginx oniguruma-dev supervisor tzdata git libzip-dev unzip zip; do apk policy $p | sed -n 2p | sed "s/^ */$p /"; done'
 
 # nginx: newest stable release vs. what the runtime image actually installs (nginx.org repo)
 curl -fsSL https://nginx.org/en/CHANGES-1.30 | sed -n 2p
@@ -151,7 +151,7 @@ the vendor chunk and CSS mean the bundle output did not change.
 ### GitHub Actions and QA tools
 
 - Replace SHA **and** the trailing `# vX.Y.Z` comment; first-party actions stay on `@vN`.
-- `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest`
+- `docker run --rm -v "$PWD/.github:/repo/.github:ro" -v "$PWD/.git:/repo/.git:ro" -w /repo rhysd/actionlint:1.7.12`
 - New hook versions may add rules (hadolint 2.15 added DL3066) — run them over the whole repo.
 
 ## 4. Verify
@@ -238,6 +238,9 @@ Commit type follows [releasing.md → "Version discipline"](releasing.md):
   `pmOnFail: ignore` in `pnpm-workspace.yaml` keeps the lockfile single-document; corepack still
   enforces the pinned version. Consequence: run pnpm through corepack (`corepack enable`) locally,
   a globally installed pnpm no longer switches versions by itself.
+- **PHP 8.5 PDO constants.** In Symfony YAML, use driver-specific constants such as
+  `Pdo\Mysql::ATTR_INIT_COMMAND`; the legacy `PDO::MYSQL_ATTR_INIT_COMMAND` name emits a
+  deprecation during the container build.
 - **pnpm 12 strict release age.** Since pnpm 12.3 an explicit `minimumReleaseAge` makes
   `minimumReleaseAgeStrict` default to `true`, which breaks every Dependabot npm update with
   `ERR_PNPM_STRICT_MIN_RELEASE_AGE_REQUIRES_SAVE` (dependabot/dependabot-core#16375). It is set to
