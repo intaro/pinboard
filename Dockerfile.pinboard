@@ -13,7 +13,7 @@
 ###############################################################################
 # Stage 1 — Frontend: build Webpack Encore assets via pnpm
 ###############################################################################
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS node-builder
+FROM node:24-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53 AS node-builder
 
 WORKDIR /build
 
@@ -38,7 +38,7 @@ RUN pnpm run build
 ###############################################################################
 # Stage 2 — PHP dependencies: composer install (no dev)
 ###############################################################################
-FROM composer:2@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac AS composer-builder
+FROM composer:2@sha256:da624c2c705d54e2f5a9bb77a5dc6c7d091711433ebefd7035672e84c2010fee AS composer-builder
 
 WORKDIR /build
 
@@ -79,7 +79,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 # weeks (1.30.6, CVE-2026-93479 and four more, was missing from Alpine 3.24).
 # apk takes the highest version across repositories, so nginx.org wins. The
 # signing key is copied from the digest-pinned official nginx image.
-COPY --from=nginx:1.30-alpine@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5 \
+COPY --from=nginx:1.30-alpine@sha256:c59d1f8b1e0e42da75be973424cd72e23f7f8adfb54e982f4d1cd0216a5a5576 \
      /etc/apk/keys/nginx_signing.rsa.pub /etc/apk/keys/nginx_signing.rsa.pub
 RUN apk add --no-cache \
     --repository "https://nginx.org/packages/alpine/v$(cut -d. -f1,2 /etc/alpine-release)/main" \
