@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.26](https://github.com/intaro/pinboard/compare/v2.1.25...v2.1.26) (2026-10-22)
+
+
+### Bug Fixes
+
+* **docker:** update PHP for critical security fixes ([#256](https://github.com/intaro/pinboard/issues/256)) ([6c1ef3c](https://github.com/intaro/pinboard/commit/6c1ef3c27194a092bc06cb17ec06bcd917f88fed))
+
 ## [2.1.25](https://github.com/intaro/pinboard/compare/v2.1.24...v2.1.25) (2026-10-17)
 
 
