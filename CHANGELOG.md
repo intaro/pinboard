@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.27](https://github.com/intaro/pinboard/compare/v2.1.26...v2.1.27) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** update project dependencies and base images ([#258](https://github.com/intaro/pinboard/issues/258)) ([1810c75](https://github.com/intaro/pinboard/commit/1810c75e886e64c30842d7469cf3c35e6f2686de))
+
 ## [2.1.26](https://github.com/intaro/pinboard/compare/v2.1.25...v2.1.26) (2026-10-22)
 
 
