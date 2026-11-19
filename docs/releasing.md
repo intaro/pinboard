@@ -115,7 +115,7 @@ Add these under **Settings → Secrets and variables → Actions** in the GitHub
 For the workflow to function correctly, `master` should have the following branch protection rules active:
 
 - Require a pull request before merging (no direct pushes).
-- Require status checks to pass before merging: `PHP CS Fixer`, `PHPStan`, `PHPUnit (PHP 8.4)`, `PHPUnit (PHP 8.5)`.
+- Require status checks to pass before merging: `PHP CS Fixer`, `PHPStan`, `PHPUnit (PHP 8.4)`, `PHPUnit (PHP 8.6)`.
 - Require branches to be up to date before merging.
 - Allow repository admins to bypass (so Release Please can push the release commit).
 

@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/intaro/pinboard)](https://github.com/intaro/pinboard/releases/latest)
 [![Docker Pulls](https://img.shields.io/docker/pulls/xolegator/pinboard?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)
 [![Docker Image Size](https://img.shields.io/docker/image-size/xolegator/pinboard/latest?logo=docker&logoColor=white)](https://hub.docker.com/r/xolegator/pinboard)
-[![PHP](https://img.shields.io/badge/PHP-8.4%20%E2%80%93%208.5-777BB4?logo=php&logoColor=white)](composer.json)
+[![PHP](https://img.shields.io/badge/PHP-8.4%20%E2%80%93%208.6-777BB4?logo=php&logoColor=white)](composer.json)
 [![Symfony](https://img.shields.io/badge/Symfony-8.0-000000?logo=symfony&logoColor=white)](https://symfony.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -98,7 +98,7 @@ The database image bundles the [XOlegator/pinba_engine](https://github.com/XOleg
 
 For local development without Docker.
 
-**Requirements:** PHP ≥ 8.5, MySQL 8.x with `pinba_engine` plugin, Node.js 24 (`.nvmrc`), pnpm via corepack (`corepack enable` — the exact version comes from `packageManager` in `package.json`).
+**Requirements:** PHP ≥ 8.4, MySQL 8.x with `pinba_engine` plugin, Node.js 24 (`.nvmrc`), pnpm via corepack (`corepack enable` — the exact version comes from `packageManager` in `package.json`).
 
 ```bash
 # PHP dependencies

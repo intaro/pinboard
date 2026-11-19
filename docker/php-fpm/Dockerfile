@@ -1,4 +1,4 @@
-FROM php:8.5.12-fpm-alpine@sha256:4943e6c8a08008605b470f6171d611a89384bac97188e4b0a7aefd3f793cd040
+FROM php:8.6-fpm-alpine@sha256:3892978a38794b348f73d6926fb63e352b5338f8b302cdd2cf0ed968f63b50c5
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # Latest release should be periodically revalidated against aptible/supercronic.
@@ -12,7 +12,7 @@ ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v${
 # policy as Dockerfile.pinboard).
 RUN apk add --no-cache \
     bash=~5.3 \
-    curl=~8.22 \
+    curl=~8.23 \
     git=~2.54 \
     icu-dev=~78 \
     libzip-dev=~1.11 \
