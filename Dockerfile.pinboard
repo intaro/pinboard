@@ -84,7 +84,7 @@ COPY --from=nginx:1.30-alpine@sha256:3bc3836dc0be3b811f238210360bf8e7ca8a2d0effd
 RUN apk add --no-cache \
     --repository "https://nginx.org/packages/alpine/v$(cut -d. -f1,2 /etc/alpine-release)/main" \
     bash=~5.3 \
-    curl=~8.22 \
+    curl=~8.23 \
     icu-dev=~78 \
     libxslt-dev=~1.1 \
     nginx=~1.30 \

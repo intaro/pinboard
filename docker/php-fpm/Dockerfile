@@ -12,7 +12,7 @@ ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v${
 # policy as Dockerfile.pinboard).
 RUN apk add --no-cache \
     bash=~5.3 \
-    curl=~8.22 \
+    curl=~8.23 \
     git=~2.54 \
     icu-dev=~78 \
     libzip-dev=~1.11 \
