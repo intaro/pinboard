@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.28](https://github.com/intaro/pinboard/compare/v2.1.27...v2.1.28) (2026-11-19)
+
+
+### Bug Fixes
+
+* **deps:** update runtime and development dependencies ([#270](https://github.com/intaro/pinboard/issues/270)) ([b80e28c](https://github.com/intaro/pinboard/commit/b80e28cd03630fb62549df5e75a731401b9bde4a))
+
 ## [2.1.27](https://github.com/intaro/pinboard/compare/v2.1.26...v2.1.27) (2026-10-22)
 
 
