@@ -61,7 +61,7 @@ Three jobs run automatically on every PR and on every push to `master`:
 |----------------|-------------------------------------------------|
 | PHP CS Fixer   | `vendor/bin/php-cs-fixer fix --dry-run --diff`  |
 | PHPStan        | `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` |
-| PHPUnit        | `vendor/bin/phpunit --no-progress` (PHP 8.4 + 8.5) |
+| PHPUnit        | `vendor/bin/phpunit --no-progress` (PHP 8.4 + 8.6) |
 
 All three must pass before a PR can be merged. See `.github/workflows/ci.yml` for the full configuration.
 
