@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/intaro/pinboard/compare/v2.1.28...v2.2.0) (2026-11-19)
+
+
+### Features
+
+* **runtime:** upgrade to PHP 8.6 ([#272](https://github.com/intaro/pinboard/issues/272)) ([8f7c091](https://github.com/intaro/pinboard/commit/8f7c091664a56c84d41ee2813c7a8d67d48b5c8c))
+
 ## [2.1.28](https://github.com/intaro/pinboard/compare/v2.1.27...v2.1.28) (2026-11-19)
 
 
