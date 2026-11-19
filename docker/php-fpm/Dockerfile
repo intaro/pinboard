@@ -1,4 +1,4 @@
-FROM php:8.5.12-fpm-alpine@sha256:4943e6c8a08008605b470f6171d611a89384bac97188e4b0a7aefd3f793cd040
+FROM php:8.6-fpm-alpine@sha256:3892978a38794b348f73d6926fb63e352b5338f8b302cdd2cf0ed968f63b50c5
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 # Latest release should be periodically revalidated against aptible/supercronic.
